@@ -125,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     setUser(newUser);
     localStorage.setItem("petlog_user", JSON.stringify(newUser));
-    navigate("/dashboard");
+    // Navigation is handled by the calling component (PetInfoPage)
   };
 
   const connectWithapet = () => {

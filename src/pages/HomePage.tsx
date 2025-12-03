@@ -1,17 +1,26 @@
-
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sparkles, MessageCircle, ShoppingBag, Users, Calendar, ArrowRight, Heart } from 'lucide-react';
 import { motion } from "framer-motion";
+import { useAuth } from "@/lib/auth-context";
 
 
 export default function HomePage() {
   const [isMounted, setIsMounted] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Redirect to dashboard if user is logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
 
 
   if (!isMounted) return null;
@@ -119,7 +128,7 @@ export default function HomePage() {
               >
                 <Link to={feature.href} className="block h-full group">
                   <div className="h-full p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
-                    <div className={`w - 14 h - 14 rounded - 2xl ${ feature.color } flex items - center justify - center mb - 6 group - hover: scale - 110 transition - transform`}>
+                    <div className={`w - 14 h - 14 rounded - 2xl ${feature.color} flex items - center justify - center mb - 6 group - hover: scale - 110 transition - transform`}>
                       <feature.icon className="w-7 h-7" />
                     </div>
                     <h3 className="text-xl font-bold mb-3 text-slate-900">{feature.title}</h3>

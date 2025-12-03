@@ -13,7 +13,7 @@ const animationStyles = `
   .right-panel-active .sign-up-container {
     transform: translateX(100%);
     opacity: 1;
-    z-index: 5;
+    z-index: 50;
     animation: show 0.6s;
   }
   @keyframes show {
@@ -23,7 +23,7 @@ const animationStyles = `
     }
     50%, 100% {
       opacity: 1;
-      z-index: 5;
+      z-index: 50;
     }
   }
   .right-panel-active .overlay-container {
@@ -161,7 +161,7 @@ export default function LoginPage() {
         </div>
 
         {/* Overlay Container */}
-        <div className={`overlay-container absolute top-0 left-1/2 w-1/2 h-full overflow-hidden transition-transform duration-600 ease-in-out z-100 ${isRightPanelActive ? "-translate-x-full" : ""}`}>
+        <div className={`overlay-container absolute top-0 left-1/2 w-1/2 h-full overflow-hidden transition-transform duration-600 ease-in-out z-[100] ${isRightPanelActive ? "-translate-x-full" : ""}`}>
           <div className={`overlay bg-gradient-to-r from-[#FF4B2B] to-[#FF416C] text-white relative -left-full h-full w-[200%] transform transition-transform duration-600 ease-in-out ${isRightPanelActive ? "translate-x-1/2" : "translate-x-0"}`}>
 
             {/* Overlay Left (Visible when Right Panel Active / Sign Up Mode) */}

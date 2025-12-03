@@ -1,14 +1,14 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Camera, User } from "lucide-react"
-import { useAuth } from "@/lib/auth-context"
 
 export default function SignupInfoPage() {
-    const { signup } = useAuth()
+    const navigate = useNavigate()
     const [name, setName] = useState("")
     const [birthday, setBirthday] = useState("")
     const [gender, setGender] = useState("female")
@@ -28,15 +28,25 @@ export default function SignupInfoPage() {
         setIsLoading(true)
 
         try {
-            await signup({
+            // Get credentials from sessionStorage
+            const credentialsStr = sessionStorage.getItem("signup_credentials")
+            const credentials = credentialsStr ? JSON.parse(credentialsStr) : {}
+
+            // Save user info to sessionStorage for next step
+            const userInfo = {
+                email: credentials.email,
+                password: credentials.password,
                 name,
                 birthday,
                 gender,
                 avatar: previewUrl || "/placeholder.svg?height=40&width=40"
-            })
-            // signup function handles navigation to dashboard
+            }
+            sessionStorage.setItem("signup_user_info", JSON.stringify(userInfo))
+
+            // Navigate to pet registration
+            navigate("/pet-info")
         } catch (error) {
-            console.error("Signup failed", error)
+            console.error("Failed to save user info", error)
         } finally {
             setIsLoading(false)
         }

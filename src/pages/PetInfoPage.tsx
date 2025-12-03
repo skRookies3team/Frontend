@@ -34,7 +34,7 @@ const CAT_BREEDS = [
 
 export default function PetInfoPage() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { signup } = useAuth()
   const [photoPreview, setPhotoPreview] = useState<string>("")
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [aiAnalysisComplete, setAiAnalysisComplete] = useState(false)
@@ -83,41 +83,65 @@ export default function PetInfoPage() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (user) {
-      const newPet = {
-        id: Date.now().toString(),
-        name: formData.name,
-        species: formData.species,
-        breed: formData.breed,
-        age: Number(formData.age),
-        photo: photoPreview || "/placeholder.svg",
-        gender: formData.gender,
-        neutered: formData.neutered === "yes",
-        birthday: formData.birthday,
-      }
-
-      const updatedUser = {
-        ...user,
-        profileCompleted: true,
-        pets: [newPet],
-      }
-      localStorage.setItem("petlog_user", JSON.stringify(updatedUser))
+    // Get user info from sessionStorage
+    const userInfoStr = sessionStorage.getItem("signup_user_info")
+    if (!userInfoStr) {
+      console.error("No user info found in session")
+      navigate("/signup/info")
+      return
     }
 
+    const userInfo = JSON.parse(userInfoStr)
+
+    // Prepare pet data
+    const petData = {
+      id: Date.now().toString(),
+      name: formData.name,
+      species: formData.species,
+      breed: formData.breed,
+      age: Number(formData.age),
+      photo: photoPreview || "/placeholder.svg",
+      gender: formData.gender,
+      neutered: formData.neutered === "yes",
+      birthday: formData.birthday,
+    }
+
+    // Complete signup with user info and pet data
+    await signup({
+      ...userInfo,
+      pets: [petData],
+    })
+
+    // Clean up sessionStorage
+    sessionStorage.removeItem("signup_user_info")
+    sessionStorage.removeItem("signup_credentials")
+
+    // Navigate to dashboard
     navigate("/dashboard")
   }
 
-  const handleSkip = () => {
-    if (user) {
-      const updatedUser = {
-        ...user,
-        profileCompleted: true,
-      }
-      localStorage.setItem("petlog_user", JSON.stringify(updatedUser))
+  const handleSkip = async () => {
+    // Get user info from sessionStorage
+    const userInfoStr = sessionStorage.getItem("signup_user_info")
+    if (!userInfoStr) {
+      console.error("No user info found in session")
+      navigate("/signup/info")
+      return
     }
+
+    const userInfo = JSON.parse(userInfoStr)
+
+    // Complete signup without pet
+    await signup(userInfo)
+
+    // Clean up sessionStorage
+    sessionStorage.removeItem("signup_user_info")
+    sessionStorage.removeItem("signup_credentials")
+
+    // Navigate to dashboard
     navigate("/dashboard")
   }
 
@@ -301,8 +325,8 @@ export default function PetInfoPage() {
                     type="button"
                     onClick={() => setFormData({ ...formData, gender: "male" })}
                     className={`rounded-xl border-2 p-3 text-sm font-medium transition-all ${formData.gender === "male"
-                        ? "border-pink-500 bg-gradient-to-r from-pink-500 to-rose-500 text-white"
-                        : "border-pink-200 hover:border-pink-500"
+                      ? "border-pink-500 bg-gradient-to-r from-pink-500 to-rose-500 text-white"
+                      : "border-pink-200 hover:border-pink-500"
                       }`}
                   >
                     수컷
@@ -311,8 +335,8 @@ export default function PetInfoPage() {
                     type="button"
                     onClick={() => setFormData({ ...formData, gender: "female" })}
                     className={`rounded-xl border-2 p-3 text-sm font-medium transition-all ${formData.gender === "female"
-                        ? "border-pink-500 bg-gradient-to-r from-pink-500 to-rose-500 text-white"
-                        : "border-pink-200 hover:border-pink-500"
+                      ? "border-pink-500 bg-gradient-to-r from-pink-500 to-rose-500 text-white"
+                      : "border-pink-200 hover:border-pink-500"
                       }`}
                   >
                     암컷
@@ -327,8 +351,8 @@ export default function PetInfoPage() {
                     type="button"
                     onClick={() => setFormData({ ...formData, neutered: "yes" })}
                     className={`rounded-xl border-2 p-3 text-sm font-medium transition-all ${formData.neutered === "yes"
-                        ? "border-pink-500 bg-gradient-to-r from-pink-500 to-rose-500 text-white"
-                        : "border-pink-200 hover:border-pink-500"
+                      ? "border-pink-500 bg-gradient-to-r from-pink-500 to-rose-500 text-white"
+                      : "border-pink-200 hover:border-pink-500"
                       }`}
                   >
                     했어요
@@ -337,8 +361,8 @@ export default function PetInfoPage() {
                     type="button"
                     onClick={() => setFormData({ ...formData, neutered: "no" })}
                     className={`rounded-xl border-2 p-3 text-sm font-medium transition-all ${formData.neutered === "no"
-                        ? "border-pink-500 bg-gradient-to-r from-pink-500 to-rose-500 text-white"
-                        : "border-pink-200 hover:border-pink-500"
+                      ? "border-pink-500 bg-gradient-to-r from-pink-500 to-rose-500 text-white"
+                      : "border-pink-200 hover:border-pink-500"
                       }`}
                   >
                     안 했어요
