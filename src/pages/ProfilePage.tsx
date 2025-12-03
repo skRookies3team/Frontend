@@ -28,7 +28,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth-context"
-import { MY_PETS, AI_DIARIES, type Pet } from "@/lib/pet-data"
+import { AI_DIARIES } from "@/lib/pet-data"
 import { RECAPS, Recap } from "@/lib/recap-data"
 import { RecapModal } from "@/components/recap-modal"
 import { Link, useNavigate, Outlet } from "react-router-dom"
@@ -91,7 +91,7 @@ const ALL_PHOTOS = [
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const { user, logout, updateUser } = useAuth()
+  const { user, logout, updateUser, addPet, updatePet, deletePet } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null)
 
@@ -110,9 +110,12 @@ export default function ProfilePage() {
   const [dialogDate, setDialogDate] = useState<string>("")
 
   // Pet Management State
-  const [pets, setPets] = useState<Pet[]>(MY_PETS)
+  // Pet Management State
+  // const [pets, setPets] = useState<Pet[]>(MY_PETS) // Removed local state
+  const pets = user?.pets || []
   const [showAddPetDialog, setShowAddPetDialog] = useState(false)
   const [showManagePetsDialog, setShowManagePetsDialog] = useState(false)
+  const [editingPetId, setEditingPetId] = useState<string | null>(null)
 
   // Edit Profile State
   const [showEditProfileDialog, setShowEditProfileDialog] = useState(false)
@@ -154,41 +157,59 @@ export default function ProfilePage() {
     }
   }
 
-  const handleAddPet = () => {
+  const handleSavePet = () => {
     if (!newPetName || !newPetBreed) return
 
-    const newPet: Pet = {
-      id: Date.now().toString(),
-      name: newPetName,
-      breed: newPetBreed,
-      age: parseInt(newPetAge) || 0,
-      gender: newPetGender as "남아" | "여아",
-      photo: "/placeholder.svg",
-      bio: "새로운 가족입니다.",
-      weight: 0,
-      birthday: new Date().toISOString().split('T')[0],
-      personality: [],
-      healthStatus: {
-        lastCheckup: "-",
-        vaccination: "미접종",
-        weight: "정상"
-      },
-      stats: {
-        walks: 0,
-        friends: 0,
-        photos: 0
+    if (editingPetId) {
+      updatePet(editingPetId, {
+        name: newPetName,
+        breed: newPetBreed,
+        age: parseInt(newPetAge) || 0,
+      })
+    } else {
+      const newPet = {
+        id: Date.now().toString(),
+        name: newPetName,
+        species: "강아지", // Default value
+        breed: newPetBreed,
+        age: parseInt(newPetAge) || 0,
+        gender: newPetGender as "남아" | "여아",
+        photo: "/placeholder.svg",
+        neutered: false, // Default value
+        birthday: new Date().toISOString().split('T')[0],
+        personality: "활발함", // Default value
+        healthStatus: {
+          lastCheckup: "-",
+          vaccination: "미접종",
+          weight: "정상"
+        },
+        stats: {
+          walks: 0,
+          friends: 0,
+          photos: 0
+        }
       }
+      addPet(newPet)
     }
 
-    setPets([...pets, newPet])
     setShowAddPetDialog(false)
+    setEditingPetId(null)
     setNewPetName("")
     setNewPetBreed("")
     setNewPetAge("")
   }
 
+  const handleEditPet = (pet: any) => {
+    setEditingPetId(pet.id)
+    setNewPetName(pet.name)
+    setNewPetBreed(pet.breed)
+    setNewPetAge(pet.age.toString())
+    setShowManagePetsDialog(false)
+    setShowAddPetDialog(true)
+  }
+
   const handleDeletePet = (id: string) => {
-    setPets(pets.filter(p => p.id !== id))
+    deletePet(id)
   }
 
   const filteredPhotos =
@@ -346,7 +367,13 @@ export default function ProfilePage() {
 
                 <button
                   className="flex flex-col items-center gap-2 min-w-[80px]"
-                  onClick={() => setShowAddPetDialog(true)}
+                  onClick={() => {
+                    setEditingPetId(null)
+                    setNewPetName("")
+                    setNewPetBreed("")
+                    setNewPetAge("")
+                    setShowAddPetDialog(true)
+                  }}
                 >
                   <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-muted-foreground/30 bg-muted/30 transition-colors hover:bg-muted/50">
                     <Plus className="h-6 w-6 text-muted-foreground" />
@@ -724,12 +751,14 @@ export default function ProfilePage() {
         </DialogContent>
       </Dialog>
 
-      {/* Add Pet Dialog */}
+      {/* Add/Edit Pet Dialog */}
       <Dialog open={showAddPetDialog} onOpenChange={setShowAddPetDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>반려동물 추가</DialogTitle>
-            <DialogDescription>새로운 반려동물 정보를 입력해주세요.</DialogDescription>
+            <DialogTitle>{editingPetId ? "반려동물 정보 수정" : "반려동물 추가"}</DialogTitle>
+            <DialogDescription>
+              {editingPetId ? "반려동물 정보를 수정합니다." : "새로운 반려동물 정보를 입력해주세요."}
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
@@ -746,7 +775,7 @@ export default function ProfilePage() {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleAddPet}>추가하기</Button>
+            <Button onClick={handleSavePet}>{editingPetId ? "수정하기" : "추가하기"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -762,7 +791,10 @@ export default function ProfilePage() {
             {pets.map(pet => (
               <div key={pet.id} className="flex items-center justify-between py-2">
                 <span>{pet.name}</span>
-                <Button variant="ghost" size="sm" onClick={() => handleDeletePet(pet.id)}>삭제</Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => handleEditPet(pet)}>수정</Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleDeletePet(pet.id)}>삭제</Button>
+                </div>
               </div>
             ))}
           </div>

@@ -24,6 +24,17 @@ interface User {
     birthday?: string;
     emoji?: string;
     personality?: string;
+    healthStatus?: {
+      lastCheckup: string;
+      vaccination: string;
+      weight: string;
+    };
+    stats?: {
+      walks: number;
+      friends: number;
+      photos: number;
+    };
+    isMemorial?: boolean;
   }[];
 }
 
@@ -36,6 +47,9 @@ interface AuthContextType {
   connectWithapet: () => void;
   addPetCoin: (amount: number) => void;
   updateUser: (updates: Partial<User>) => void;
+  addPet: (pet: User['pets'][0]) => void;
+  updatePet: (petId: string, updates: Partial<User['pets'][0]>) => void;
+  deletePet: (petId: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -158,8 +172,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const addPet = (pet: User['pets'][0]) => {
+    if (user) {
+      const updatedPets = [...user.pets, pet];
+      const updatedUser = { ...user, pets: updatedPets };
+      setUser(updatedUser);
+      localStorage.setItem("petlog_user", JSON.stringify(updatedUser));
+    }
+  };
+
+  const updatePet = (petId: string, updates: Partial<User['pets'][0]>) => {
+    if (user) {
+      const updatedPets = user.pets.map(pet =>
+        pet.id === petId ? { ...pet, ...updates } : pet
+      );
+      const updatedUser = { ...user, pets: updatedPets };
+      setUser(updatedUser);
+      localStorage.setItem("petlog_user", JSON.stringify(updatedUser));
+    }
+  };
+
+  const deletePet = (petId: string) => {
+    if (user) {
+      const updatedPets = user.pets.filter(pet => pet.id !== petId);
+      const updatedUser = { ...user, pets: updatedPets };
+      setUser(updatedUser);
+      localStorage.setItem("petlog_user", JSON.stringify(updatedUser));
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, isLoading, connectWithapet, addPetCoin, updateUser }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, isLoading, connectWithapet, addPetCoin, updateUser, addPet, updatePet, deletePet }}>
       {isLoading ? null : children}
     </AuthContext.Provider>
   );

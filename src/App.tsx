@@ -35,6 +35,7 @@ import ProfilePage from "./pages/ProfilePage"
 import MileagePage from "./pages/MileagePage"
 import PetProfilePage from "./pages/PetProfilePage"
 import RegisterPetPage from "./pages/RegisterPetPage"
+import PetEditPage from "./pages/PetEditPage"
 import SettingsPage from "./pages/SettingsPage"
 import ShopPage from "./pages/ShopPage"
 import CartPage from "./pages/CartPage"
@@ -100,8 +101,9 @@ function App() {
                   <Route path="portfolio" element={<PortfolioPage />} />
                   <Route path="profile" element={<ProfilePage />}>
                     <Route path="mileage" element={<MileagePage />} />
-                    <Route path="pet/:id" element={<PetProfilePage />} />
                   </Route>
+                  <Route path="profile/pet/:id" element={<PetProfilePage />} />
+                  <Route path="profile/pet/:id/edit" element={<PetEditPage />} />
                   <Route path="shop" element={<ShopPage />}>
                     <Route path="cart" element={<CartPage />} />
                     <Route path="wishlist" element={<WishlistPage />} />

@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom"
-import { MY_PETS } from "@/lib/pet-data"
+import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -9,8 +9,9 @@ import { ChevronLeft, Calendar, Weight, Activity, Heart, Camera, Syringe } from 
 export default function PetProfilePage() {
     const params = useParams()
     const navigate = useNavigate()
+    const { user } = useAuth()
     const petId = params.id as string
-    const pet = MY_PETS.find((p) => p.id === petId)
+    const pet = user?.pets.find((p) => p.id === petId)
 
     if (!pet) {
         return (
@@ -54,21 +55,21 @@ export default function PetProfilePage() {
                     <Card className="border-0 shadow-md bg-pink-50/50">
                         <CardContent className="flex flex-col items-center justify-center p-4">
                             <Activity className="mb-2 h-6 w-6 text-pink-500" />
-                            <p className="text-2xl font-bold text-pink-600">{pet.stats.walks}</p>
+                            <p className="text-2xl font-bold text-pink-600">{pet.stats?.walks || 0}</p>
                             <p className="text-xs text-muted-foreground">산책 횟수</p>
                         </CardContent>
                     </Card>
                     <Card className="border-0 shadow-md bg-purple-50/50">
                         <CardContent className="flex flex-col items-center justify-center p-4">
                             <Heart className="mb-2 h-6 w-6 text-purple-500" />
-                            <p className="text-2xl font-bold text-purple-600">{pet.stats.friends}</p>
+                            <p className="text-2xl font-bold text-purple-600">{pet.stats?.friends || 0}</p>
                             <p className="text-xs text-muted-foreground">친구</p>
                         </CardContent>
                     </Card>
                     <Card className="border-0 shadow-md bg-blue-50/50">
                         <CardContent className="flex flex-col items-center justify-center p-4">
                             <Camera className="mb-2 h-6 w-6 text-blue-500" />
-                            <p className="text-2xl font-bold text-blue-600">{pet.stats.photos}</p>
+                            <p className="text-2xl font-bold text-blue-600">{pet.stats?.photos || 0}</p>
                             <p className="text-xs text-muted-foreground">사진</p>
                         </CardContent>
                     </Card>
@@ -86,19 +87,20 @@ export default function PetProfilePage() {
                                     <Calendar className="h-4 w-4" />
                                     <span>생일</span>
                                 </div>
-                                <span className="font-medium">{pet.birthday}</span>
+                                <span className="font-medium">{pet.birthday || "-"}</span>
                             </div>
                             <div className="flex items-center justify-between border-b pb-2">
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                     <Weight className="h-4 w-4" />
                                     <span>몸무게</span>
                                 </div>
-                                <span className="font-medium">{pet.weight}kg</span>
+                                <span className="font-medium">{pet.healthStatus?.weight || "-"}</span>
                             </div>
                             <div>
                                 <p className="mb-2 text-sm text-muted-foreground">소개</p>
                                 <p className="rounded-lg bg-muted p-3 text-sm leading-relaxed">
-                                    {pet.bio}
+                                    {/* pet.bio is not in the interface yet, handling gracefully or assuming it might be added later or using a default */}
+                                    {"새로운 가족입니다."}
                                 </p>
                             </div>
                         </CardContent>
@@ -110,11 +112,13 @@ export default function PetProfilePage() {
                         </CardHeader>
                         <CardContent>
                             <div className="flex flex-wrap gap-2">
-                                {pet.personality.map((trait) => (
-                                    <Badge key={trait} variant="secondary" className="px-3 py-1 text-sm">
-                                        #{trait}
+                                {pet.personality ? (
+                                    <Badge variant="secondary" className="px-3 py-1 text-sm">
+                                        #{pet.personality}
                                     </Badge>
-                                ))}
+                                ) : (
+                                    <span className="text-sm text-muted-foreground">등록된 성격이 없습니다.</span>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -130,7 +134,7 @@ export default function PetProfilePage() {
                                     <span>예방접종</span>
                                 </div>
                                 <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
-                                    {pet.healthStatus.vaccination}
+                                    {pet.healthStatus?.vaccination || "미접종"}
                                 </Badge>
                             </div>
                             <div className="flex items-center justify-between">
@@ -139,17 +143,20 @@ export default function PetProfilePage() {
                                     <span>체중 상태</span>
                                 </div>
                                 <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
-                                    {pet.healthStatus.weight}
+                                    {pet.healthStatus?.weight || "정상"}
                                 </Badge>
                             </div>
                             <div className="mt-2 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
-                                마지막 검진일: {pet.healthStatus.lastCheckup}
+                                마지막 검진일: {pet.healthStatus?.lastCheckup || "-"}
                             </div>
                         </CardContent>
                     </Card>
                 </div>
 
-                <Button className="w-full bg-gradient-to-r from-pink-500 to-rose-500 text-lg font-bold shadow-lg hover:opacity-90">
+                <Button
+                    className="w-full bg-gradient-to-r from-pink-500 to-rose-500 text-lg font-bold shadow-lg hover:opacity-90"
+                    onClick={() => navigate(`/profile/pet/${petId}/edit`)}
+                >
                     프로필 수정
                 </Button>
             </main>

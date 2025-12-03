@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Send, Paperclip, Heart, Camera, Smile } from 'lucide-react'
 import { useAuth } from "@/lib/auth-context"
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 
 interface Message {
   id: string
@@ -29,10 +29,7 @@ export default function ChatbotPage() {
   const [searchParams] = useSearchParams()
   const petIdFromUrl = searchParams.get('petId')
 
-  const pets = user?.pets || [
-    { id: "1", name: "초코", breed: "골든 리트리버", photo: "/golden-retriever.png", age: "3살", personality: "활발하고 사교적", emoji: "🐕" },
-    { id: "2", name: "모카", breed: "푸들", photo: "/fluffy-white-poodle.png", age: "2살", personality: "영리하고 장난기 많음", emoji: "🐩" },
-  ]
+  const pets = user?.pets || []
 
   const initialPet = petIdFromUrl
     ? pets.find(p => p.id === petIdFromUrl) || pets[0]
@@ -133,7 +130,7 @@ export default function ChatbotPage() {
       <aside className="hidden md:flex md:w-80 flex-col border-r border-pink-100 bg-white/80 backdrop-blur-sm">
         <div className="p-6 border-b border-pink-100">
           <h2 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-            {pets[currentTitlePetIndex].emoji} {pets[currentTitlePetIndex].name}이와 대화하기
+            {pets[currentTitlePetIndex]?.emoji} {pets[currentTitlePetIndex]?.name}이와 대화하기
           </h2>
           <p className="text-sm text-muted-foreground mt-1">대화할 반려동물을 선택하세요</p>
         </div>
@@ -177,9 +174,11 @@ export default function ChatbotPage() {
         </div>
 
         <div className="p-4 border-t border-pink-100">
-          <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 rounded-xl">
-            + 반려동물 추가하기
-          </Button>
+          <Link to="/pet-info">
+            <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 rounded-xl">
+              + 반려동물 추가하기
+            </Button>
+          </Link>
         </div>
       </aside>
 
