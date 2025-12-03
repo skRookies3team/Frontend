@@ -14,7 +14,7 @@ type ThemeProviderState = {
 }
 
 const initialState: ThemeProviderState = {
-    theme: "system",
+    theme: "light",
     setTheme: () => null,
 }
 
@@ -22,7 +22,7 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
 export function ThemeProvider({
     children,
-    defaultTheme = "system",
+    defaultTheme = "light",
     storageKey = "vite-ui-theme",
 }: ThemeProviderProps) {
     const [theme, setTheme] = useState<Theme>(
@@ -45,8 +45,8 @@ export function ThemeProvider({
             return
         }
 
-        // If theme is "root", don't add any class - use :root CSS variables
-        if (theme === "root") {
+        // If theme is "root" or "light", don't add any class - use :root CSS variables
+        if (theme === "root" || theme === "light") {
             return
         }
 
