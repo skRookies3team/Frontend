@@ -22,6 +22,9 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  Facebook,
+  Twitter,
+  Link as LinkIcon,
 } from "lucide-react"
 import { motion } from "framer-motion"
 import { Input } from "@/components/ui/input"
@@ -95,10 +98,7 @@ export default function AiDiaryPage() {
     }, 2000)
   }
 
-  const handleShareToInstagram = () => {
-    // Instagram sharing logic
-    alert("Instagram에 공유하기 기능이 실행됩니다")
-  }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-rose-50 pb-20 md:pb-0">
@@ -354,135 +354,162 @@ export default function AiDiaryPage() {
                   </CardContent>
                 </Card>
 
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-6">
                   <Button
                     onClick={handleShareToFeed}
                     size="lg"
-                    className="rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-base font-bold shadow-lg hover:from-pink-600 hover:to-rose-600 md:text-lg"
+                    className="w-full rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-base font-bold shadow-lg hover:from-pink-600 hover:to-rose-600 md:text-lg"
                   >
                     <Share2 className="mr-2 h-5 w-5" />
                     피드에 게시
                   </Button>
-                  <Button
-                    onClick={handleShareToInstagram}
-                    size="lg"
-                    variant="outline"
-                    className="rounded-full border-2 border-pink-500 text-base font-bold text-pink-600 hover:bg-pink-50 md:text-lg bg-transparent"
-                  >
-                    <Instagram className="mr-2 h-5 w-5" />
-                    Instagram 공유
-                  </Button>
                 </div>
               </div>
 
-              <Card className="border-pink-100 shadow-xl lg:sticky lg:top-24 lg:h-fit">
-                <CardContent className="space-y-6 p-6">
-                  <div>
-                    <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-pink-600">
-                      <Palette className="h-5 w-5" />
-                      다이어리 스타일
-                    </h3>
+              <div className="space-y-6 lg:sticky lg:top-24 lg:h-fit">
+                <Card className="border-pink-100 shadow-xl">
+                  <CardContent className="space-y-6 p-6">
+                    <div>
+                      <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-pink-600">
+                        <Palette className="h-5 w-5" />
+                        다이어리 스타일
+                      </h3>
 
-                    {/* Text alignment */}
-                    <div className="space-y-3">
-                      <label className="text-sm font-medium text-muted-foreground">텍스트 정렬</label>
-                      <div className="grid grid-cols-3 gap-2">
-                        <button
-                          onClick={() => setTextAlign("left")}
-                          className={`rounded-lg border-2 p-2 transition-all ${textAlign === "left" ? "border-pink-500 bg-pink-50" : "border-pink-200 hover:border-pink-300"}`}
-                        >
-                          <AlignLeft className="mx-auto h-5 w-5 text-pink-600" />
-                        </button>
-                        <button
-                          onClick={() => setTextAlign("center")}
-                          className={`rounded-lg border-2 p-2 transition-all ${textAlign === "center" ? "border-pink-500 bg-pink-50" : "border-pink-200 hover:border-pink-300"}`}
-                        >
-                          <AlignCenter className="mx-auto h-5 w-5 text-pink-600" />
-                        </button>
-                        <button
-                          onClick={() => setTextAlign("right")}
-                          className={`rounded-lg border-2 p-2 transition-all ${textAlign === "right" ? "border-pink-500 bg-pink-50" : "border-pink-200 hover:border-pink-300"}`}
-                        >
-                          <AlignRight className="mx-auto h-5 w-5 text-pink-600" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Font size */}
-                    <div className="space-y-3">
-                      <label className="text-sm font-medium text-muted-foreground">글자 크기</label>
-                      <input
-                        type="range"
-                        min="12"
-                        max="24"
-                        value={fontSize}
-                        onChange={(e) => setFontSize(Number(e.target.value))}
-                        className="w-full accent-pink-500"
-                      />
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>작게</span>
-                        <span className="font-medium text-pink-600">{fontSize}px</span>
-                        <span>크게</span>
-                      </div>
-                    </div>
-
-                    {/* Background color */}
-                    <div className="space-y-3">
-                      <label className="text-sm font-medium text-muted-foreground">배경 색상</label>
-                      <div className="grid grid-cols-5 gap-2">
-                        {["#ffffff", "#fff5f5", "#fef2f2", "#fdf4ff", "#f0f9ff"].map((color) => (
+                      {/* Text alignment */}
+                      <div className="space-y-3">
+                        <label className="text-sm font-medium text-muted-foreground">텍스트 정렬</label>
+                        <div className="grid grid-cols-3 gap-2">
                           <button
-                            key={color}
-                            onClick={() => setBackgroundColor(color)}
-                            className={`h-10 rounded-lg border-2 transition-all ${backgroundColor === color ? "border-pink-500 scale-110" : "border-pink-200 hover:border-pink-300"}`}
-                            style={{ backgroundColor: color }}
-                          />
-                        ))}
+                            onClick={() => setTextAlign("left")}
+                            className={`rounded-lg border-2 p-2 transition-all ${textAlign === "left" ? "border-pink-500 bg-pink-50" : "border-pink-200 hover:border-pink-300"}`}
+                          >
+                            <AlignLeft className="mx-auto h-5 w-5 text-pink-600" />
+                          </button>
+                          <button
+                            onClick={() => setTextAlign("center")}
+                            className={`rounded-lg border-2 p-2 transition-all ${textAlign === "center" ? "border-pink-500 bg-pink-50" : "border-pink-200 hover:border-pink-300"}`}
+                          >
+                            <AlignCenter className="mx-auto h-5 w-5 text-pink-600" />
+                          </button>
+                          <button
+                            onClick={() => setTextAlign("right")}
+                            className={`rounded-lg border-2 p-2 transition-all ${textAlign === "right" ? "border-pink-500 bg-pink-50" : "border-pink-200 hover:border-pink-300"}`}
+                          >
+                            <AlignRight className="mx-auto h-5 w-5 text-pink-600" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Preset styles */}
-                    <div className="space-y-3">
-                      <label className="text-sm font-medium text-muted-foreground">프리셋</label>
-                      <div className="space-y-2">
-                        <button
-                          onClick={() => {
-                            setLayoutStyle("grid")
-                            setTextAlign("left")
-                            setFontSize(16)
-                            setBackgroundColor("#ffffff")
-                          }}
-                          className="w-full rounded-lg border-2 border-pink-200 p-3 text-left text-sm font-medium text-pink-600 transition-all hover:border-pink-500 hover:bg-pink-50"
-                        >
-                          기본 스타일
-                        </button>
-                        <button
-                          onClick={() => {
-                            setLayoutStyle("masonry")
-                            setTextAlign("center")
-                            setFontSize(18)
-                            setBackgroundColor("#fef2f2")
-                          }}
-                          className="w-full rounded-lg border-2 border-pink-200 p-3 text-left text-sm font-medium text-pink-600 transition-all hover:border-pink-500 hover:bg-pink-50"
-                        >
-                          로맨틱 스타일
-                        </button>
-                        <button
-                          onClick={() => {
-                            setLayoutStyle("slide")
-                            setTextAlign("left")
-                            setFontSize(14)
-                            setBackgroundColor("#f0f9ff")
-                          }}
-                          className="w-full rounded-lg border-2 border-pink-200 p-3 text-left text-sm font-medium text-pink-600 transition-all hover:border-pink-500 hover:bg-pink-50"
-                        >
-                          모던 스타일
-                        </button>
+                      {/* Font size */}
+                      <div className="space-y-3">
+                        <label className="text-sm font-medium text-muted-foreground">글자 크기</label>
+                        <input
+                          type="range"
+                          min="12"
+                          max="24"
+                          value={fontSize}
+                          onChange={(e) => setFontSize(Number(e.target.value))}
+                          className="w-full accent-pink-500"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>작게</span>
+                          <span className="font-medium text-pink-600">{fontSize}px</span>
+                          <span>크게</span>
+                        </div>
+                      </div>
+
+                      {/* Background color */}
+                      <div className="space-y-3">
+                        <label className="text-sm font-medium text-muted-foreground">배경 색상</label>
+                        <div className="grid grid-cols-5 gap-2">
+                          {["#ffffff", "#fff5f5", "#fef2f2", "#fdf4ff", "#f0f9ff"].map((color) => (
+                            <button
+                              key={color}
+                              onClick={() => setBackgroundColor(color)}
+                              className={`h-10 rounded-lg border-2 transition-all ${backgroundColor === color ? "border-pink-500 scale-110" : "border-pink-200 hover:border-pink-300"}`}
+                              style={{ backgroundColor: color }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Preset styles */}
+                      <div className="space-y-3">
+                        <label className="text-sm font-medium text-muted-foreground">프리셋</label>
+                        <div className="space-y-2">
+                          <button
+                            onClick={() => {
+                              setLayoutStyle("grid")
+                              setTextAlign("left")
+                              setFontSize(16)
+                              setBackgroundColor("#ffffff")
+                            }}
+                            className="w-full rounded-lg border-2 border-pink-200 p-3 text-left text-sm font-medium text-pink-600 transition-all hover:border-pink-500 hover:bg-pink-50"
+                          >
+                            기본 스타일
+                          </button>
+                          <button
+                            onClick={() => {
+                              setLayoutStyle("masonry")
+                              setTextAlign("center")
+                              setFontSize(18)
+                              setBackgroundColor("#fef2f2")
+                            }}
+                            className="w-full rounded-lg border-2 border-pink-200 p-3 text-left text-sm font-medium text-pink-600 transition-all hover:border-pink-500 hover:bg-pink-50"
+                          >
+                            로맨틱 스타일
+                          </button>
+                          <button
+                            onClick={() => {
+                              setLayoutStyle("slide")
+                              setTextAlign("left")
+                              setFontSize(14)
+                              setBackgroundColor("#f0f9ff")
+                            }}
+                            className="w-full rounded-lg border-2 border-pink-200 p-3 text-left text-sm font-medium text-pink-600 transition-all hover:border-pink-500 hover:bg-pink-50"
+                          >
+                            모던 스타일
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+
+                {/* Animated Social Buttons */}
+                <div className="flex justify-center gap-4 py-2">
+                  {[
+                    { icon: Facebook, label: "Facebook", color: "hover:bg-[#1877F2]", text: "group-hover:text-white" },
+                    { icon: Twitter, label: "Twitter", color: "hover:bg-[#1DA1F2]", text: "group-hover:text-white" },
+                    { icon: Instagram, label: "Instagram", color: "hover:bg-[#E4405F]", text: "group-hover:text-white" },
+                    { icon: LinkIcon, label: "Copy Link", color: "hover:bg-slate-800", text: "group-hover:text-white" },
+                  ].map((social, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        if (social.label === "Copy Link") {
+                          navigator.clipboard.writeText(window.location.href);
+                          alert("링크가 복사되었습니다!");
+                        } else {
+                          alert(`${social.label} 공유 기능은 준비 중입니다.`);
+                        }
+                      }}
+                      className={`group relative flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${social.color}`}
+                    >
+                      {/* Tooltip */}
+                      <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 transition-all duration-300 group-hover:opacity-100 pointer-events-none">
+                        <div className={`whitespace-nowrap rounded-md px-2 py-1 text-xs font-bold text-white shadow-sm ${social.color.replace('hover:', '')}`}>
+                          {social.label}
+                        </div>
+                        <div className={`absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-${social.color.replace('hover:bg-', '')}`} />
+                      </div>
+
+                      <social.icon className={`h-5 w-5 text-slate-600 transition-colors duration-300 ${social.text}`} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
             </div>
           </div>
         )}

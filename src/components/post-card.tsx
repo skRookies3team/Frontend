@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Heart, MessageCircle, Share2, MoreHorizontal, Flag } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Facebook, Twitter, Instagram, Link as LinkIcon } from "lucide-react"
 
 interface PostCardProps {
   post: {
@@ -171,9 +173,46 @@ export function PostCard({ post, onLikeToggle }: PostCardProps) {
             </button>
           </div>
 
-          <button className="text-muted-foreground transition-colors hover:text-primary">
-            <Share2 className="h-6 w-6" />
-          </button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="text-muted-foreground transition-colors hover:text-primary">
+                <Share2 className="h-6 w-6" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-2" align="end">
+              <div className="flex gap-2">
+                {[
+                  { icon: Facebook, label: "Facebook", color: "hover:bg-[#1877F2]", text: "group-hover:text-white" },
+                  { icon: Twitter, label: "Twitter", color: "hover:bg-[#1DA1F2]", text: "group-hover:text-white" },
+                  { icon: Instagram, label: "Instagram", color: "hover:bg-[#E4405F]", text: "group-hover:text-white" },
+                  { icon: LinkIcon, label: "Copy Link", color: "hover:bg-slate-800", text: "group-hover:text-white" },
+                ].map((social, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      if (social.label === "Copy Link") {
+                        navigator.clipboard.writeText(window.location.href);
+                        alert("링크가 복사되었습니다!");
+                      } else {
+                        alert(`${social.label} 공유 기능은 준비 중입니다.`);
+                      }
+                    }}
+                    className={`group relative flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${social.color}`}
+                  >
+                    {/* Tooltip */}
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 transition-all duration-300 group-hover:opacity-100 pointer-events-none z-50">
+                      <div className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[10px] font-bold text-white shadow-sm ${social.color.replace('hover:', '')}`}>
+                        {social.label}
+                      </div>
+                      <div className={`absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-${social.color.replace('hover:bg-', '')}`} />
+                    </div>
+
+                    <social.icon className={`h-4 w-4 text-slate-600 transition-colors duration-300 ${social.text}`} />
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </CardContent>
     </Card>
