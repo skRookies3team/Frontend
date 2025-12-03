@@ -56,7 +56,7 @@ const AppLayout = () => {
   return (
     <>
       <Header />
-      <main>
+      <main className="bg-background text-foreground">
         <Outlet />
       </main>
       <FloatingChatbotWidget />

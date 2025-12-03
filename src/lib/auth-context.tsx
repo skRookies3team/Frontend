@@ -42,7 +42,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const mockUser: User = {
   id: "1",
-  name: "고윤정",
+  name: "김우빈",
   email: "user@petlog.com",
   avatar: "/placeholder-user.jpg",
   bio: "반려동물과 함께하는 행복한 일상 🐾",
@@ -160,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ user, login, signup, logout, isLoading, connectWithapet, addPetCoin, updateUser }}>
-      {children}
+      {isLoading ? null : children}
     </AuthContext.Provider>
   );
 }

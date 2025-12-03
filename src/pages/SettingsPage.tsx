@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { useTheme } from "../components/theme-provider"
+import { useTheme } from "@/components/theme-provider"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -186,9 +186,9 @@ export default function SettingsPage() {
                                         <Label>테마 선택</Label>
                                         <div className="grid grid-cols-3 gap-4">
                                             <button
-                                                className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all hover:bg-muted ${theme === "light" ? "border-primary bg-primary/5" : "border-muted"
+                                                className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all hover:bg-muted ${theme === "root" ? "border-primary bg-primary/5" : "border-muted"
                                                     }`}
-                                                onClick={() => setTheme("light")}
+                                                onClick={() => setTheme("root")}
                                             >
                                                 <Sun className="h-6 w-6" />
                                                 <span className="text-sm font-medium">라이트</span>
