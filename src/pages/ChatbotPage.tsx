@@ -203,7 +203,7 @@ export default function ChatbotPage() {
                   )}
                 </button>
               ))}
-              <Link to="/pet-info" className="block">
+              <Link to="/pet-info?returnTo=/chatbot" className="block">
                 <button className="w-full p-3 text-sm text-pink-600 font-medium hover:bg-pink-50 border-t border-pink-100">
                   + 반려동물 추가하기
                 </button>
@@ -223,8 +223,8 @@ export default function ChatbotPage() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className={`rounded-2xl px-4 py-2 text-sm ${message.sender === "user"
-                    ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white ml-auto"
-                    : "bg-white/80 backdrop-blur-sm text-gray-800"
+                  ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white ml-auto"
+                  : "bg-white/80 backdrop-blur-sm text-gray-800"
                   }`}
               >
                 {message.content}

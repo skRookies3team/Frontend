@@ -3,7 +3,28 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth-context";
-import { Facebook, Linkedin, Mail } from 'lucide-react';
+
+// Google Icon SVG Component
+const GoogleIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path
+      fill="#4285F4"
+      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+    />
+    <path
+      fill="#34A853"
+      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+    />
+    <path
+      fill="#FBBC05"
+      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+    />
+    <path
+      fill="#EA4335"
+      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+    />
+  </svg>
+);
 
 // A temporary fix for the animation until the real CSS is loaded
 const animationStyles = `
@@ -41,7 +62,7 @@ const animationStyles = `
 `;
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, googleLogin, googleSignup } = useAuth();
   const navigate = useNavigate();
   const [isRightPanelActive, setIsRightPanelActive] = useState(false);
 
@@ -49,10 +70,14 @@ export default function LoginPage() {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   // Signup State
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
+  const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
+  const [isGoogleSignupLoading, setIsGoogleSignupLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,8 +94,35 @@ export default function LoginPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (signupPassword !== signupConfirmPassword) {
+      setPasswordError("비밀번호가 일치하지 않습니다.");
+      return;
+    }
+    setPasswordError("");
     console.log("회원가입:", { signupEmail, signupPassword });
     navigate("/signup/info");
+  };
+
+  const handleGoogleLogin = async () => {
+    setIsGoogleLoading(true);
+    try {
+      await googleLogin();
+    } catch (error) {
+      console.error("Google 로그인 실패", error);
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    setIsGoogleSignupLoading(true);
+    try {
+      await googleSignup();
+    } catch (error) {
+      console.error("Google 회원가입 실패", error);
+    } finally {
+      setIsGoogleSignupLoading(false);
+    }
   };
 
   return (
@@ -84,18 +136,23 @@ export default function LoginPage() {
         <div className={`sign-up-container absolute top-0 h-full transition-all duration-600 ease-in-out left-0 w-1/2 opacity-0 z-10 ${isRightPanelActive ? "translate-x-full opacity-100 z-50 animate-show" : ""}`}>
           <form onSubmit={handleSignup} className="bg-white flex flex-col items-center justify-center h-full px-12 text-center">
             <h1 className="font-bold text-3xl mb-4 text-slate-800">회원가입</h1>
-            <div className="flex gap-4 my-4">
-              <Button variant="outline" size="icon" className="rounded-full border-slate-200 w-10 h-10" type="button">
-                <Facebook className="w-4 h-4 text-slate-600" />
-              </Button>
-              <Button variant="outline" size="icon" className="rounded-full border-slate-200 w-10 h-10" type="button">
-                <Mail className="w-4 h-4 text-slate-600" />
-              </Button>
-              <Button variant="outline" size="icon" className="rounded-full border-slate-200 w-10 h-10" type="button">
-                <Linkedin className="w-4 h-4 text-slate-600" />
-              </Button>
+            <Button
+              variant="outline"
+              className="w-full flex items-center justify-center gap-3 py-3 px-4 border-slate-200 hover:bg-slate-50 transition-colors my-4"
+              type="button"
+              onClick={handleGoogleSignup}
+              disabled={isGoogleSignupLoading}
+            >
+              <GoogleIcon className="w-5 h-5" />
+              <span className="text-slate-700 font-medium">
+                {isGoogleSignupLoading ? "연결 중..." : "Google로 회원가입"}
+              </span>
+            </Button>
+            <div className="flex items-center gap-3 w-full my-2">
+              <div className="flex-1 h-px bg-slate-200"></div>
+              <span className="text-xs text-slate-500">또는 이메일</span>
+              <div className="flex-1 h-px bg-slate-200"></div>
             </div>
-            <span className="text-xs text-slate-500 mb-4">또는 이메일</span>
             <Input
               type="email"
               placeholder="이메일"
@@ -112,6 +169,20 @@ export default function LoginPage() {
               onChange={(e) => setSignupPassword(e.target.value)}
               required
             />
+            <Input
+              type="password"
+              placeholder="비밀번호 확인"
+              className={`bg-slate-100 border-none my-2 py-3 px-4 w-full ${passwordError ? 'ring-2 ring-red-400' : ''}`}
+              value={signupConfirmPassword}
+              onChange={(e) => {
+                setSignupConfirmPassword(e.target.value);
+                if (passwordError) setPasswordError("");
+              }}
+              required
+            />
+            {passwordError && (
+              <span className="text-xs text-red-500 mt-1">{passwordError}</span>
+            )}
             <Button className="mt-4 rounded-full bg-[#FF4B2B] hover:bg-[#FF416C] text-white font-bold py-3 px-11 uppercase tracking-wider transition-transform active:scale-95">
               회원가입
             </Button>
@@ -122,18 +193,23 @@ export default function LoginPage() {
         <div className={`sign-in-container absolute top-0 h-full transition-all duration-600 ease-in-out left-0 w-1/2 z-20 ${isRightPanelActive ? "translate-x-full" : ""}`}>
           <form onSubmit={handleLogin} className="bg-white flex flex-col items-center justify-center h-full px-12 text-center">
             <h1 className="font-bold text-3xl mb-4 text-slate-800">로그인</h1>
-            <div className="flex gap-4 my-4">
-              <Button variant="outline" size="icon" className="rounded-full border-slate-200 w-10 h-10" type="button">
-                <Facebook className="w-4 h-4 text-slate-600" />
-              </Button>
-              <Button variant="outline" size="icon" className="rounded-full border-slate-200 w-10 h-10" type="button">
-                <Mail className="w-4 h-4 text-slate-600" />
-              </Button>
-              <Button variant="outline" size="icon" className="rounded-full border-slate-200 w-10 h-10" type="button">
-                <Linkedin className="w-4 h-4 text-slate-600" />
-              </Button>
+            <Button
+              variant="outline"
+              className="w-full flex items-center justify-center gap-3 py-3 px-4 border-slate-200 hover:bg-slate-50 transition-colors my-4"
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={isGoogleLoading}
+            >
+              <GoogleIcon className="w-5 h-5" />
+              <span className="text-slate-700 font-medium">
+                {isGoogleLoading ? "로그인 중..." : "Google로 로그인"}
+              </span>
+            </Button>
+            <div className="flex items-center gap-3 w-full my-2">
+              <div className="flex-1 h-px bg-slate-200"></div>
+              <span className="text-xs text-slate-500">또는 이메일</span>
+              <div className="flex-1 h-px bg-slate-200"></div>
             </div>
-            <span className="text-xs text-slate-500 mb-4">계정으로 로그인</span>
             <Input
               type="email"
               placeholder="이메일"
@@ -200,3 +276,4 @@ export default function LoginPage() {
     </div>
   )
 }
+

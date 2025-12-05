@@ -42,6 +42,8 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (userData: Partial<User>) => Promise<void>;
+  googleLogin: () => Promise<void>;
+  googleSignup: () => Promise<void>;
   logout: () => void;
   isLoading: boolean;
   connectWithapet: () => void;
@@ -142,6 +144,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Navigation is handled by the calling component (PetInfoPage)
   };
 
+  const googleLogin = async () => {
+    // Simulate Google OAuth popup and authentication
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    const newUser = { ...mockUser, profileCompleted: true };
+    setUser(newUser);
+    localStorage.setItem("petlog_user", JSON.stringify(newUser));
+    navigate("/dashboard");
+  };
+
+  const googleSignup = async () => {
+    // Simulate Google OAuth popup for new user signup
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    // For signup, navigate to info page to complete profile
+    navigate("/signup/info");
+  };
+
   const connectWithapet = () => {
     if (user) {
       const updatedUser = { ...user, withapetConnected: true, petCoin: user.petCoin + 100 };
@@ -202,7 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, isLoading, connectWithapet, addPetCoin, updateUser, addPet, updatePet, deletePet }}>
+    <AuthContext.Provider value={{ user, login, signup, googleLogin, googleSignup, logout, isLoading, connectWithapet, addPetCoin, updateUser, addPet, updatePet, deletePet }}>
       {isLoading ? null : children}
     </AuthContext.Provider>
   );

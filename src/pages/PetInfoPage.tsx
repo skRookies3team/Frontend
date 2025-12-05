@@ -1,7 +1,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -34,7 +34,9 @@ const CAT_BREEDS = [
 
 export default function PetInfoPage() {
   const navigate = useNavigate()
-  const { signup } = useAuth()
+  const [searchParams] = useSearchParams()
+  const returnTo = searchParams.get('returnTo')
+  const { user, signup, addPet } = useAuth()
   const [photoPreview, setPhotoPreview] = useState<string>("")
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [aiAnalysisComplete, setAiAnalysisComplete] = useState(false)
@@ -86,19 +88,9 @@ export default function PetInfoPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Get user info from sessionStorage
-    const userInfoStr = sessionStorage.getItem("signup_user_info")
-    if (!userInfoStr) {
-      console.error("No user info found in session")
-      navigate("/signup/info")
-      return
-    }
-
-    const userInfo = JSON.parse(userInfoStr)
-
     // Prepare pet data
     const petData = {
-      id: Date.now().toString(),
+      id: `pet-${Date.now()}`,
       name: formData.name,
       species: formData.species,
       breed: formData.breed,
@@ -108,6 +100,23 @@ export default function PetInfoPage() {
       neutered: formData.neutered === "yes",
       birthday: formData.birthday,
     }
+
+    // 이미 로그인된 사용자인 경우 (returnTo가 있으면 기존 사용자)
+    if (user && returnTo) {
+      addPet(petData)
+      navigate(returnTo)
+      return
+    }
+
+    // 회원가입 플로우인 경우
+    const userInfoStr = sessionStorage.getItem("signup_user_info")
+    if (!userInfoStr) {
+      console.error("No user info found in session")
+      navigate("/signup/info")
+      return
+    }
+
+    const userInfo = JSON.parse(userInfoStr)
 
     // Complete signup with user info and pet data
     await signup({
@@ -124,7 +133,13 @@ export default function PetInfoPage() {
   }
 
   const handleSkip = async () => {
-    // Get user info from sessionStorage
+    // 이미 로그인된 사용자인 경우
+    if (user && returnTo) {
+      navigate(returnTo)
+      return
+    }
+
+    // 회원가입 플로우인 경우
     const userInfoStr = sessionStorage.getItem("signup_user_info")
     if (!userInfoStr) {
       console.error("No user info found in session")
