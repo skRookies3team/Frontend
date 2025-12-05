@@ -32,69 +32,76 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart, LineChart, Line } from "recharts"
 
-const healthData = {
-  heartRate: {
-    current: 95,
-    min: 75,
-    max: 110,
-    status: "normal",
-    trend: "up",
-    change: 5,
-    lastUpdate: "5분 전",
+// 펫별 건강 데이터
+const petHealthDataMap: Record<string, {
+  healthData: typeof defaultHealthData,
+  heartRateHistory: typeof defaultHeartRateHistory,
+  respiratoryHistory: typeof defaultRespiratoryHistory,
+  weightHistory: typeof defaultWeightHistory
+}> = {
+  "pet-1": {
+    healthData: {
+      heartRate: { current: 95, min: 75, max: 110, status: "normal", trend: "up", change: 5, lastUpdate: "5분 전" },
+      respiratoryRate: { current: 28, min: 20, max: 35, status: "normal", trend: "stable", lastUpdate: "5분 전" },
+      weight: { current: 12.5, previous: 12.3, status: "normal", trend: "up", change: 0.2, lastUpdate: "오늘 오전 8:00" },
+      aiDiagnosis: { status: "healthy", confidence: 94, summary: "전반적으로 건강한 상태입니다", recommendations: ["규칙적인 산책 유지", "수분 섭취량 모니터링", "다음 주 건강검진 예약 권장"], lastUpdate: "1시간 전" },
+    },
+    heartRateHistory: [
+      { time: "00:00", value: 88 }, { time: "04:00", value: 82 }, { time: "08:00", value: 95 },
+      { time: "12:00", value: 102 }, { time: "16:00", value: 97 }, { time: "20:00", value: 90 }, { time: "24:00", value: 85 },
+    ],
+    respiratoryHistory: [
+      { time: "00:00", value: 24 }, { time: "04:00", value: 22 }, { time: "08:00", value: 28 },
+      { time: "12:00", value: 30 }, { time: "16:00", value: 26 }, { time: "20:00", value: 25 }, { time: "24:00", value: 23 },
+    ],
+    weightHistory: [
+      { date: "1주전", value: 12.0 }, { date: "6일전", value: 12.1 }, { date: "5일전", value: 12.2 },
+      { date: "4일전", value: 12.2 }, { date: "3일전", value: 12.3 }, { date: "2일전", value: 12.4 }, { date: "오늘", value: 12.5 },
+    ],
   },
-  respiratoryRate: {
-    current: 28,
-    min: 20,
-    max: 35,
-    status: "normal",
-    trend: "stable",
-    lastUpdate: "5분 전",
-  },
-  weight: {
-    current: 12.5,
-    previous: 12.3,
-    status: "normal",
-    trend: "up",
-    change: 0.2,
-    lastUpdate: "오늘 오전 8:00",
-  },
-  aiDiagnosis: {
-    status: "healthy",
-    confidence: 94,
-    summary: "전반적으로 건강한 상태입니다",
-    recommendations: ["규칙적인 산책 유지", "수분 섭취량 모니터링", "다음 주 건강검진 예약 권장"],
-    lastUpdate: "1시간 전",
+  "pet-2": {
+    healthData: {
+      heartRate: { current: 78, min: 60, max: 100, status: "normal", trend: "stable", change: 0, lastUpdate: "3분 전" },
+      respiratoryRate: { current: 22, min: 15, max: 30, status: "normal", trend: "down", lastUpdate: "3분 전" },
+      weight: { current: 8.2, previous: 8.0, status: "normal", trend: "up", change: 0.2, lastUpdate: "오늘 오전 9:00" },
+      aiDiagnosis: { status: "healthy", confidence: 98, summary: "매우 건강한 상태입니다", recommendations: ["현재 식단 유지", "주 3회 산책 권장"], lastUpdate: "30분 전" },
+    },
+    heartRateHistory: [
+      { time: "00:00", value: 72 }, { time: "04:00", value: 70 }, { time: "08:00", value: 78 },
+      { time: "12:00", value: 85 }, { time: "16:00", value: 80 }, { time: "20:00", value: 75 }, { time: "24:00", value: 72 },
+    ],
+    respiratoryHistory: [
+      { time: "00:00", value: 20 }, { time: "04:00", value: 18 }, { time: "08:00", value: 22 },
+      { time: "12:00", value: 25 }, { time: "16:00", value: 23 }, { time: "20:00", value: 21 }, { time: "24:00", value: 19 },
+    ],
+    weightHistory: [
+      { date: "1주전", value: 7.8 }, { date: "6일전", value: 7.9 }, { date: "5일전", value: 8.0 },
+      { date: "4일전", value: 8.0 }, { date: "3일전", value: 8.1 }, { date: "2일전", value: 8.1 }, { date: "오늘", value: 8.2 },
+    ],
   },
 }
 
-const heartRateHistory = [
-  { time: "00:00", value: 88 },
-  { time: "04:00", value: 82 },
-  { time: "08:00", value: 95 },
-  { time: "12:00", value: 102 },
-  { time: "16:00", value: 97 },
-  { time: "20:00", value: 90 },
-  { time: "24:00", value: 85 },
+// 기본 데이터 (선택된 펫이 없을 때)
+const defaultHealthData = {
+  heartRate: { current: 95, min: 75, max: 110, status: "normal", trend: "up", change: 5, lastUpdate: "5분 전" },
+  respiratoryRate: { current: 28, min: 20, max: 35, status: "normal", trend: "stable", lastUpdate: "5분 전" },
+  weight: { current: 12.5, previous: 12.3, status: "normal", trend: "up", change: 0.2, lastUpdate: "오늘 오전 8:00" },
+  aiDiagnosis: { status: "healthy", confidence: 94, summary: "전반적으로 건강한 상태입니다", recommendations: ["규칙적인 산책 유지", "수분 섭취량 모니터링", "다음 주 건강검진 예약 권장"], lastUpdate: "1시간 전" },
+}
+
+const defaultHeartRateHistory = [
+  { time: "00:00", value: 88 }, { time: "04:00", value: 82 }, { time: "08:00", value: 95 },
+  { time: "12:00", value: 102 }, { time: "16:00", value: 97 }, { time: "20:00", value: 90 }, { time: "24:00", value: 85 },
 ]
 
-const respiratoryHistory = [
-  { time: "00:00", value: 24 },
-  { time: "04:00", value: 22 },
-  { time: "08:00", value: 28 },
-  { time: "12:00", value: 30 },
-  { time: "16:00", value: 26 },
-  { time: "20:00", value: 25 },
-  { time: "24:00", value: 23 },
+const defaultRespiratoryHistory = [
+  { time: "00:00", value: 24 }, { time: "04:00", value: 22 }, { time: "08:00", value: 28 },
+  { time: "12:00", value: 30 }, { time: "16:00", value: 26 }, { time: "20:00", value: 25 }, { time: "24:00", value: 23 },
 ]
 
-const weightHistory = [
-  { date: "1주전", value: 12.0 },
-  { date: "6일전", value: 12.1 },
-  { date: "5일전", value: 12.2 },
-  { date: "4일전", value: 12.2 },
-  { date: "3일전", value: 12.3 },
-  { date: "2일전", value: 12.4 },
-  { date: "오늘", value: 12.5 },
+const defaultWeightHistory = [
+  { date: "1주전", value: 12.0 }, { date: "6일전", value: 12.1 }, { date: "5일전", value: 12.2 },
+  { date: "4일전", value: 12.2 }, { date: "3일전", value: 12.3 }, { date: "2일전", value: 12.4 }, { date: "오늘", value: 12.5 },
 ]
 
 const healthDataHistory = {
@@ -149,8 +156,28 @@ export default function HealthcarePage() {
   const [showAIChat, setShowAIChat] = useState(false)
   const [aiChatMessage, setAiChatMessage] = useState("")
   const [showReportModal, setShowReportModal] = useState(false)
+  const [selectedPetId, setSelectedPetId] = useState<string>("")
 
   const [currentLogIndex, setCurrentLogIndex] = useState(0)
+
+  // 선택된 펫 찾기
+  const selectedPet = user?.pets?.find(pet => pet.id === selectedPetId) || user?.pets?.[0]
+
+  // 펫 목록이 있으면 첫 번째 펫 선택
+  useEffect(() => {
+    if (user?.pets?.length && !selectedPetId) {
+      setSelectedPetId(user.pets[0].id)
+    }
+  }, [user?.pets, selectedPetId])
+
+  // 선택된 펫의 건강 데이터 가져오기
+  const petData = petHealthDataMap[selectedPetId] || {
+    healthData: defaultHealthData,
+    heartRateHistory: defaultHeartRateHistory,
+    respiratoryHistory: defaultRespiratoryHistory,
+    weightHistory: defaultWeightHistory,
+  }
+  const { healthData, heartRateHistory, respiratoryHistory, weightHistory } = petData
 
 
 
@@ -329,9 +356,30 @@ export default function HealthcarePage() {
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-[#f0ede6] flex items-center justify-center text-3xl">🐕</div>
+              <div className="w-14 h-14 rounded-full bg-[#f0ede6] flex items-center justify-center text-3xl overflow-hidden">
+                {selectedPet?.photo ? (
+                  <img src={selectedPet.photo} alt={selectedPet.name} className="w-full h-full object-cover" />
+                ) : (
+                  "🐕"
+                )}
+              </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{user.pets[0].name} Health Dashboard</h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-bold text-gray-900">{selectedPet?.name || "펫"} Health Dashboard</h1>
+                  {user.pets && user.pets.length > 1 && (
+                    <select
+                      value={selectedPetId}
+                      onChange={(e) => setSelectedPetId(e.target.value)}
+                      className="ml-2 px-3 py-1 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      {user.pets.map((pet) => (
+                        <option key={pet.id} value={pet.id}>
+                          {pet.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
                 <p className="text-sm text-gray-600 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-green-500"></span>
                   실시간 모니터링 중

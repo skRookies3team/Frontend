@@ -1,7 +1,7 @@
 import { TabNavigation } from "@/components/tab-navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
@@ -414,26 +414,26 @@ export default function ProfilePage() {
           </div>
 
           <Tabs defaultValue="calendar" className="w-full">
-            <TabsList className="w-full justify-start overflow-x-auto rounded-none border-b bg-transparent p-0">
+            <TabsList className="grid w-full grid-cols-3 rounded-none border-b bg-transparent p-0">
               <TabsTrigger
                 value="calendar"
-                className="rounded-none border-b-2 border-transparent px-6 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                className="rounded-none border-b-2 border-transparent px-2 py-3 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent"
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                AI 다이어리 캘린더
+                <CalendarIcon className="mr-1 h-4 w-4" />
+                AI 다이어리
               </TabsTrigger>
               <TabsTrigger
                 value="recap"
-                className="rounded-none border-b-2 border-transparent px-6 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                className="rounded-none border-b-2 border-transparent px-2 py-3 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent"
               >
-                <BookOpen className="mr-2 h-4 w-4" />
+                <BookOpen className="mr-1 h-4 w-4" />
                 AI 리캡
               </TabsTrigger>
               <TabsTrigger
                 value="gallery"
-                className="rounded-none border-b-2 border-transparent px-6 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                className="rounded-none border-b-2 border-transparent px-2 py-3 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent"
               >
-                <ImageIcon className="mr-2 h-4 w-4" />
+                <ImageIcon className="mr-1 h-4 w-4" />
                 사진 보관함
               </TabsTrigger>
             </TabsList>
@@ -540,9 +540,14 @@ export default function ProfilePage() {
             {/* AI 리캡 탭 */}
             <TabsContent value="recap" className="mt-6">
               <Link to="/ai-studio/recap">
-                <Button variant="outline" className="mb-6 w-full border-primary bg-transparent text-primary hover:bg-primary hover:text-black">
-                  AI 리캡 스튜디오로 이동
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                <Button
+                  variant="outline"
+                  className="group mb-6 w-full border-primary bg-white text-primary transition-all duration-300 hover:bg-primary/5"
+                >
+                  <span className="flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
+                    AI 리캡 스튜디오로 이동
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </span>
                 </Button>
               </Link>
 
@@ -692,10 +697,10 @@ export default function ProfilePage() {
             </TabsContent>
           </Tabs>
         </div>
-      </main>
+      </main >
 
       {/* Edit Profile Dialog */}
-      <Dialog open={showEditProfileDialog} onOpenChange={setShowEditProfileDialog}>
+      < Dialog open={showEditProfileDialog} onOpenChange={setShowEditProfileDialog} >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>프로필 수정</DialogTitle>
@@ -749,10 +754,10 @@ export default function ProfilePage() {
             <Button onClick={handleUpdateProfile}>저장하기</Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog >
 
       {/* Add/Edit Pet Dialog */}
-      <Dialog open={showAddPetDialog} onOpenChange={setShowAddPetDialog}>
+      < Dialog open={showAddPetDialog} onOpenChange={setShowAddPetDialog} >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingPetId ? "반려동물 정보 수정" : "반려동물 추가"}</DialogTitle>
@@ -778,10 +783,10 @@ export default function ProfilePage() {
             <Button onClick={handleSavePet}>{editingPetId ? "수정하기" : "추가하기"}</Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog >
 
       {/* Manage Pets Dialog */}
-      <Dialog open={showManagePetsDialog} onOpenChange={setShowManagePetsDialog}>
+      < Dialog open={showManagePetsDialog} onOpenChange={setShowManagePetsDialog} >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>반려동물 관리</DialogTitle>
@@ -799,63 +804,67 @@ export default function ProfilePage() {
             ))}
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog >
 
       {/* Diary Modal */}
-      {selectedDiary && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-white/95 backdrop-blur-sm p-4"
-          onClick={() => setSelectedDiary(null)}
-        >
+      {
+        selectedDiary && (
           <div
-            className="relative w-full max-w-2xl overflow-hidden rounded-lg bg-background shadow-xl"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-white/95 backdrop-blur-sm p-4"
+            onClick={() => setSelectedDiary(null)}
           >
-            <button
-              className="absolute right-4 top-4 z-10 rounded-full bg-white/80 p-2 text-gray-700 hover:bg-white"
-              onClick={() => setSelectedDiary(null)}
+            <div
+              className="relative w-full max-w-2xl overflow-hidden rounded-lg bg-background shadow-xl"
+              onClick={(e) => e.stopPropagation()}
             >
-              <X className="h-5 w-5" />
-            </button>
-            <div className="relative h-64 overflow-hidden">
-              <img src={selectedDiary.image} alt={selectedDiary.title} className="h-full w-full object-cover" />
-              <Badge className="absolute left-4 top-4 flex items-center gap-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                <Sparkles className="h-3 w-3" />
-                AI 다이어리
-              </Badge>
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-white">
-                <h2 className="mb-2 text-2xl font-bold">{selectedDiary.title}</h2>
+              <button
+                className="absolute right-4 top-4 z-10 rounded-full bg-white/80 p-2 text-gray-700 hover:bg-white"
+                onClick={() => setSelectedDiary(null)}
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <div className="relative h-64 overflow-hidden">
+                <img src={selectedDiary.image} alt={selectedDiary.title} className="h-full w-full object-cover" />
+                <Badge className="absolute left-4 top-4 flex items-center gap-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                  <Sparkles className="h-3 w-3" />
+                  AI 다이어리
+                </Badge>
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-white">
+                  <h2 className="mb-2 text-2xl font-bold">{selectedDiary.title}</h2>
+                  <div className="flex gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {selectedDiary.weather}
+                    </Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      {selectedDiary.mood}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6">
+                <p className="mb-6 text-muted-foreground leading-relaxed">{selectedDiary.content}</p>
                 <div className="flex gap-2">
-                  <Badge variant="secondary" className="text-xs">
-                    {selectedDiary.weather}
-                  </Badge>
-                  <Badge variant="secondary" className="text-xs">
-                    {selectedDiary.mood}
-                  </Badge>
+                  <Button className="flex-1">
+                    <Download className="mr-2 h-4 w-4" />
+                    다운로드
+                  </Button>
+                  <Button variant="outline" className="flex-1">
+                    <Share2 className="mr-2 h-4 w-4" />
+                    공유하기
+                  </Button>
                 </div>
               </div>
             </div>
-            <div className="p-6">
-              <p className="mb-6 text-muted-foreground leading-relaxed">{selectedDiary.content}</p>
-              <div className="flex gap-2">
-                <Button className="flex-1">
-                  <Download className="mr-2 h-4 w-4" />
-                  다운로드
-                </Button>
-                <Button variant="outline" className="flex-1">
-                  <Share2 className="mr-2 h-4 w-4" />
-                  공유하기
-                </Button>
-              </div>
-            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Recap Modal */}
-      {selectedRecap && (
-        <RecapModal recap={selectedRecap} onClose={() => setSelectedRecap(null)} />
-      )}
+      {
+        selectedRecap && (
+          <RecapModal recap={selectedRecap} onClose={() => setSelectedRecap(null)} />
+        )
+      }
 
       {/* Create Diary Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -878,6 +887,6 @@ export default function ProfilePage() {
 
       <Outlet />
       <TabNavigation />
-    </div>
+    </div >
   )
 }
