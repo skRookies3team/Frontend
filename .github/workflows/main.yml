@@ -9,26 +9,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) 소스 가져오기
+      # 소스 가져오기
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # 2) Node.js 22 설치
+      # Node.js 22 설치
       - name: Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 22
           cache: 'pnpm'
 
-      # 3) npm install
+      # pnpm 설치
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      # npm install
       - name: Install dependencies
         run: npm install
 
-      # 4) React(Vite) 빌드
+      # React(Vite) 빌드
       - name: Build project
         run: npm run build
 
-      # 5) AWS 인증 (GitHub Secrets 사용)
+      # AWS 인증 (GitHub Secrets 사용)
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
@@ -36,12 +42,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-2
 
-      # 6) S3 업로드 (build → 버킷 root)
+      # S3 업로드 (build → 버킷 root)
       - name: Deloy to S3
         run: |
           aws s3 sync build/ s3://petlog-frontend-bucket --delete
 
-      # 7) CloudFront 캐시 무효화
+      # CloudFront 캐시 무효화
       - name: Invalidate CloudFront Cache
         run: |
           aws cloudfront create-invalidation \
