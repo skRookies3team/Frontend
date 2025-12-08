@@ -13,6 +13,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      # pnpm 설치
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
       # Node.js 22 설치
       - name: Node.js
         uses: actions/setup-node@v3
@@ -20,19 +26,13 @@ jobs:
           node-version: 22
           cache: 'pnpm'
 
-      # pnpm 설치
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-
       # npm install
       - name: Install dependencies
-        run: npm install
+        run: pnpm install
 
       # React(Vite) 빌드
       - name: Build project
-        run: npm run build
+        run: pnpm run build
 
       # AWS 인증 (GitHub Secrets 사용)
       - name: Configure AWS Credentials
