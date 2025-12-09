@@ -287,3 +287,12 @@ features/[domain]/
 > - **담당자 독립성**: 헬스케어 담당자는 `features/healthcare/` 폴더만 보면 됨
 > - **백엔드 연동 용이**: API 파일이 도메인별로 분리되어 엔드포인트 추적 쉬움
 > - **코드 충돌 최소화**: 각자 다른 feature 폴더에서 작업
+
+## 향후 API 연동 시 사용법
+1. import httpClient from '@/shared/api/http-client';
+
+2. GET 요청
+const pets = await httpClient.get<Pet[]>('/pets');
+
+3. POST 요청
+const newPet = await httpClient.post<Pet>('/pets', { name: '몽치' });
