@@ -347,7 +347,7 @@ export default function DashboardPage() {
                         <div className="flex-1 min-w-0">
                           <h4 className="font-semibold text-sm text-foreground truncate">{pet.name}</h4>
                           <p className="text-xs text-muted-foreground">
-                            {pet.breed} · {pet.age}세
+                            {pet.breed} · {String(pet.age).includes('개월') ? pet.age : `${pet.age}세`}
                           </p>
                           <Badge variant="destructive" className="mt-1 text-xs">
                             실종
@@ -520,12 +520,12 @@ export default function DashboardPage() {
                           <div>
                             <h3 className="font-semibold text-foreground">{pet.name}</h3>
                             <p className="text-sm text-muted-foreground">
-                              {pet.breed} · {pet.age}세 · {pet.gender}
+                              {pet.breed} · {!pet.age && pet.age !== 0 ? '나이 미등록' : (String(pet.age).includes('개월') || String(pet.age).includes('살') ? pet.age : `${pet.age}세`)} · {pet.gender}
                             </p>
                             {pet.birthday && <p className="text-xs text-muted-foreground mt-1">생일: {pet.birthday}</p>}
                           </div>
                         </div>
-                        <Link to={`/profile/pet/${pet.id}`}>
+                        <Link to={`/profile/pet/${pet.id}?returnTo=/dashboard`}>
                           <Button variant="outline" size="sm">
                             프로필
                           </Button>
@@ -544,7 +544,7 @@ export default function DashboardPage() {
                     <p className="text-sm text-muted-foreground mb-4">
                       반려동물 정보를 등록하면 더 많은 기능을 사용할 수 있어요
                     </p>
-                    <Link to="/pet-info">
+                    <Link to="/pet-info?returnTo=/dashboard">
                       <Button className="bg-gradient-to-r from-pink-600 to-rose-600">
                         <PlusCircle className="h-4 w-4 mr-2" />
                         지금 등록하기

@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams, useNavigate, useSearchParams } from "react-router-dom"
 import { useAuth } from "@/features/auth/context/auth-context"
 import { Button } from "@/shared/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
@@ -9,6 +9,8 @@ import { ChevronLeft, Calendar, Weight, Activity, Heart, Camera, Syringe } from 
 export default function PetProfilePage() {
     const params = useParams()
     const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
+    const returnTo = searchParams.get('returnTo') || '/profile'
     const { user } = useAuth()
     const petId = params.id as string
     const pet = user?.pets.find((p) => p.id === petId)
@@ -17,7 +19,7 @@ export default function PetProfilePage() {
         return (
             <div className="flex min-h-screen flex-col items-center justify-center gap-4">
                 <p className="text-xl font-semibold">반려동물을 찾을 수 없습니다.</p>
-                <Button onClick={() => navigate(-1)}>돌아가기</Button>
+                <Button onClick={() => navigate(returnTo)}>돌아가기</Button>
             </div>
         )
     }
@@ -26,7 +28,7 @@ export default function PetProfilePage() {
         <div className="min-h-screen bg-background pb-20 md:pb-8">
             {/* Header */}
             <div className="sticky top-0 z-10 flex items-center border-b bg-background/80 px-4 py-3 backdrop-blur-md">
-                <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="-ml-2">
+                <Button variant="ghost" size="icon" onClick={() => navigate(returnTo)} className="-ml-2">
                     <ChevronLeft className="h-6 w-6" />
                 </Button>
                 <h1 className="ml-2 text-lg font-bold">반려동물 프로필</h1>
@@ -46,7 +48,9 @@ export default function PetProfilePage() {
                     </div>
                     <div className="text-center">
                         <h2 className="text-2xl font-bold">{pet.name}</h2>
-                        <p className="text-muted-foreground">{pet.breed} • {pet.age}살</p>
+                        <p className="text-muted-foreground">
+                            {pet.breed} • {!pet.age && pet.age !== 0 ? '나이 미등록' : (String(pet.age).includes('개월') || String(pet.age).includes('살') ? pet.age : `${pet.age}살`)}
+                        </p>
                     </div>
                 </div>
 
@@ -155,7 +159,7 @@ export default function PetProfilePage() {
 
                 <Button
                     className="w-full bg-gradient-to-r from-pink-500 to-rose-500 text-lg font-bold shadow-lg hover:opacity-90"
-                    onClick={() => navigate(`/profile/pet/${petId}/edit`)}
+                    onClick={() => navigate(`/profile/pet/${petId}/edit?returnTo=${encodeURIComponent(returnTo)}`)}
                 >
                     프로필 수정
                 </Button>

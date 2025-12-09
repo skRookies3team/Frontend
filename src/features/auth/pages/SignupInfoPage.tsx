@@ -10,6 +10,7 @@ import { Camera, User } from "lucide-react"
 export default function SignupInfoPage() {
     const navigate = useNavigate()
     const [name, setName] = useState("")
+    const [username, setUsername] = useState("")
     const [birthday, setBirthday] = useState("")
     const [gender, setGender] = useState("female")
     const [isLoading, setIsLoading] = useState(false)
@@ -37,6 +38,7 @@ export default function SignupInfoPage() {
                 email: credentials.email,
                 password: credentials.password,
                 name,
+                username,
                 birthday,
                 gender,
                 avatar: previewUrl || "/placeholder.svg?height=40&width=40"
@@ -100,6 +102,22 @@ export default function SignupInfoPage() {
                                     required
                                     className="bg-slate-50 border-slate-200 focus:border-pink-500 focus:ring-pink-500"
                                 />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="username">사용자 이름 <span className="text-red-500">*</span></Label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">@</span>
+                                    <Input
+                                        id="username"
+                                        placeholder="username"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                                        required
+                                        className="pl-8 bg-slate-50 border-slate-200 focus:border-pink-500 focus:ring-pink-500"
+                                    />
+                                </div>
+                                <p className="text-xs text-slate-500">영문 소문자, 숫자, 밑줄(_)만 사용 가능합니다</p>
                             </div>
 
                             <div className="space-y-2">
