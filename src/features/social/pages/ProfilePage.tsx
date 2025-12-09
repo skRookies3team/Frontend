@@ -114,18 +114,21 @@ export default function ProfilePage() {
   // const [pets, setPets] = useState<Pet[]>(MY_PETS) // Removed local state
   const pets = user?.pets || []
   const [showAddPetDialog, setShowAddPetDialog] = useState(false)
+  const [showAddPetConfirmDialog, setShowAddPetConfirmDialog] = useState(false)
   const [showManagePetsDialog, setShowManagePetsDialog] = useState(false)
   const [editingPetId, setEditingPetId] = useState<string | null>(null)
 
   // Edit Profile State
   const [showEditProfileDialog, setShowEditProfileDialog] = useState(false)
   const [editName, setEditName] = useState("")
+  const [editUsername, setEditUsername] = useState("")
   const [editBio, setEditBio] = useState("")
   const [editAvatar, setEditAvatar] = useState<string | null>(null)
 
   // Initialize edit state when dialog opens
   const handleOpenEditProfile = () => {
     setEditName(user?.name || "")
+    setEditUsername(user?.username || "")
     setEditBio(user?.bio || "")
     setEditAvatar(user?.avatar || null)
     setShowEditProfileDialog(true)
@@ -134,6 +137,7 @@ export default function ProfilePage() {
   const handleUpdateProfile = () => {
     updateUser({
       name: editName,
+      username: editUsername,
       bio: editBio,
       ...(editAvatar && { avatar: editAvatar })
     })
@@ -307,7 +311,7 @@ export default function ProfilePage() {
                       </Button>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">@{user?.email?.split('@')[0] || "sarahkim"}</p>
+                  <p className="text-sm text-muted-foreground">@{user?.username || user?.email?.split('@')[0] || "user"}</p>
                   {user?.bio && (
                     <p className="mt-2 text-sm text-foreground">{user.bio}</p>
                   )}
@@ -367,13 +371,7 @@ export default function ProfilePage() {
 
                 <button
                   className="flex flex-col items-center gap-2 min-w-[80px]"
-                  onClick={() => {
-                    setEditingPetId(null)
-                    setNewPetName("")
-                    setNewPetBreed("")
-                    setNewPetAge("")
-                    setShowAddPetDialog(true)
-                  }}
+                  onClick={() => setShowAddPetConfirmDialog(true)}
                 >
                   <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-muted-foreground/30 bg-muted/30 transition-colors hover:bg-muted/50">
                     <Plus className="h-6 w-6 text-muted-foreground" />
@@ -738,6 +736,21 @@ export default function ProfilePage() {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-username" className="text-right">
+                사용자 이름
+              </Label>
+              <div className="col-span-3 relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
+                <Input
+                  id="edit-username"
+                  value={editUsername}
+                  onChange={(e) => setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                  className="pl-8"
+                  placeholder="username"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-bio" className="text-right">
                 소개
               </Label>
@@ -755,6 +768,35 @@ export default function ProfilePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog >
+
+      {/* Add Pet Confirmation Dialog */}
+      <Dialog open={showAddPetConfirmDialog} onOpenChange={setShowAddPetConfirmDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>반려동물 추가</DialogTitle>
+            <DialogDescription>
+              새로운 반려동물을 추가하시겠습니까?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setShowAddPetConfirmDialog(false)}
+            >
+              아니오
+            </Button>
+            <Button
+              onClick={() => {
+                setShowAddPetConfirmDialog(false)
+                navigate("/pet-info?returnTo=/profile")
+              }}
+              className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
+            >
+              예
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add/Edit Pet Dialog */}
       < Dialog open={showAddPetDialog} onOpenChange={setShowAddPetDialog} >
@@ -792,13 +834,41 @@ export default function ProfilePage() {
             <DialogTitle>반려동물 관리</DialogTitle>
             <DialogDescription>등록된 반려동물을 관리합니다.</DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-4 space-y-3">
             {pets.map(pet => (
-              <div key={pet.id} className="flex items-center justify-between py-2">
-                <span>{pet.name}</span>
+              <div key={pet.id} className={cn(
+                "flex items-center justify-between p-3 rounded-lg border",
+                pet.isMemorial ? "bg-gray-50 border-gray-200" : "border-border"
+              )}>
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "h-10 w-10 rounded-full overflow-hidden",
+                    pet.isMemorial && "grayscale opacity-70"
+                  )}>
+                    <img src={pet.photo} alt={pet.name} className="h-full w-full object-cover" />
+                  </div>
+                  <div>
+                    <span className="font-medium">{pet.name}</span>
+                    {pet.isMemorial && (
+                      <span className="ml-2 text-xs text-muted-foreground">🕊️ 추모</span>
+                    )}
+                  </div>
+                </div>
                 <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      updatePet(pet.id, { isMemorial: !pet.isMemorial })
+                    }}
+                    className={cn(
+                      pet.isMemorial && "bg-gray-100"
+                    )}
+                  >
+                    {pet.isMemorial ? "추모 해제" : "추모 모드"}
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => handleEditPet(pet)}>수정</Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleDeletePet(pet.id)}>삭제</Button>
+                  <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDeletePet(pet.id)}>삭제</Button>
                 </div>
               </div>
             ))}

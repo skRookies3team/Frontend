@@ -7,7 +7,7 @@ import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
 import { Card, CardContent } from "@/shared/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select"
-import { PawPrint, Upload, X, Sparkles, Dog, Cat, Rabbit, Bird, Fish } from 'lucide-react'
+import { PawPrint, Upload, X, Sparkles, Dog, Cat, Rabbit, Bird, Fish, ChevronLeft } from 'lucide-react'
 import { useAuth } from "@/features/auth/context/auth-context"
 
 const ANIMAL_TYPES = [
@@ -23,13 +23,82 @@ const ANIMAL_TYPES = [
 ]
 
 const DOG_BREEDS = [
-  "골든 리트리버", "푸들", "웰시코기", "포메라니안", "치와와", "말티즈", "시바견",
-  "비글", "불독", "요크셔테리어", "닥스훈트", "시츄", "기타"
+  "골든 리트리버",
+  "그레이트 데인",
+  "그레이하운드",
+  "달마티안",
+  "도베르만 핀셔",
+  "래브라도 리트리버",
+  "로데시안 리지백",
+  "로트와일러",
+  "말티즈",
+  "말티푸",
+  "미니어처 닥스훈트",
+  "미니어처 슈나우저",
+  "바센지",
+  "바셋 하운드",
+  "벨지안 셰퍼드 독",
+  "보더 콜리",
+  "보르조이",
+  "보스턴 테리어",
+  "복서",
+  "불 마스티프",
+  "불 테리어",
+  "브리타니 스파니엘",
+  "비글",
+  "비숑 프리제",
+  "사모예드",
+  "살루키",
+  "셔틀랜드 쉽독",
+  "스코티시 테리어",
+  "스탠더드 닥스훈트",
+  "스탠더드 슈나우저",
+  "시바견",
+  "시베리안 허스키",
+  "시추",
+  "아메리칸 스태퍼드셔 테리어",
+  "아이리시 워터 스패니얼",
+  "아이리시 울프하운드",
+  "아키타견",
+  "아프간 하운드",
+  "알래스칸 말라뮤트",
+  "에어데일 테리어",
+  "오스트레일리안 캐틀 독",
+  "올드 잉글리시 쉽독",
+  "와이마라너",
+  "요크셔 테리어",
+  "웨스트 하이랜드 화이트 테리어",
+  "잉글리시 세터",
+  "잉글리시 스프링어 스패니얼",
+  "자이언트 슈나우저",
+  "잭 러셀 테리어",
+  "저먼 셰퍼드 독",
+  "저먼 쇼트헤어드 포인터",
+  "저먼 핀셔",
+  "진돗개",
+  "차우차우",
+  "체서피크 베이 리트리버",
+  "치와와",
+  "카디건 웰시 코기",
+  "카발리에 킹 찰스 스패니얼",
+  "캐닌헨 닥스훈트",
+  "코커 스패니얼",
+  "퍼그",
+  "펨브로크 웰시 코기",
+  "포메라니안",
+  "프렌치 불도그",
+  "푸들",
+  "파피용",
+  "블러드하운드",
+  "휘펫",
+  "기타"
 ]
 
 const CAT_BREEDS = [
-  "코리안 숏헤어", "페르시안", "러시안 블루", "브리티시 숏헤어", "샴", "스코티시 폴드",
-  "뱅갈", "메인쿤", "아메리칸 숏헤어", "노르웨이 숲", "기타"
+  "노르웨이 숲", "데본 렉스", "랙돌", "러시안 블루", "먼치킨", "메인 쿤", "뱅갈",
+  "버만", "브리티시 숏헤어", "샤미즈 (샴)", "스코티시 폴드", "스핑크스", "아비시니안",
+  "아메리칸 숏헤어", "오리엔탈 숏헤어", "코니시 렉스", "코리안 숏헤어", "터키시 앙고라",
+  "터키시 반", "페르시안", "히말라얀", "엑조틱 숏헤어", "기타"
 ]
 
 export default function PetInfoPage() {
@@ -94,7 +163,7 @@ export default function PetInfoPage() {
       name: formData.name,
       species: formData.species,
       breed: formData.breed,
-      age: Number(formData.age),
+      age: formData.age,
       photo: photoPreview || "/placeholder.svg",
       gender: formData.gender,
       neutered: formData.neutered === "yes",
@@ -169,6 +238,16 @@ export default function PetInfoPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-rose-50 px-6 py-12 pt-24">
       <div className="mx-auto max-w-md">
+        {/* Back Button */}
+        <button
+          type="button"
+          onClick={() => navigate(returnTo || "/profile")}
+          className="mb-4 flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronLeft className="h-5 w-5" />
+          <span>뒤로가기</span>
+        </button>
+
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-500">
             <PawPrint className="h-8 w-8 text-white" />
@@ -276,7 +355,7 @@ export default function PetInfoPage() {
                     <SelectTrigger className="rounded-xl border-pink-200">
                       <SelectValue placeholder="품종을 선택하세요" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-[300px] overflow-y-auto">
                       {getBreedOptions().map((breed) => (
                         <SelectItem key={breed} value={breed}>
                           {breed}
@@ -308,29 +387,40 @@ export default function PetInfoPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="age">나이</Label>
-                  <Input
-                    id="age"
-                    type="number"
-                    placeholder="3"
-                    value={formData.age}
-                    onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                    className="rounded-xl border-pink-200"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="birthday">생일</Label>
-                  <Input
-                    id="birthday"
-                    type="date"
-                    value={formData.birthday}
-                    onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
-                    className="rounded-xl border-pink-200"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="birthday">생일</Label>
+                <Input
+                  id="birthday"
+                  type="date"
+                  value={formData.birthday}
+                  onChange={(e) => {
+                    const birthday = e.target.value
+                    let calculatedAge = ""
+                    if (birthday) {
+                      const birthDate = new Date(birthday)
+                      const today = new Date()
+                      let years = today.getFullYear() - birthDate.getFullYear()
+                      let months = today.getMonth() - birthDate.getMonth()
+
+                      if (today.getDate() < birthDate.getDate()) {
+                        months--
+                      }
+                      if (months < 0) {
+                        years--
+                        months += 12
+                      }
+
+                      if (years < 1) {
+                        const totalMonths = years * 12 + months
+                        calculatedAge = `${Math.max(0, totalMonths)}개월`
+                      } else {
+                        calculatedAge = years.toString()
+                      }
+                    }
+                    setFormData({ ...formData, birthday, age: calculatedAge })
+                  }}
+                  className="rounded-xl border-pink-200"
+                />
               </div>
 
               <div className="space-y-3">

@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 interface User {
   id: string;
   name: string;
+  username: string;
   email: string;
   avatar: string;
   bio?: string;
@@ -17,7 +18,7 @@ interface User {
     name: string;
     species: string;
     breed: string;
-    age: number;
+    age: number | string;
     photo: string;
     gender: string;
     neutered: boolean;
@@ -59,6 +60,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const mockUser: User = {
   id: "1",
   name: "김우빈",
+  username: "woobin_kim",
   email: "user@petlog.com",
   avatar: "/placeholder-user.jpg",
   bio: "반려동물과 함께하는 행복한 일상 🐾",
