@@ -9,9 +9,15 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
+      // FASD Structure Aliases
+      "@/app": path.resolve(__dirname, "./src/app"),
+      "@/shared": path.resolve(__dirname, "./src/shared"),
+      "@/features": path.resolve(__dirname, "./src/features"),
+      // Legacy aliases (for gradual migration)
       "@/components": path.resolve(__dirname, "./src/components"),
       "@/lib": path.resolve(__dirname, "./src/lib"),
       "@/hooks": path.resolve(__dirname, "./src/hooks"),
+      "@/pages": path.resolve(__dirname, "./src/pages"),
       "@": path.resolve(__dirname, "./src"),
     },
   },
