@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react"
+import { usePetMate } from "@/lib/use-petmate"
+import { PetMateCandidate } from "@/lib/petmate-api"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import {
@@ -24,24 +26,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { toast } from "sonner"
 
-interface PetMate {
-  id: string
-  userName: string
-  userAvatar: string
-  userGender: "남성" | "여성"
-  petName: string
-  petBreed: string
-  petAge: number
-  petGender: string
-  petPhoto: string
-  distance: number
-  bio: string
-  activityLevel: number
-  commonInterests: string[]
-  matchScore: number
-  isOnline: boolean
-}
 
 export default function PetMatePage() {
   const { user, isLoading } = useAuth()
@@ -55,8 +41,20 @@ export default function PetMatePage() {
   const [distanceFilter, setDistanceFilter] = useState("3")
   const [genderFilter, setGenderFilter] = useState<"all" | "male" | "female">("all")
   const [breedFilter, setBreedFilter] = useState("all")
-  const [matchedUser, setMatchedUser] = useState<PetMate | null>(null)
+  const [matchedUser, setMatchedUser] = useState<PetMateCandidate | null>(null)
   const [isOnline, setIsOnline] = useState(true)
+
+  // Use the PetMate hook with real API (set useMockData to true for testing without backend)
+  const {
+    candidates: allCandidates,
+    toggleLike,
+    isUserLiked,
+  } = usePetMate({
+    userId: user?.id ? Number(user.id) : 1,
+    useMockData: true  // Using mock data for testing - set to false when backend is running
+  })
+
+  const [chatRoomIdFromMatch, setChatRoomIdFromMatch] = useState<number | null>(null)
 
   const [stats] = useState({
     totalMatches: 12,
@@ -64,116 +62,12 @@ export default function PetMatePage() {
     successRate: 85,
   })
 
-  const [allCandidates] = useState<PetMate[]>([
-    {
-      id: "1",
-      userName: "포메사랑",
-      userAvatar: "/woman-profile.png",
-      userGender: "여성",
-      petName: "뭉치",
-      petBreed: "포메라니안",
-      petAge: 3,
-      petGender: "남아",
-      petPhoto: "/cute-pomeranian.png",
-      distance: 0.68,
-      bio: "매일 저녁 7시에 한강공원에서 산책해요! 같은 포메 친구 찾아요 🐾",
-      activityLevel: 85,
-      commonInterests: ["한강 산책", "소형견 모임", "미용 정보"],
-      matchScore: 95,
-      isOnline: true,
-    },
-    {
-      id: "2",
-      userName: "골댕이집사",
-      userAvatar: "/man-profile.png",
-      userGender: "남성",
-      petName: "해피",
-      petBreed: "골든 리트리버",
-      petAge: 2,
-      petGender: "여아",
-      petPhoto: "/happy-golden-retriever.png",
-      distance: 1.2,
-      bio: "활발한 골댕이와 함께 공원 러닝 즐겨요! 대형견 친구 환영합니다 🏃‍♂️",
-      activityLevel: 95,
-      commonInterests: ["러닝", "프리스비", "수영"],
-      matchScore: 88,
-      isOnline: true,
-    },
-    {
-      id: "3",
-      userName: "닥스훈트맘",
-      userAvatar: "/diverse-woman-smiling.png",
-      userGender: "여성",
-      petName: "소시지",
-      petBreed: "닥스훈트",
-      petAge: 5,
-      petGender: "남아",
-      petPhoto: "/dachshund-dog.png",
-      distance: 0.9,
-      bio: "느긋하게 산책 좋아하는 소형견이에요. 주말 아침 산책 메이트 구해요!",
-      activityLevel: 60,
-      commonInterests: ["느긋한 산책", "카페 투어", "사진 찍기"],
-      matchScore: 82,
-      isOnline: false,
-    },
-    {
-      id: "4",
-      userName: "시바견주인",
-      userAvatar: "/casual-man.png",
-      userGender: "남성",
-      petName: "코코",
-      petBreed: "시바견",
-      petAge: 4,
-      petGender: "여아",
-      petPhoto: "/shiba-inu.png",
-      distance: 2.1,
-      bio: "산책 좋아하는 시바견이에요. 평일 저녁 함께 산책하실 분!",
-      activityLevel: 75,
-      commonInterests: ["산책", "간식", "놀이터"],
-      matchScore: 78,
-      isOnline: true,
-    },
-    {
-      id: "5",
-      userName: "비글사랑",
-      userAvatar: "/woman-with-stylish-glasses.png",
-      userGender: "여성",
-      petName: "바니",
-      petBreed: "비글",
-      petAge: 3,
-      petGender: "여아",
-      petPhoto: "/beagle-puppy.png",
-      distance: 1.5,
-      bio: "에너지 넘치는 비글이에요! 주말 공원 런 같이 하실 분 찾아요 🏃‍♀️",
-      activityLevel: 90,
-      commonInterests: ["달리기", "공놀이", "간식 탐험"],
-      matchScore: 91,
-      isOnline: true,
-    },
-    {
-      id: "6",
-      userName: "말티즈엄마",
-      userAvatar: "/woman-friendly.jpg",
-      userGender: "여성",
-      petName: "뽀미",
-      petBreed: "말티즈",
-      petAge: 2,
-      petGender: "여아",
-      petPhoto: "/white-maltese-dog.jpg",
-      distance: 0.5,
-      bio: "조용하고 착한 말티즈예요. 카페 투어 좋아하는 분 환영해요 ☕",
-      activityLevel: 50,
-      commonInterests: ["카페", "미용", "사진"],
-      matchScore: 87,
-      isOnline: true,
-    },
-  ])
-
+  // Filter candidates based on current filters
   const candidates = allCandidates.filter((candidate) => {
-    if (candidate.distance > Number.parseFloat(distanceFilter)) return false
+    if (candidate.distance && candidate.distance > Number.parseFloat(distanceFilter)) return false
     if (genderFilter !== "all") {
-      if (genderFilter === "male" && candidate.userGender !== "남성") return false
-      if (genderFilter === "female" && candidate.userGender !== "여성") return false
+      if (genderFilter === "male" && candidate.userGender !== "남성" && candidate.userGender !== "Male") return false
+      if (genderFilter === "female" && candidate.userGender !== "여성" && candidate.userGender !== "Female") return false
     }
     if (breedFilter !== "all" && candidate.petBreed !== breedFilter) return false
     return true
@@ -189,20 +83,30 @@ export default function PetMatePage() {
 
   const currentCandidate = candidates[currentIndex]
 
-  const handleLike = () => {
-    const isMatch = Math.random() > 0.5
-    if (isMatch) {
-      setMatchedUser(currentCandidate)
-      setMatchModalOpen(true)
-    }
+  const handleLike = async () => {
+    if (!currentCandidate) return
 
-    setTimeout(() => {
-      if (currentIndex < candidates.length - 1) {
-        setCurrentIndex(currentIndex + 1)
-      } else {
-        setCurrentIndex(0)
-      }
-    }, 300)
+    const result = await toggleLike(currentCandidate.userId)
+
+    if (result?.action === 'liked') {
+      toast.success('요청을 보냈습니다!', {
+        description: `${currentCandidate.userName}님에게 좋아요를 보냈습니다.`,
+        duration: 3000,
+      })
+    } else if (result?.action === 'unliked') {
+      toast.info('요청을 취소했습니다.', {
+        description: `${currentCandidate.userName}님에게 보낸 좋아요가 취소되었습니다.`,
+        duration: 3000,
+      })
+    } else if (result?.action === 'matched') {
+      setMatchedUser(currentCandidate)
+      setChatRoomIdFromMatch(result.matchResult?.chatRoomId || null)
+      setMatchModalOpen(true)
+      toast.success('🎉 매칭 성공!', {
+        description: `${currentCandidate.userName}님과 매칭되었습니다! 채팅방이 생성되었습니다.`,
+        duration: 5000,
+      })
+    }
   }
 
   const handleNext = () => {
@@ -437,14 +341,7 @@ export default function PetMatePage() {
                   <ChevronRight className="h-7 w-7 text-gray-900" />
                 </Button>
 
-                {/* 좋아요 버튼 */}
-                <Button
-                  size="lg"
-                  className="absolute bottom-8 right-8 h-20 w-20 rounded-full bg-white hover:bg-white/90 shadow-2xl hover:scale-110 transition-transform"
-                  onClick={handleLike}
-                >
-                  <Heart className="h-10 w-10 text-pink-500" />
-                </Button>
+
 
                 {/* 매칭 점수 */}
                 <div className="absolute right-6 top-6 flex items-center gap-3 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 px-6 py-4 shadow-2xl border-2 border-white/40">
@@ -496,6 +393,26 @@ export default function PetMatePage() {
                         {currentCandidate.userGender}
                       </Badge>
                     </div>
+                    {/* 매치 요청 버튼 */}
+                    <Button
+                      size="lg"
+                      className={`h-14 w-14 rounded-full shadow-lg hover:scale-110 transition-transform ${currentCandidate && isUserLiked(currentCandidate.userId)
+                        ? "bg-pink-500 hover:bg-pink-600"
+                        : "bg-white hover:bg-gray-100 border-2 border-pink-200"
+                        }`}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleLike()
+                      }}
+                    >
+                      <Heart
+                        className={`h-7 w-7 ${currentCandidate && isUserLiked(currentCandidate.userId)
+                          ? "fill-white text-white"
+                          : "text-pink-500"
+                          }`}
+                      />
+                    </Button>
                   </div>
                 </Link>
 
@@ -676,7 +593,9 @@ export default function PetMatePage() {
                 className="w-full bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 h-16 text-lg font-bold shadow-xl hover:shadow-2xl transition-all"
                 onClick={() => {
                   setMatchModalOpen(false)
-                  navigate(`/messages?user=${matchedUser?.id}`)
+                  navigate(chatRoomIdFromMatch
+                    ? `/messages?room=${chatRoomIdFromMatch}`
+                    : `/messages?user=${matchedUser?.userId}`)
                 }}
               >
                 <MessageCircle className="mr-3 h-6 w-6" />
@@ -808,6 +727,6 @@ export default function PetMatePage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </div >
   )
 }
