@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { setTokenGetter, setTokenRemover } from "@/shared/api/http-client";
+import { loginApi } from "@/features/auth/api/auth-api";
 
 interface User {
   id: string;
@@ -41,12 +43,15 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (userData: Partial<User>) => Promise<void>;
   googleLogin: () => Promise<void>;
   googleSignup: () => Promise<void>;
   logout: () => void;
   isLoading: boolean;
+  setToken: (token: string | null) => void;
+  hasToken: () => boolean;
   connectWithapet: () => void;
   addPetCoin: (amount: number) => void;
   updateUser: (updates: Partial<User>) => void;
@@ -99,7 +104,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // 토큰을 메모리(상태)에 저장 - frontsample 패턴 (localStorage 대신)
+  const [token, setTokenState] = useState<string | null>(null);
+
+  // 토큰 설정 (메모리에만 저장)
+  const setToken = (newToken: string | null) => {
+    setTokenState(newToken);
+  };
+
+  // 토큰 존재 여부 확인
+  const hasToken = () => {
+    return !!token;
+  };
+
+  // axios에 토큰 가져오기 및 삭제 함수 등록 - frontsample 패턴
   useEffect(() => {
+    setTokenGetter(() => token);
+    setTokenRemover(() => {
+      setTokenState(null);
+      setUser(null);
+    });
+  }, [token]);
+
+  useEffect(() => {
+    // 개발용: localStorage에서 사용자 정보 복원 (실제 운영에서는 토큰 기반으로 변경)
     const storedUser = localStorage.getItem("petlog_user");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
@@ -126,12 +154,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, location.pathname, isLoading, navigate]);
 
-  const login = async (_email: string, _password: string) => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    const newUser = { ...mockUser, profileCompleted: true };
-    setUser(newUser);
-    localStorage.setItem("petlog_user", JSON.stringify(newUser));
-    navigate("/dashboard");
+  // 로그인 - frontsample 패턴 참고
+  const login = async (email: string, password: string) => {
+    try {
+      // 백엔드 API 호출
+      const response = await loginApi(email, password);
+
+      // 토큰 저장 (메모리)
+      setToken(response.accessToken);
+
+      // 사용자 정보 저장
+      const userData = { ...mockUser, ...response.user, email, profileCompleted: true };
+      setUser(userData);
+      // 개발용으로 localStorage에도 저장 (나중에 제거 가능)
+      localStorage.setItem("petlog_user", JSON.stringify(userData));
+
+      navigate("/dashboard");
+    } catch (error) {
+      // API 실패 시 Mock 데이터로 폴백 (개발용)
+      console.warn('API 로그인 실패, Mock 데이터 사용:', error);
+      const newUser = { ...mockUser, email, profileCompleted: true };
+      setUser(newUser);
+      localStorage.setItem("petlog_user", JSON.stringify(newUser));
+      navigate("/dashboard");
+    }
   };
 
   const signup = async (userData: Partial<User>) => {
@@ -143,11 +189,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     setUser(newUser);
     localStorage.setItem("petlog_user", JSON.stringify(newUser));
-    // Navigation is handled by the calling component (PetInfoPage)
   };
 
   const googleLogin = async () => {
-    // Simulate Google OAuth popup and authentication
     await new Promise((resolve) => setTimeout(resolve, 800));
     const newUser = { ...mockUser, profileCompleted: true };
     setUser(newUser);
@@ -156,9 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const googleSignup = async () => {
-    // Simulate Google OAuth popup for new user signup
     await new Promise((resolve) => setTimeout(resolve, 800));
-    // For signup, navigate to info page to complete profile
     navigate("/signup/info");
   };
 
@@ -178,7 +220,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // 로그아웃 - 토큰 삭제 (메모리에서)
   const logout = () => {
+    setToken(null);
     setUser(null);
     localStorage.removeItem("petlog_user");
     navigate("/");
@@ -222,7 +266,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, googleLogin, googleSignup, logout, isLoading, connectWithapet, addPetCoin, updateUser, addPet, updatePet, deletePet }}>
+    <AuthContext.Provider value={{
+      user,
+      token,
+      login,
+      signup,
+      googleLogin,
+      googleSignup,
+      logout,
+      isLoading,
+      setToken,
+      hasToken,
+      connectWithapet,
+      addPetCoin,
+      updateUser,
+      addPet,
+      updatePet,
+      deletePet
+    }}>
       {isLoading ? null : children}
     </AuthContext.Provider>
   );

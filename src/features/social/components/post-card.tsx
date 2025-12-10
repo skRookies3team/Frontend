@@ -6,7 +6,8 @@ import { Card, CardContent } from "@/shared/ui/card"
 import { Heart, MessageCircle, Share2, MoreHorizontal, Flag } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover"
-import { Facebook, Twitter, Instagram, Link as LinkIcon } from "lucide-react"
+import { Facebook, Instagram, Link as LinkIcon } from "lucide-react"
+import { KakaoIcon } from "@/shared/components/icons/KakaoIcon"
 
 interface PostCardProps {
   post: {
@@ -183,7 +184,7 @@ export function PostCard({ post, onLikeToggle }: PostCardProps) {
               <div className="flex gap-2">
                 {[
                   { icon: Facebook, label: "Facebook", color: "hover:bg-[#1877F2]", text: "group-hover:text-white" },
-                  { icon: Twitter, label: "Twitter", color: "hover:bg-[#1DA1F2]", text: "group-hover:text-white" },
+                  { icon: KakaoIcon, label: "카카오톡", color: "hover:bg-[#FEE500]", text: "group-hover:text-[#3C1E1E]" },
                   { icon: Instagram, label: "Instagram", color: "hover:bg-[#E4405F]", text: "group-hover:text-white" },
                   { icon: LinkIcon, label: "Copy Link", color: "hover:bg-slate-800", text: "group-hover:text-white" },
                 ].map((social, idx) => (
