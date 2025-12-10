@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-// [수정]: SocialShareButtons.tsx가 동일한 'diary' 폴더 안에 있다고 가정하고 경로를 수정합니다.
+// [수정]: SocialShareButtons.tsx의 확장자를 다시 명시하여 경로 문제 해결 시도
 import SocialShareButtons from './SocialShareButtons.tsx'; 
+// [수정]: types 경로의 확장자를 다시 명시하여 경로 문제 해결 시도
 import { SelectedImage, LayoutStyle, TextAlign } from '../../diary/types/diary.ts';
 
 interface EditStepProps {
@@ -20,7 +21,8 @@ interface EditStepProps {
     isSubmitting: boolean;
 }
 
-const Icon: React.FC<{ className?: string }> = ({ children, className }) => <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>;
+// [수정 유지]: children prop의 타입을 명시적으로 React.ReactNode로 추가합니다.
+const Icon: React.FC<{ className?: string, children: React.ReactNode }> = ({ children, className }) => <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>;
 
 export default function EditStep({
     selectedImages,
@@ -216,7 +218,6 @@ export default function EditStep({
                     </div>
 
                     {/* Social Buttons (Sharing) */}
-                    {/* SocialShareButtons.tsx는 이제 동일 폴더 내에 있다고 가정 */}
                     <SocialShareButtons />
                 </div>
             </div>
