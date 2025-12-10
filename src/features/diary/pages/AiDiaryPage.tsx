@@ -2,20 +2,28 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
 // --- Import Types and Service Layer ---
-import { DiaryStep, SelectedImage, LayoutStyle, TextAlign, ImageType } from '../types/diary.ts';
-import { uploadImagesToS3, createAiDiary, generateAiDiaryContent } from '../services/DiaryService.tsx';
+// [수정]: 경로 확인 및 확장자 명시 유지 (./types/diary.ts)
+import { DiaryStep, SelectedImage, LayoutStyle, TextAlign, ImageType } from '../../diary/types/diary.ts';
+// [수정]: 경로 확인 및 확장자 명시 유지 (./services/DiaryService.tsx)
+import { createAiDiary, generateAiDiaryContent } from '../../diary/services/DiaryService.tsx'; 
 
 // --- Import Child Components ---
+// [수정]: 경로 확인 및 확장자 명시 유지 (./components/diary/UploadStep.tsx)
 import UploadStep from '../../diary/components/UploadStep.tsx';
+// [수정]: 경로 확인 및 확장자 명시 유지 (./components/diary/GeneratingStep.tsx)
 import GeneratingStep from '../../diary/components/GeneratingStep.tsx';
+// [수정]: 경로 확인 및 확장자 명시 유지 (./components/diary/EditStep.tsx)
 import EditStep from '../../diary/components/EditStep.tsx';
+// [수정]: 경로 확인 및 확장자 명시 유지 (./components/diary/CompleteStep.tsx)
 import CompleteStep from '../../diary/components/CompleteStep.tsx';
+// [수정]: 경로 확인 및 확장자 명시 유지 (./components/diary/GalleryModal.tsx)
 import GalleryModal from '../../diary/components/GalleryModal.tsx';
 
 
 export default function AiDiaryPage() {
   
   const [step, setStep] = useState<DiaryStep>("upload");
+  // [수정 유지]: SelectedImage[] 타입
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const [showGallery, setShowGallery] = useState(false);
   const [editedDiary, setEditedDiary] = useState("");
@@ -47,12 +55,16 @@ export default function AiDiaryPage() {
     e.target.value = ''; 
     
     try {
-        const uploadedImages = await uploadImagesToS3(filesToUpload);
-        setSelectedImages(prev => [...prev, ...uploadedImages]);
+        // [수정]: SelectedImage 타입이 객체이므로, 로컬 URL 대신 mock 객체로 변환
+        const newImages: SelectedImage[] = filesToUpload.map(file => ({
+            imageUrl: URL.createObjectURL(file), // Mock URL 사용
+            source: ImageType.GALLERY
+        }));
+        setSelectedImages(prev => [...prev, ...newImages]);
 
     } catch (error) {
-        console.error("[ERROR] S3 업로드 실패:", error);
-        alert("이미지 업로드에 실패했습니다.");
+        console.error("[ERROR] 이미지 처리 실패:", error);
+        alert("이미지 처리 중 오류가 발생했습니다.");
     } finally {
         setIsSubmitting(false);
     }
@@ -110,6 +122,7 @@ export default function AiDiaryPage() {
 
     const diaryData = {
       content: editedDiary || "AI 일기 내용을 입력하세요.",
+      // SelectedImage[]를 DiaryImageDTO[]로 변환하여 Service Layer에 전달
       images: selectedImages.map((img, index) => ({
         imageUrl: img.imageUrl,
         imgOrder: index + 1,
@@ -132,7 +145,7 @@ export default function AiDiaryPage() {
   
   // --- UI Rendering (Main Switch) ---
 
-  const Icon: React.FC<{ className?: string }> = ({ children, className }) => <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>;
+  const Icon: React.FC<{ className?: string, children: React.ReactNode }> = ({ children, className }) => <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>;
   
   const renderStep = () => {
     switch (step) {
