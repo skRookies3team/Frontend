@@ -1,13 +1,16 @@
 import React from 'react';
 
 // --- SVG Icon Components for Social Share ---
-// SVG 정의는 간결성을 위해 생략하고, 동일한 JSX 구조를 유지합니다.
 const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
 );
 
-const TwitterIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.7 2 3c2 1 4.2 1.7 6 1.7 3.3-3.6 8-4.6 12-3z"/></svg>
+// [추가/수정]: 카카오톡 아이콘 (SVG 경로 간소화 및 색상 관리)
+const KakaoIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+        <rect width="24" height="24" rx="4.8" fill="transparent"/>
+        <path d="M12 4.5c-4.4 0-8 2.3-8 5.2 0 1.9 1.4 3.6 3.7 4.5l-.8 3.5c-.1.5.3.8.7.6l4.4-3.1c.4.1.8.1 1.2.1 4.4 0 8-2.3 8-5.2s-3.6-5.2-8-5.2z" fill="currentColor"/>
+    </svg>
 );
 
 const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -19,17 +22,18 @@ const LinkIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 // Helper component for Icon span wrapper
-const Icon: React.FC<{ className?: string }> = ({ children, className }) => <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>;
+const Icon: React.FC<{ children: React.ReactNode, className?: string }> = ({ children, className }) => <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>;
 
 /**
  * 소셜 공유 버튼 컴포넌트입니다. 툴팁과 클립보드 복사 기능을 포함합니다.
  */
 const SocialShareButtons: React.FC = () => {
     const socialButtons = [
-        { label: "Facebook", icon: FacebookIcon, color: "hover:bg-[#1877F2]", text: "group-hover:text-white" }, 
-        { label: "Twitter", icon: TwitterIcon, color: "hover:bg-[#1DA1F2]", text: "group-hover:text-white" }, 
-        { label: "Instagram", icon: InstagramIcon, color: "hover:bg-[#E4405F]", text: "group-hover:text-white" }, 
-        { label: "Copy Link", icon: LinkIcon, color: "hover:bg-slate-800", text: "group-hover:text-white" }, 
+        // [수정]: 아이콘 컬러 클래스 추가 및 배경 컬러 코드 명시 (툴팁 꼬리 색상용)
+        { icon: FacebookIcon, label: "Facebook", color: "hover:bg-[#1877F2]", iconColor: "text-slate-600 group-hover:text-white", bgColor: "#1877F2", strokeColor: "currentColor" },
+        { icon: KakaoIcon, label: "카카오톡", color: "hover:bg-[#FEE500]", iconColor: "text-slate-600 group-hover:text-[#3C1E1E]", bgColor: "#FEE500", strokeColor: "none" }, 
+        { icon: InstagramIcon, label: "Instagram", color: "hover:bg-[#E4405F]", iconColor: "text-slate-600 group-hover:text-white", bgColor: "#E4405F", strokeColor: "currentColor" }, 
+        { icon: LinkIcon, label: "Copy Link", color: "hover:bg-slate-800", iconColor: "text-slate-600 group-hover:text-white", bgColor: "#475569", strokeColor: "currentColor" }, 
     ];
 
     const handleButtonClick = (label: string) => {
@@ -41,7 +45,6 @@ const SocialShareButtons: React.FC = () => {
             document.execCommand('copy'); 
 
             document.body.removeChild(tempInput);
-            // [UX 개선] 팝업 대신 alert 사용
             alert("링크가 복사되었습니다!");
         } else {
             alert(`${label} 공유 기능은 준비 중입니다.`);
@@ -50,23 +53,39 @@ const SocialShareButtons: React.FC = () => {
 
     return (
         <div className="flex justify-center gap-4 py-2">
-            {socialButtons.map((social, idx) => (
-                <button
-                    key={idx}
-                    onClick={() => handleButtonClick(social.label)}
-                    className={`group relative flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${social.color}`}
-                >
-                    {/* 툴팁 구현 */}
-                    <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-3 scale-0 rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-xl transition-all duration-300 group-hover:scale-100 group-hover:opacity-100 opacity-0 whitespace-nowrap z-10`}>
-                        {social.label}
-                    </div>
-                    
-                    {/* 아이콘 렌더링 */}
-                    <Icon className={`h-6 w-6 text-slate-600 transition-colors duration-300 ${social.text}`}>
-                        <social.icon />
-                    </Icon>
-                </button>
-            ))}
+            {socialButtons.map((social, idx) => {
+                const tooltipBgColor = social.bgColor || '#333';
+                const tooltipTextColor = social.label === "카카오톡" ? "text-[#3C1E1E]" : "text-white"; 
+
+                return (
+                    <button
+                        key={idx}
+                        onClick={() => handleButtonClick(social.label)}
+                        className={`group relative flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${social.color}`}
+                    >
+                        {/* 툴팁 구현: 뾰족한 꼬리 추가 */}
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 opacity-0 transition-all duration-300 group-hover:opacity-100 pointer-events-none">
+                            <div className={`whitespace-nowrap rounded-md px-2 py-1 text-xs font-bold shadow-sm ${tooltipTextColor}`} style={{ backgroundColor: tooltipBgColor }}>
+                                {social.label}
+                            </div>
+                            {/* 툴팁 꼬리 */}
+                            <div 
+                                className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2"
+                                style={{ 
+                                    borderLeft: '6px solid transparent', 
+                                    borderRight: '6px solid transparent', 
+                                    borderTop: `6px solid ${tooltipBgColor}` 
+                                }}
+                            />
+                        </div>
+
+                        {/* 아이콘 렌더링 */}
+                        <Icon className={`h-6 w-6 transition-colors duration-300 ${social.iconColor}`} >
+                            <social.icon stroke={social.strokeColor} />
+                        </Icon>
+                    </button>
+                );
+            })}
         </div>
     );
 };
