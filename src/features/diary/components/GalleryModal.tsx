@@ -1,5 +1,6 @@
 import React from 'react';
-import { SelectedImage, ImageType, GALLERY_IMAGES } from '../../diary/types/diary.ts';
+// [수정]: 파일 확장자 (.ts)를 제거하여 모듈 해석 오류를 해결합니다.
+import { SelectedImage, GALLERY_IMAGES } from '../../diary/types/diary'; 
 
 interface GalleryModalProps {
     showGallery: boolean;
@@ -8,7 +9,8 @@ interface GalleryModalProps {
     handleSelectFromGallery: (imageUrl: string) => void;
 }
 
-const Icon: React.FC<{ className?: string }> = ({ children, className }) => <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>;
+// [수정 유지]: children prop의 타입을 명시적으로 React.ReactNode로 추가합니다.
+const Icon: React.FC<{ className?: string, children: React.ReactNode }> = ({ children, className }) => <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>;
 
 export default function GalleryModal({
     showGallery,
@@ -34,6 +36,7 @@ export default function GalleryModal({
                     <p className="mb-4 text-sm text-slate-500">선택된 사진: {selectedImages.length}/10</p>
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                         {GALLERY_IMAGES.map((image, index) => {
+                            // SelectedImage가 객체({imageUrl, source})이므로, .imageUrl로 비교합니다.
                             const isSelected = selectedImages.some(img => img.imageUrl === image);
                             return (
                                 <button
