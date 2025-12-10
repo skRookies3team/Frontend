@@ -1,18 +1,20 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-// [수정 없음]: 파일 구조상 이 경로가 맞으므로 유지하고 재시도합니다.
+// [수정]: 파일 확장자 (.ts)를 다시 명시하여 경로 문제 해결 시도
 import { SelectedImage, ImageType } from '../../diary/types/diary.ts';
 
 interface UploadStepProps {
     selectedImages: SelectedImage[];
     isSubmitting: boolean;
+    // [수정]: React.ChangeEvent<HTMLInputElement> 타입 명시
     handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
     handleGenerate: () => void;
     setSelectedImages: React.Dispatch<React.SetStateAction<SelectedImage[]>>;
     setShowGallery: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const Icon: React.FC<{ className?: string }> = ({ children, className }) => <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>;
+// [수정]: children prop의 타입을 명시적으로 React.ReactNode로 추가합니다.
+const Icon: React.FC<{ className?: string, children: React.ReactNode }> = ({ children, className }) => <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>;
 
 export default function UploadStep({
     selectedImages,
@@ -91,7 +93,6 @@ export default function UploadStep({
                                                 disabled={isSubmitting || selectedImages.length >= 10}
                                             >
                                                 <Icon className="mr-2 h-4 w-4">{'➕'}</Icon>
-                                                추가
                                             </button>
                                         </label>
                                     </div>

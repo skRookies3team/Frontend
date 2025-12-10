@@ -4,7 +4,8 @@ interface GeneratingStepProps {
     progress: number;
 }
 
-const Icon: React.FC<{ className?: string }> = ({ children, className }) => <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>;
+// [수정]: children prop의 타입을 명시적으로 React.ReactNode로 추가합니다.
+const Icon: React.FC<{ className?: string, children: React.ReactNode }> = ({ children, className }) => <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>;
 
 export default function GeneratingStep({ progress }: GeneratingStepProps) {
     return (
