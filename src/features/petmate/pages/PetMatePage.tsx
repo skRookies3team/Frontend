@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { usePetMate } from "@/features/petmate/hooks/use-petmate"
-import { PetMateCandidate } from "@/features/petmate/api/petmate-api"
+import { PetMateCandidate, getAddressFromGPS } from "@/features/petmate/api/petmate-api"
 import { Button } from "@/shared/ui/button"
 import { Card } from "@/shared/ui/card"
 import {
@@ -125,19 +125,33 @@ export default function PetMatePage() {
     }
   }
 
-  const handleCurrentLocation = () => {
+  const handleCurrentLocation = async () => {
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords
-          setCurrentLocation(`위도: ${latitude.toFixed(2)}, 경도: ${longitude.toFixed(2)}`)
-          setLocationModalOpen(false)
-        },
-        (error) => {
-          console.error("위치 정보를 가져올 수 없습니다:", error)
-          alert("위치 정보를 가져올 수 없습니다. 브라우저 설정을 확인해주세요.")
-        },
-      )
+      try {
+        // 먼저 위치 정보 가져오기
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject)
+        })
+
+        const { latitude, longitude } = position.coords
+        setCurrentLocation(`위치 확인 중...`)
+
+        try {
+          // Kakao API로 주소 변환
+          const addressInfo = await getAddressFromGPS()
+          const displayAddress = addressInfo.roadAddress || addressInfo.fullAddress || `${addressInfo.region1} ${addressInfo.region2} ${addressInfo.region3}`
+          setCurrentLocation(displayAddress)
+        } catch (apiError) {
+          // API 실패 시 좌표 표시
+          console.error("주소 변환 실패:", apiError)
+          setCurrentLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`)
+        }
+
+        setLocationModalOpen(false)
+      } catch (error) {
+        console.error("위치 정보를 가져올 수 없습니다:", error)
+        alert("위치 정보를 가져올 수 없습니다. 브라우저 설정을 확인해주세요.")
+      }
     } else {
       alert("이 브라우저는 위치 정보를 지원하지 않습니다.")
     }
