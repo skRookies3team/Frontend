@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+
 
 // --- Import Types and Service Layer ---
 // [수정]: 경로 확인 및 확장자 명시 유지 (./types/diary.ts)
