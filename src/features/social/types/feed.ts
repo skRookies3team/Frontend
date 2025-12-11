@@ -1,64 +1,41 @@
-// src/features/social/types/feed.ts
-
-/**
- * 댓글 정보 DTO
- */
-export interface CommentDto {
-  commentId: number;
-  writerUsername: string; // 백엔드 CommentDto 확인 필요 (현재 명세상 username 권장)
-  content: string;
-  createdAt: string;
-}
-
-/**
- * 피드 조회 응답 DTO
- * Backend: FeedResponse.GetFeedDto
- */
 export interface FeedDto {
   feedId: number;
-  writerNickname: string; // 백엔드 필드명: writerNickname
+  writerNickname: string;
   petName: string;
   content: string;
-  imageUrl: string;
+  imageUrl: string | null;
   likeCount: number;
   isLiked: boolean;
-  createdAt: string;
+  createdAt: string; // ISO 8601
   location: string;
   commentCount: number;
-  recentComments: CommentDto[];
-  hashtags: string[];
 }
 
-/**
- * 피드 생성 요청 DTO
- * Backend: FeedRequest.CreateFeedDto
- */
-export interface CreateFeedRequest {
-  userId: number;
-  petId?: number;
-  content: string;
-  location?: string;
-}
-
-/**
- * 피드 수정 요청 DTO
- * Backend: FeedRequest.UpdateFeedDto
- */
-export interface UpdateFeedRequest {
-  userId: number;
-  content: string;
-  imageUrl?: string;
-  location?: string;
-}
-
-/**
- * 무한 스크롤용 Slice 응답 래퍼
- */
 export interface FeedSliceResponse {
   content: FeedDto[];
+  pageable: {
+    pageNumber: number;
+    pageSize: number;
+    sort: {
+      empty: boolean;
+      sorted: boolean;
+      unsorted: boolean;
+    };
+    offset: number;
+    paged: boolean;
+    unpaged: boolean;
+  };
   last: boolean;
+  totalPages: number;
+  totalElements: number;
   size: number;
   number: number;
+  sort: {
+    empty: boolean;
+    sorted: boolean;
+    unsorted: boolean;
+  };
   first: boolean;
+  numberOfElements: number;
   empty: boolean;
 }

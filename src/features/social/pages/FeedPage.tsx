@@ -1,105 +1,15 @@
-import { useState, useMemo } from "react"
+import { useState } from "react"
 import { Link } from "react-router-dom"
 import { TabNavigation } from "@/shared/components/tab-navigation"
-import { PostCard } from "@/features/social/components/post-card"
+import { FeedList } from "@/features/social/components/feed-list"
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
 import { Badge } from "@/shared/ui/badge"
 import { Home, Compass, TrendingUp, PlusSquare, Heart, PlusCircle, User, MessageSquare } from 'lucide-react'
 import { useAuth } from "@/features/auth/context/auth-context"
 
-const MOCK_POSTS = [
-  {
-    id: "1",
-    user: {
-      name: "김서연",
-      avatar: "/diverse-woman-avatar.png",
-    },
-    pet: {
-      name: "초코",
-      avatar: "/golden-retriever.png",
-    },
-    content:
-      "오늘 초코가 공원에서 최고의 하루를 보냈어요! 새로운 친구들을 많이 사귀고 꼬리를 멈추지 않고 흔들었답니다.",
-    images: ["/golden-retriever-playing-park.jpg", "/dog-running-grass.jpg"],
-    likes: 124,
-    comments: 18,
-    timeAgo: "2시간 전",
-    isLiked: false,
-  },
-  {
-    id: "2",
-    user: {
-      name: "이민준",
-      avatar: "/man-avatar.png",
-    },
-    pet: {
-      name: "루나",
-      avatar: "/tabby-cat-sunbeam.png",
-    },
-    content: "루나가 오늘 골판지 상자의 즐거움을 발견했어요. 최고의 장난감이네요!",
-    images: ["/cat-in-box.jpg"],
-    likes: 89,
-    comments: 12,
-    timeAgo: "5시간 전",
-    isLiked: true,
-  },
-  {
-    id: "3",
-    user: {
-      name: "박지은",
-      avatar: "/woman-avatar-2.png",
-    },
-    pet: {
-      name: "맥스",
-      avatar: "/corgi.jpg",
-    },
-    content: "맥스가 오늘 새로운 트릭을 배웠어요! 우리 아가가 너무 자랑스러워요.",
-    images: [],
-    likes: 56,
-    comments: 8,
-    timeAgo: "1일 전",
-    isLiked: false,
-  },
-  {
-    id: "4",
-    user: {
-      name: "김서연",
-      avatar: "/diverse-woman-avatar.png",
-    },
-    pet: {
-      name: "초코",
-      avatar: "/golden-retriever.png",
-    },
-    content: "주말에는 역시 산책이죠! 날씨가 너무 좋아서 초코도 신났어요 ☀️",
-    images: ["/dog-running-grass.jpg"],
-    likes: 45,
-    comments: 5,
-    timeAgo: "3일 전",
-    isLiked: false,
-  },
-  {
-    id: "5",
-    user: {
-      name: "최유진",
-      avatar: "/diverse-woman-avatar.png",
-    },
-    pet: {
-      name: "구름이",
-      avatar: "/pomeranian.jpg",
-    },
-    content: "미용하고 왔어요! 곰돌이 컷 어떤가요? 🐶",
-    images: ["/pomeranian.jpg"],
-    likes: 230,
-    comments: 42,
-    timeAgo: "4시간 전",
-    isLiked: true,
-  },
-]
-
 export default function FeedPage() {
   const [activeMenu, setActiveMenu] = useState("home")
   const [activeFilter, setActiveFilter] = useState("all")
-  const [posts, setPosts] = useState(MOCK_POSTS)
   const { user } = useAuth()
 
   const sidebarMenu = [
@@ -107,7 +17,7 @@ export default function FeedPage() {
     { id: "ai-recommend", label: "AI 추천", icon: Compass, link: "/feed/ai-recommend" },
     { id: "popular", label: "인기", icon: TrendingUp },
     { id: "create", label: "만들기", icon: PlusSquare, link: "/create" },
-    { id: "favorites", label: "찜", icon: Heart, badge: posts.filter(p => p.isLiked).length },
+    { id: "favorites", label: "찜", icon: Heart, badge: 0 }, // Badge logic needs to be connected to real data if needed
     { id: "messages", label: "메시지", icon: MessageSquare, badge: 3, link: "/messages" },
   ]
 
@@ -125,34 +35,6 @@ export default function FeedPage() {
     { id: 4, name: "박준서", username: "@jun_park", followers: "3.1k", avatar: null },
     { id: 5, name: "김하은", username: "@haeun_kim", followers: "1.8k", avatar: null },
   ]
-
-  const handleLikeToggle = (id: string, isLiked: boolean) => {
-    setPosts(posts.map(post =>
-      post.id === id
-        ? { ...post, isLiked, likes: isLiked ? post.likes + 1 : post.likes - 1 }
-        : post
-    ))
-  }
-
-  const filteredPosts = useMemo(() => {
-    let filtered = [...posts]
-
-    // Filter Logic
-    if (activeFilter === "my-posts") {
-      filtered = filtered.filter(post => post.user.name === "김서연")
-    } else if (activeFilter === "friends") {
-      filtered = filtered.filter(post => post.user.name !== "김서연")
-    } else if (activeFilter === "favorites" || activeMenu === "favorites") {
-      filtered = filtered.filter(post => post.isLiked)
-    }
-
-    // Sort Logic
-    if (activeMenu === "popular") {
-      filtered.sort((a, b) => b.likes - a.likes)
-    }
-
-    return filtered
-  }, [posts, activeFilter, activeMenu])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
@@ -174,7 +56,7 @@ export default function FeedPage() {
                       >
                         <Icon className={`h-5 w-5 ${isActive ? "text-pink-600" : "text-muted-foreground"}`} />
                         <span className="flex-1 font-medium">{item.label}</span>
-                        {item.badge !== undefined && (
+                        {item.badge !== undefined && item.badge > 0 && (
                           <Badge className="h-5 w-5 rounded-full bg-rose-500 p-0 text-xs text-white flex items-center justify-center">
                             {item.badge}
                           </Badge>
@@ -200,7 +82,7 @@ export default function FeedPage() {
                   >
                     <Icon className={`h-5 w-5 ${isActive ? "text-pink-600" : "text-muted-foreground"}`} />
                     <span className="flex-1 font-medium">{item.label}</span>
-                    {item.badge !== undefined && (
+                    {item.badge !== undefined && item.badge > 0 && (
                       <Badge className="h-5 w-5 rounded-full bg-gradient-to-br from-pink-400 to-rose-400 p-0 text-xs text-white flex items-center justify-center shadow-lg">
                         {item.badge}
                       </Badge>
@@ -263,17 +145,7 @@ export default function FeedPage() {
             </div>
 
             {/* Posts */}
-            <div className="space-y-4 p-4 md:p-0">
-              {filteredPosts.length > 0 ? (
-                filteredPosts.map((post) => (
-                  <PostCard key={post.id} post={post} onLikeToggle={handleLikeToggle} />
-                ))
-              ) : (
-                <div className="text-center py-10 text-muted-foreground">
-                  <p>게시물이 없습니다.</p>
-                </div>
-              )}
-            </div>
+            <FeedList />
           </main>
 
           {/* Right Sidebar - Desktop only */}

@@ -8,78 +8,52 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover"
 import { Facebook, Instagram, Link as LinkIcon } from "lucide-react"
 import { KakaoIcon } from "@/shared/components/icons/KakaoIcon"
+import { FeedDto } from "../types/feed"
 
 interface PostCardProps {
-  post: {
-    id: string
-    user: {
-      name: string
-      avatar: string
-    }
-    pet?: {
-      name: string
-      avatar: string
-    }
-    content: string
-    images: string[]
-    likes: number
-    comments: number
-    timeAgo: string
-    isLiked: boolean
-  }
-  onLikeToggle?: (id: string, isLiked: boolean) => void
+  post: FeedDto
+  onLikeToggle?: (id: number) => void
 }
 
 export function PostCard({ post, onLikeToggle }: PostCardProps) {
-  const [isLiked, setIsLiked] = useState(post.isLiked)
-  const [likes, setLikes] = useState(post.likes)
   const [showFullText, setShowFullText] = useState(false)
+
+  // FeedDto has single image, but UI supports multiple. Wrap in array if exists.
+  const images = post.imageUrl ? [post.imageUrl] : []
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
-  // Mock userId based on post id for demo
-  const userId = post.id
-
-  // Sync state with props when they change (for parent-controlled updates)
-  useEffect(() => {
-    setIsLiked(post.isLiked)
-    setLikes(post.likes)
-  }, [post.isLiked, post.likes])
-
   const handleLike = () => {
-    const newIsLiked = !isLiked
-    const newLikes = newIsLiked ? likes + 1 : likes - 1
-
-    setLikes(newLikes)
-    setIsLiked(newIsLiked)
-
     if (onLikeToggle) {
-      onLikeToggle(post.id, newIsLiked)
+      onLikeToggle(post.feedId)
     }
   }
 
   const truncatedContent = post.content.length > 150 ? post.content.slice(0, 150) + "..." : post.content
+
+  // Calculate time ago (simple version)
+  const timeAgo = new Date(post.createdAt).toLocaleDateString()
 
   return (
     <Card className="overflow-hidden border-0 shadow-md">
       <CardContent className="p-0">
         {/* Header */}
         <div className="flex items-center justify-between p-4">
-          <Link to={`/user/${userId}`} className="flex items-center gap-3">
+          <Link to={`/user/${post.writerNickname}`} className="flex items-center gap-3">
             <Avatar className="h-10 w-10 border-2 border-border">
-              <AvatarImage src={post.user.avatar || "/placeholder.svg"} alt={post.user.name} />
-              <AvatarFallback>{post.user.name[0]}</AvatarFallback>
+              <AvatarImage src={"/placeholder.svg"} alt={post.writerNickname} />
+              <AvatarFallback>{post.writerNickname[0]}</AvatarFallback>
             </Avatar>
             <div>
               <div className="flex items-center gap-2">
-                <p className="font-semibold text-foreground hover:underline">{post.user.name}</p>
-                {post.pet && (
+                <p className="font-semibold text-foreground hover:underline">{post.writerNickname}</p>
+                {post.petName && (
                   <>
                     <span className="text-muted-foreground">with</span>
-                    <p className="font-medium text-primary">{post.pet.name}</p>
+                    <p className="font-medium text-primary">{post.petName}</p>
                   </>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">{post.timeAgo}</p>
+              <p className="text-xs text-muted-foreground">{timeAgo}</p>
             </div>
           </Link>
 
@@ -114,18 +88,18 @@ export function PostCard({ post, onLikeToggle }: PostCardProps) {
         </div>
 
         {/* Images */}
-        {post.images.length > 0 && (
+        {images.length > 0 && (
           <div className="relative">
             <img
-              src={post.images[currentImageIndex] || "/placeholder.svg"}
+              src={images[currentImageIndex] || "/placeholder.svg"}
               alt="Post image"
               className="aspect-[4/3] w-full object-cover"
             />
 
-            {post.images.length > 1 && (
+            {images.length > 1 && (
               <>
                 <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
-                  {post.images.map((_, index) => (
+                  {images.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setCurrentImageIndex(index)}
@@ -144,7 +118,7 @@ export function PostCard({ post, onLikeToggle }: PostCardProps) {
                   </button>
                 )}
 
-                {currentImageIndex < post.images.length - 1 && (
+                {currentImageIndex < images.length - 1 && (
                   <button
                     onClick={() => setCurrentImageIndex(currentImageIndex + 1)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
@@ -162,15 +136,15 @@ export function PostCard({ post, onLikeToggle }: PostCardProps) {
           <div className="flex items-center gap-4">
             <button onClick={handleLike} className="flex items-center gap-2 transition-colors">
               <Heart
-                className={`h-6 w-6 transition-all ${isLiked ? "fill-pink-500 text-pink-500" : "text-muted-foreground hover:text-pink-500"
+                className={`h-6 w-6 transition-all ${post.isLiked ? "fill-pink-500 text-pink-500" : "text-muted-foreground hover:text-pink-500"
                   }`}
               />
-              <span className={`text-sm font-medium ${isLiked ? "text-pink-500" : "text-foreground"}`}>{likes}</span>
+              <span className={`text-sm font-medium ${post.isLiked ? "text-pink-500" : "text-foreground"}`}>{post.likeCount}</span>
             </button>
 
             <button className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-primary">
               <MessageCircle className="h-6 w-6" />
-              <span className="text-sm font-medium text-foreground">{post.comments}</span>
+              <span className="text-sm font-medium text-foreground">{post.commentCount}</span>
             </button>
           </div>
 
