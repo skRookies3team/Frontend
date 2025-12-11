@@ -1,8 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import { petMateApi, PetMateCandidate, PetMateFilter, MatchResult } from '../api/petmate-api';
 
+// Haversine 거리 계산 함수
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; // 지구 반경 (km)
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Math.round(R * c * 100) / 100; // 소수점 2자리
+}
+
 // Mock data for fallback when API is unavailable
-const MOCK_CANDIDATES: PetMateCandidate[] = [
+// 서울 강남구 역삼역 기준 좌표: 37.5007, 127.0365
+const MOCK_CANDIDATES: (PetMateCandidate & { latitude: number; longitude: number })[] = [
     {
         id: 1,
         userId: 1,
@@ -14,8 +27,10 @@ const MOCK_CANDIDATES: PetMateCandidate[] = [
         petAge: 3,
         petGender: "남아",
         petPhoto: "/cute-pomeranian.png",
-        distance: 0.68,
-        location: "서울 강남구",
+        distance: 0,  // 동적 계산
+        location: "서울 강남구 역삼동",
+        latitude: 37.5013,   // 역삼역 근처
+        longitude: 127.0396,
         bio: "매일 저녁 7시에 한강공원에서 산책해요! 같은 포메 친구 찾아요 🐾",
         activityLevel: 85,
         commonInterests: ["한강 산책", "소형견 모임", "미용 정보"],
@@ -33,8 +48,10 @@ const MOCK_CANDIDATES: PetMateCandidate[] = [
         petAge: 2,
         petGender: "여아",
         petPhoto: "/happy-golden-retriever.png",
-        distance: 1.2,
-        location: "서울 강남구",
+        distance: 0,
+        location: "서울 강남구 삼성동",
+        latitude: 37.5088,   // 삼성역 근처
+        longitude: 127.0631,
         bio: "활발한 골댕이와 함께 공원 러닝 즐겨요! 대형견 친구 환영합니다 🏃‍♂️",
         activityLevel: 95,
         commonInterests: ["러닝", "프리스비", "수영"],
@@ -52,8 +69,10 @@ const MOCK_CANDIDATES: PetMateCandidate[] = [
         petAge: 5,
         petGender: "남아",
         petPhoto: "/dachshund-dog.png",
-        distance: 0.9,
-        location: "서울 강남구",
+        distance: 0,
+        location: "서울 서초구 서초동",
+        latitude: 37.4923,   // 서초역 근처
+        longitude: 127.0276,
         bio: "느긋하게 산책 좋아하는 소형견이에요. 주말 아침 산책 메이트 구해요!",
         activityLevel: 60,
         commonInterests: ["느긋한 산책", "카페 투어", "사진 찍기"],
@@ -71,8 +90,10 @@ const MOCK_CANDIDATES: PetMateCandidate[] = [
         petAge: 4,
         petGender: "여아",
         petPhoto: "/shiba-inu.png",
-        distance: 2.1,
-        location: "서울 강남구",
+        distance: 0,
+        location: "서울 송파구 잠실동",
+        latitude: 37.5133,   // 잠실역 근처
+        longitude: 127.1001,
         bio: "산책 좋아하는 시바견이에요. 평일 저녁 함께 산책하실 분!",
         activityLevel: 75,
         commonInterests: ["산책", "간식", "놀이터"],
@@ -90,8 +111,10 @@ const MOCK_CANDIDATES: PetMateCandidate[] = [
         petAge: 3,
         petGender: "여아",
         petPhoto: "/beagle-puppy.png",
-        distance: 1.5,
-        location: "서울 강남구",
+        distance: 0,
+        location: "서울 강남구 논현동",
+        latitude: 37.5115,   // 논현역 근처
+        longitude: 127.0215,
         bio: "에너지 넘치는 비글이에요! 주말 공원 런 같이 하실 분 찾아요 🏃‍♀️",
         activityLevel: 90,
         commonInterests: ["달리기", "공놀이", "간식 탐험"],
@@ -109,8 +132,10 @@ const MOCK_CANDIDATES: PetMateCandidate[] = [
         petAge: 2,
         petGender: "여아",
         petPhoto: "/white-maltese-dog.jpg",
-        distance: 0.5,
-        location: "서울 강남구",
+        distance: 0,
+        location: "서울 강남구 신사동",
+        latitude: 37.5165,   // 신사역 근처
+        longitude: 127.0203,
         bio: "조용하고 착한 말티즈예요. 카페 투어 좋아하는 분 환영해요 ☕",
         activityLevel: 50,
         commonInterests: ["카페", "미용", "사진"],
@@ -122,6 +147,7 @@ const MOCK_CANDIDATES: PetMateCandidate[] = [
 interface UsePetMateOptions {
     userId: number;
     useMockData?: boolean;
+    initialFilter?: PetMateFilter;
 }
 
 interface ToggleLikeResult {
@@ -129,12 +155,13 @@ interface ToggleLikeResult {
     matchResult?: MatchResult;
 }
 
-export function usePetMate({ userId, useMockData = true }: UsePetMateOptions) {
+export function usePetMate({ userId, useMockData = true, initialFilter }: UsePetMateOptions) {
     const [candidates, setCandidates] = useState<PetMateCandidate[]>([]);
     const [matches, setMatches] = useState<MatchResult[]>([]);
     const [likedUserIds, setLikedUserIds] = useState<Set<number>>(new Set());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [currentFilter, setCurrentFilter] = useState<PetMateFilter | undefined>(initialFilter);
 
     // Fetch candidates
     const fetchCandidates = useCallback(async (filter?: PetMateFilter) => {
@@ -143,9 +170,20 @@ export function usePetMate({ userId, useMockData = true }: UsePetMateOptions) {
 
         try {
             if (useMockData) {
-                let filtered = [...MOCK_CANDIDATES];
+                // 사용자 좌표가 있으면 실제 거리 계산
+                let filtered = MOCK_CANDIDATES.map(c => {
+                    if (filter?.latitude && filter?.longitude) {
+                        const dist = calculateDistance(
+                            filter.latitude, filter.longitude,
+                            c.latitude, c.longitude
+                        );
+                        return { ...c, distance: dist };
+                    }
+                    return c;
+                });
 
-                if (filter?.radiusKm) {
+                // 거리 필터링
+                if (filter?.radiusKm && filter?.latitude && filter?.longitude) {
                     filtered = filtered.filter(c => c.distance <= filter.radiusKm!);
                 }
                 if (filter?.userGender && filter.userGender !== 'all') {
@@ -155,6 +193,9 @@ export function usePetMate({ userId, useMockData = true }: UsePetMateOptions) {
                 if (filter?.petBreed && filter.petBreed !== 'all') {
                     filtered = filtered.filter(c => c.petBreed === filter.petBreed);
                 }
+
+                // 거리순 정렬
+                filtered.sort((a, b) => a.distance - b.distance);
 
                 setCandidates(filtered);
             } else {
@@ -300,12 +341,26 @@ export function usePetMate({ userId, useMockData = true }: UsePetMateOptions) {
         return likedUserIds.has(targetUserId);
     }, [likedUserIds]);
 
+    // Update filter and refetch candidates
+    const updateFilter = useCallback((newFilter: PetMateFilter) => {
+        setCurrentFilter(newFilter);
+        fetchCandidates(newFilter);
+    }, [fetchCandidates]);
+
     // Initial fetch
     useEffect(() => {
-        fetchCandidates();
+        fetchCandidates(currentFilter);
         fetchMatches();
         fetchLikedUsers();
-    }, [fetchCandidates, fetchMatches, fetchLikedUsers]);
+    }, []);  // Only run once on mount
+
+    // Refetch when initialFilter changes from parent
+    useEffect(() => {
+        if (initialFilter) {
+            setCurrentFilter(initialFilter);
+            fetchCandidates(initialFilter);
+        }
+    }, [initialFilter?.latitude, initialFilter?.longitude, initialFilter?.radiusKm]);
 
     return {
         candidates,
@@ -313,7 +368,9 @@ export function usePetMate({ userId, useMockData = true }: UsePetMateOptions) {
         likedUserIds,
         loading,
         error,
+        currentFilter,
         fetchCandidates,
+        updateFilter,
         likeUser,
         toggleLike,
         isUserLiked,

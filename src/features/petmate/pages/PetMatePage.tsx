@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { usePetMate } from "@/features/petmate/hooks/use-petmate"
-import { PetMateCandidate, getAddressFromGPS } from "@/features/petmate/api/petmate-api"
+import { PetMateCandidate, getAddressFromGPS, petMateApi, SearchAddressResult } from "@/features/petmate/api/petmate-api"
 import { Button } from "@/shared/ui/button"
 import { Card } from "@/shared/ui/card"
 import {
@@ -44,14 +44,29 @@ export default function PetMatePage() {
   const [matchedUser, setMatchedUser] = useState<PetMateCandidate | null>(null)
   const [isOnline, setIsOnline] = useState(true)
 
+  // GPS 좌표 상태
+  const [userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(null)
+
+  // 주소 검색 상태
+  const [searchResults, setSearchResults] = useState<SearchAddressResult[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+
   // Use the PetMate hook with real API (set useMockData to true for testing without backend)
   const {
     candidates: allCandidates,
     toggleLike,
     isUserLiked,
+    updateFilter,
   } = usePetMate({
     userId: user?.id ? Number(user.id) : 1,
-    useMockData: true  // Using mock data for testing - set to false when backend is running
+    useMockData: true,  // Using mock data for testing - set to false when backend is running
+    initialFilter: userCoords ? {
+      latitude: userCoords.latitude,
+      longitude: userCoords.longitude,
+      radiusKm: Number.parseFloat(distanceFilter),
+      userGender: genderFilter,
+      petBreed: breedFilter,
+    } : undefined
   })
 
   const [chatRoomIdFromMatch, setChatRoomIdFromMatch] = useState<number | null>(null)
@@ -62,7 +77,7 @@ export default function PetMatePage() {
     successRate: 85,
   })
 
-  // Filter candidates based on current filters
+  // Filter candidates based on current filters (for mock data, backend handles this for real data)
   const candidates = allCandidates.filter((candidate) => {
     if (candidate.distance && candidate.distance > Number.parseFloat(distanceFilter)) return false
     if (genderFilter !== "all") {
@@ -72,6 +87,7 @@ export default function PetMatePage() {
     if (breedFilter !== "all" && candidate.petBreed !== breedFilter) return false
     return true
   })
+
 
   useEffect(() => {
     if (isLoading) return
@@ -136,6 +152,16 @@ export default function PetMatePage() {
         const { latitude, longitude } = position.coords
         setCurrentLocation(`위치 확인 중...`)
 
+        // GPS 좌표 저장 및 필터 업데이트
+        setUserCoords({ latitude, longitude })
+        updateFilter({
+          latitude,
+          longitude,
+          radiusKm: Number.parseFloat(distanceFilter),
+          userGender: genderFilter,
+          petBreed: breedFilter,
+        })
+
         try {
           // Kakao API로 주소 변환
           const addressInfo = await getAddressFromGPS()
@@ -156,6 +182,41 @@ export default function PetMatePage() {
       alert("이 브라우저는 위치 정보를 지원하지 않습니다.")
     }
   }
+
+  // 주소 검색 함수
+  const handleAddressSearch = async () => {
+    if (!locationSearch.trim()) return
+
+    setSearchLoading(true)
+    setSearchResults([])
+
+    try {
+      const results = await petMateApi.searchAddress(locationSearch)
+      setSearchResults(results)
+    } catch (error) {
+      console.error("주소 검색 실패:", error)
+      alert("주소 검색에 실패했습니다. 다시 시도해주세요.")
+    } finally {
+      setSearchLoading(false)
+    }
+  }
+
+  // 검색 결과 선택 함수
+  const handleSelectSearchResult = (result: SearchAddressResult) => {
+    setUserCoords({ latitude: result.latitude, longitude: result.longitude })
+    setCurrentLocation(result.addressName)
+    updateFilter({
+      latitude: result.latitude,
+      longitude: result.longitude,
+      radiusKm: Number.parseFloat(distanceFilter),
+      userGender: genderFilter,
+      petBreed: breedFilter,
+    })
+    setSearchResults([])
+    setLocationSearch("")
+    setLocationModalOpen(false)
+  }
+
 
   if (isLoading) {
     return null
@@ -690,6 +751,16 @@ export default function PetMatePage() {
             <Button
               className="w-full bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 h-16 text-lg font-bold shadow-xl hover:shadow-2xl transition-all"
               onClick={() => {
+                // 좌표가 있으면 backend API도 업데이트
+                if (userCoords) {
+                  updateFilter({
+                    latitude: userCoords.latitude,
+                    longitude: userCoords.longitude,
+                    radiusKm: Number.parseFloat(distanceFilter),
+                    userGender: genderFilter,
+                    petBreed: breedFilter,
+                  })
+                }
                 setFilterModalOpen(false)
                 setCurrentIndex(0)
               }}
@@ -710,34 +781,57 @@ export default function PetMatePage() {
             <DialogDescription>매칭할 지역을 설정해주세요</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
+            <div className="flex gap-2">
               <Input
-                placeholder="서울 중구 세종대로 110"
+                placeholder="서울 강남구 역삼동"
                 value={locationSearch}
                 onChange={(e) => setLocationSearch(e.target.value)}
-                className="w-full"
+                onKeyDown={(e) => e.key === 'Enter' && handleAddressSearch()}
+                className="flex-1"
               />
+              <Button
+                onClick={handleAddressSearch}
+                disabled={searchLoading || !locationSearch.trim()}
+                className="bg-gradient-to-r from-blue-500 to-cyan-500"
+              >
+                {searchLoading ? "검색중..." : <Search className="h-4 w-4" />}
+              </Button>
             </div>
+
+            {/* 검색 결과 목록 */}
+            {searchResults.length > 0 && (
+              <div className="max-h-48 overflow-y-auto border rounded-lg divide-y">
+                {searchResults.map((result, index) => (
+                  <button
+                    key={index}
+                    className="w-full p-3 text-left hover:bg-blue-50 transition-colors"
+                    onClick={() => handleSelectSearchResult(result)}
+                  >
+                    <p className="text-sm font-medium text-gray-900">{result.addressName}</p>
+                    {result.roadAddress && (
+                      <p className="text-xs text-gray-500 mt-1">{result.roadAddress}</p>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <Button variant="outline" className="w-full gap-2 bg-transparent" onClick={handleCurrentLocation}>
               <Navigation className="h-4 w-4" />
               현재 내 위치로 설정하기
             </Button>
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1 bg-transparent" onClick={() => setLocationModalOpen(false)}>
-                취소
-              </Button>
-              <Button
-                className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500"
-                onClick={() => {
-                  if (locationSearch) {
-                    setCurrentLocation(locationSearch)
-                  }
-                  setLocationModalOpen(false)
-                }}
-              >
-                확인
-              </Button>
-            </div>
+
+            <Button
+              variant="outline"
+              className="w-full bg-transparent"
+              onClick={() => {
+                setSearchResults([])
+                setLocationSearch("")
+                setLocationModalOpen(false)
+              }}
+            >
+              닫기
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
