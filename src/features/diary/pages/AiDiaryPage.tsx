@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+// [삭제]: 배포 오류 방지를 위해 framer-motion 제거
+// import { motion } from 'framer-motion';
 
 // --- Import Types and Service Layer ---
 // [수정]: 경로 확인 및 확장자 명시 유지 (./types/diary.ts)
