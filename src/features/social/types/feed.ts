@@ -1,41 +1,46 @@
+// src/features/social/types/feed.ts
+
+export interface CommentDto {
+  commentId: number;
+  writerNickname: string;
+  content: string;
+  createdAt: string;
+}
+
 export interface FeedDto {
   feedId: number;
-  writerNickname: string;
+  writerNickname: string; // 백엔드 필드명에 맞춤
   petName: string;
   content: string;
   imageUrl: string | null;
   likeCount: number;
   isLiked: boolean;
-  createdAt: string; // ISO 8601
-  location: string;
+  createdAt: string;
+  location: string | null;
   commentCount: number;
+  recentComments: CommentDto[];
+  hashtags: string[];
 }
 
 export interface FeedSliceResponse {
   content: FeedDto[];
-  pageable: {
-    pageNumber: number;
-    pageSize: number;
-    sort: {
-      empty: boolean;
-      sorted: boolean;
-      unsorted: boolean;
-    };
-    offset: number;
-    paged: boolean;
-    unpaged: boolean;
-  };
   last: boolean;
-  totalPages: number;
-  totalElements: number;
   size: number;
   number: number;
-  sort: {
-    empty: boolean;
-    sorted: boolean;
-    unsorted: boolean;
-  };
   first: boolean;
-  numberOfElements: number;
   empty: boolean;
+}
+
+export interface CreateFeedRequest {
+  userId: number;
+  petId?: number;
+  content: string;
+  location?: string;
+}
+
+export interface UpdateFeedRequest {
+  userId: number;
+  content: string;
+  imageUrl?: string;
+  location?: string;
 }
