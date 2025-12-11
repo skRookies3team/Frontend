@@ -1,7 +1,7 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+// import { motion } from 'framer-motion'; // [삭제]: 배포 오류 방지를 위해 삭제
 // [수정]: SocialShareButtons.tsx의 확장자를 다시 명시하여 경로 문제 해결 시도
-import SocialShareButtons from './SocialShareButtons.tsx'; 
+import SocialShareButtons from './SocialShareButtons.tsx';
 // [수정]: types 경로의 확장자를 다시 명시하여 경로 문제 해결 시도
 import { SelectedImage, LayoutStyle, TextAlign } from '../../diary/types/diary.ts';
 
@@ -78,10 +78,10 @@ export default function EditStep({
                                 }
                             >
                                 {selectedImages.map((image, index) => (
-                                    <motion.div
+                                    // [수정]: motion.div를 일반 div로 변경하고 transition 클래스 추가
+                                    <div
                                         key={image.imageUrl}
-                                        layout
-                                        className={`overflow-hidden rounded-xl shadow-md ${layoutStyle === "slide" ? "min-w-[250px]" : layoutStyle === "masonry" ? "mb-3" : ""
+                                        className={`overflow-hidden rounded-xl shadow-md transition-all duration-300 ease-in-out ${layoutStyle === "slide" ? "min-w-[250px]" : layoutStyle === "masonry" ? "mb-3" : ""
                                             }`}
                                     >
                                         <img
@@ -89,7 +89,7 @@ export default function EditStep({
                                             alt={`Diary ${index + 1}`}
                                             className="h-full w-full object-cover"
                                         />
-                                    </motion.div>
+                                    </div>
                                 ))}
                             </div>
 
