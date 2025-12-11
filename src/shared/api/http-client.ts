@@ -70,7 +70,7 @@ axiosInstance.interceptors.response.use(
         return response;
     },
     async (error: AxiosError) => {
-        const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean; skipAuth?: boolean };
+        /*const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean; skipAuth?: boolean };
 
         // 401 에러이고, 아직 재시도하지 않은 요청이라면
         if (error.response?.status === 401 && !originalRequest._retry) {
@@ -132,6 +132,7 @@ axiosInstance.interceptors.response.use(
                 isRefreshing = false;
             }
         }
+        */
 
         return Promise.reject(error);
     }
