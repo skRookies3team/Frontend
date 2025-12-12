@@ -63,7 +63,7 @@ axiosInstance.interceptors.request.use(
     }
 );
 
-// 응답 인터셉터 - 토큰 자동 갱신(Refresh) 로직 추가
+/* 응답 인터셉터 - 토큰 자동 갱신(Refresh) 로직 추가
 axiosInstance.interceptors.response.use(
     (response) => {
         console.log('응답 성공:', response.config.url);
@@ -132,10 +132,11 @@ axiosInstance.interceptors.response.use(
                 isRefreshing = false;
             }
         }
+        
 
         return Promise.reject(error);
     }
-);
+);*/
 
 // HTTP 클라이언트 객체
 export const httpClient = {
