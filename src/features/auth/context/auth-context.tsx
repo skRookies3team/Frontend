@@ -292,28 +292,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const addPet = async (petDto: any, file: File | null) => {
-    console.log("AuthContext: addPet mock called", { petDto, file });
+    console.log("AuthContext: addPet called", { user, petDto, file });
+    if (!user) {
+      console.log("AuthContext: addPet aborted - no user");
+      return;
+    }
 
-    // Mock implementation - simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      // Call Backend API
+      const response = await createPetApi(Number(user.id), petDto, file);
 
-    if (user) {
+      // Verify response structure matches expected local state
       const newPet = {
-        id: Date.now().toString(),
-        name: petDto.petName,
-        species: petDto.species === "DOG" ? "강아지" : "고양이",
-        breed: petDto.breed,
-        age: 1, // 단순화를 위해 임의 값
-        photo: file ? URL.createObjectURL(file) : "/placeholder-pet.jpg",
-        gender: petDto.genderType === "MALE" ? "수컷" : "암컷",
-        neutered: petDto.neutered,
-        birthday: petDto.birth
+        id: response.petId.toString(),
+        name: response.petName,
+        species: response.species === "DOG" ? "강아지" : "고양이",
+        breed: response.breed,
+        age: response.age,
+        photo: response.profileImage || "/placeholder-pet.jpg",
+        gender: response.genderType === "MALE" ? "수컷" : response.genderType === "FEMALE" ? "암컷" : "알 수 없음",
+        neutered: response.is_neutered, // Map is_neutered from response to neutered in local state
+        birthday: response.birth,
+        // Optional fields default values
+        healthStatus: {
+          lastCheckup: "",
+          vaccination: "",
+          weight: ""
+        },
+        stats: {
+          walks: 0,
+          friends: 0,
+          photos: 0
+        }
       };
 
       const updatedPets = [...user.pets, newPet];
       const updatedUser = { ...user, pets: updatedPets };
       setUser(updatedUser);
       localStorage.setItem("petlog_user", JSON.stringify(updatedUser));
+    } catch (error) {
+      console.error("Failed to add pet:", error);
+      throw error;
     }
   };
 

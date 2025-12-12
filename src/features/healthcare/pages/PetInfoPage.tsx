@@ -158,9 +158,11 @@ export default function PetInfoPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log("PetInfoPage: handleSubmit called", { user, returnTo, formData });
 
     // 이미 로그인된 사용자인 경우 (returnTo가 있으면 기존 사용자)
     if (user && returnTo) {
+      console.log("PetInfoPage: processing as existing user");
       const createPetDto = {
         petName: formData.name,
         breed: formData.breed,
