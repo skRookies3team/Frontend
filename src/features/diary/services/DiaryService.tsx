@@ -1,12 +1,13 @@
 import { SelectedImage, DiaryImageDTO } from '../types/diary.ts';
-
+import httpClient from '@/shared/api/http-client';
+ 
 // --- Global Constants and API Endpoints (Service Layer) ---
 const DEFAULT_USER_ID = 100;
 const DEFAULT_PET_ID = 10;
 const API_ENDPOINTS = {
-    // 프록시 설정에 의해 'http://localhost:8080' (게이트웨이)로 전달됨
-    DIARY_CREATE: '/api/diaries', 
-    USER_S3_UPLOAD: 'http://localhost:8081/api/users/upload', 
+    // 프록시 설정에 의해 'http://localhost:8000' (게이트웨이)로 전달됨
+    DIARY_CREATE: '/api/diaries',
+    USER_S3_UPLOAD: '/api/users/upload',
 };
 
 // Mock S3 업로드 시뮬레이션
@@ -44,7 +45,7 @@ export const createAiDiary = async (diaryData: { content: string, images: DiaryI
     const diaryRequestPayload = {
         userId: DEFAULT_USER_ID,
         petId: DEFAULT_PET_ID,
-        content: diaryData.content, 
+        content: diaryData.content,
         visibility: "PUBLIC",
         isAiGen: true,
         weather: null,
@@ -54,35 +55,26 @@ export const createAiDiary = async (diaryData: { content: string, images: DiaryI
 
     try {
         console.log("--- DIARY CREATE START (via Gateway) ---");
-        const response = await fetch(API_ENDPOINTS.DIARY_CREATE, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-USER-ID': String(DEFAULT_USER_ID)
-            },
-            body: JSON.stringify(diaryRequestPayload),
-        });
 
-        const contentType = response.headers.get('content-type');
-        let data: { message: string, diaryId?: number } = { message: `Server Error (${response.status})` };
-        
-        if (contentType && contentType.includes('application/json')) {
-            data = await response.json();
-        }
+        // httpClient를 사용하여 요청 전송 (자동으로 Authorization 헤더 추가됨)
+        // baseURL을 빈 문자열로 설정하여 프록시(/api/...)를 타도록 함
+        const data = await httpClient.post<{ diaryId: number, message: string }>(
+            API_ENDPOINTS.DIARY_CREATE,
+            diaryRequestPayload,
+            {
+                baseURL: '',
+                headers: { 'X-USER-ID': String(DEFAULT_USER_ID) } // Gateway 요구사항이 있다면 유지
+            }
+        );
 
-        if (response.ok) {
-            console.log(`[BACKEND SUCCESS] Diary ID: ${data.diaryId}, Message: ${data.message}`);
-            return data as { diaryId: number, message: string };
-        } else {
-            console.error(`[ERROR] Backend response failed: ${response.status}`, data);
-            throw new Error(`일기 생성 실패 (${response.status}): ${data.message || '서버 오류'}`);
-        }
+        console.log(`[BACKEND SUCCESS] Diary ID: ${data.diaryId}, Message: ${data.message}`);
+        return data;
 
     } catch (error) {
-        // 네트워크 오류 처리
-        const errorMessage = error instanceof Error ? error.message : '알 수 없는 네트워크 오류';
-        console.error("[ERROR] Network connection failed:", errorMessage);
-        throw new Error(`네트워크 연결 실패: ${errorMessage}`);
+        // 네트워크 오류 및 4xx, 5xx 에러 처리 (httpClient가 throw함)
+        const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+        console.error("[ERROR] Diary creation failed:", error);
+        throw new Error(`일기 생성 실패: ${errorMessage}`);
     }
 };
 
