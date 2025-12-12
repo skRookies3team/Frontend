@@ -33,6 +33,7 @@ export interface PetMateCandidate {
     petGender: string;
     petPhoto: string;
     bio: string;
+    bioIcon?: string;  // SVG icon path for bio
     activityLevel: number;
     distance: number;
     location: string;
