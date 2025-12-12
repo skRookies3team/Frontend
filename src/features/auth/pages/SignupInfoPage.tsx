@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { useAuth } from "@/features/auth/context/auth-context"
 import { Button } from "@/shared/ui/button"
 import { Input } from "@/shared/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/ui/card"
@@ -16,11 +17,14 @@ export default function SignupInfoPage() {
     const [isLoading, setIsLoading] = useState(false)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
+    const { setSignupUserFile } = useAuth()
+
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (file) {
             const url = URL.createObjectURL(file)
             setPreviewUrl(url)
+            setSignupUserFile(file)
         }
     }
 
@@ -34,6 +38,8 @@ export default function SignupInfoPage() {
             const credentials = credentialsStr ? JSON.parse(credentialsStr) : {}
 
             // Save user info to sessionStorage for next step
+            // We only save text info here. The file is already in state (previewUrl is just a URL).
+            // We need to capture the actual file in handleImageChange and save it to context.
             const userInfo = {
                 email: credentials.email,
                 password: credentials.password,
@@ -41,7 +47,7 @@ export default function SignupInfoPage() {
                 username,
                 birthday,
                 gender,
-                avatar: previewUrl || "/placeholder.svg?height=40&width=40"
+                // avatar: previewUrl || "/placeholder.svg?height=40&width=40" // Avatar is handled via context
             }
             sessionStorage.setItem("signup_user_info", JSON.stringify(userInfo))
 
