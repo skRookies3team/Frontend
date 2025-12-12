@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- 귀여운 강아지 발바닥 with 하트 -->
+  <path d="M16 26c-2-3-7-7-7-12 0-3.5 3-6 7-6s7 2.5 7 6c0 5-5 9-7 12z" fill="#FF8A9B"/>
+  <!-- 발가락 패드 - 콩 모양 -->
+  <ellipse cx="8" cy="8" rx="3" ry="4" fill="#FFB5C5" transform="rotate(-20 8 8)"/>
+  <ellipse cx="24" cy="8" rx="3" ry="4" fill="#FFB5C5" transform="rotate(20 24 8)"/>
+  <ellipse cx="5" cy="15" rx="2.5" ry="3.5" fill="#FFB5C5" transform="rotate(-30 5 15)"/>
+  <ellipse cx="27" cy="15" rx="2.5" ry="3.5" fill="#FFB5C5" transform="rotate(30 27 15)"/>
+  <!-- 반짝이는 별 -->
+  <path d="M28 4l.8 1.6 1.7.3-1.2 1.2.3 1.7-1.6-.8-1.6.8.3-1.7-1.2-1.2 1.7-.3z" fill="#FFD93D"/>
+</svg>

@@ -11,8 +11,6 @@ import {
   Sparkles,
   Settings2,
   Power,
-  Users,
-  TrendingUp,
   User,
   ChevronLeft,
   ChevronRight,
@@ -71,11 +69,6 @@ export default function PetMatePage() {
 
   const [chatRoomIdFromMatch, setChatRoomIdFromMatch] = useState<number | null>(null)
 
-  const [stats] = useState({
-    totalMatches: 12,
-    thisWeek: 3,
-    successRate: 85,
-  })
 
   // Filter candidates based on current filters (for mock data, backend handles this for real data)
   const candidates = allCandidates.filter((candidate) => {
@@ -256,375 +249,277 @@ export default function PetMatePage() {
     )
   }
 
-  if (!currentCandidate || candidates.length === 0) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-orange-50 pt-24 pb-12">
-        <div className="container mx-auto max-w-2xl px-4">
-          <Card className="p-12 text-center shadow-2xl border-2 border-pink-200 bg-white">
-            <div className="mb-6 mx-auto w-32 h-32 rounded-full bg-gradient-to-br from-pink-100 via-rose-100 to-orange-100 flex items-center justify-center shadow-lg">
-              <Sparkles className="h-16 w-16 text-pink-500" />
+  const hasNoCandidates = !currentCandidate || candidates.length === 0;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-orange-50 pt-24 pb-12">
+      {/* 제목 - 항상 중앙 */}
+      <div className="text-center mb-8 px-4">
+        <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 via-rose-600 to-orange-600 bg-clip-text text-transparent mb-3">
+          펫메이트 찾기
+        </h1>
+        <p className="text-gray-600 text-xl">우리 동네 반려동물 친구를 만나보세요 🐾</p>
+      </div>
+
+      {/* 사이드바 - 데스크탑: 왼쪽 고정, 모바일: 일반 흐름 */}
+      <div className="lg:fixed lg:left-56 lg:top-72 lg:w-72 lg:z-10 px-4 lg:px-0 mb-6 lg:mb-0">
+        <div className="space-y-4">
+          {/* 매칭 상태 */}
+          <Card
+            className={`p-4 cursor-pointer transition-all hover:shadow-lg ${isOnline
+              ? "bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300"
+              : "bg-white border-2 border-gray-200"
+              }`}
+            onClick={() => setIsOnline(!isOnline)}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-full ${isOnline ? "bg-green-500" : "bg-gray-300"}`}>
+                <Power className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900">{isOnline ? "온라인" : "오프라인"}</p>
+                <p className="text-xs text-gray-500">클릭하여 전환</p>
+              </div>
+              {isOnline && <div className="h-3 w-3 rounded-full bg-green-500 animate-pulse" />}
             </div>
-            <h2 className="mb-4 text-4xl font-bold bg-gradient-to-r from-pink-600 via-rose-600 to-orange-600 bg-clip-text text-transparent">
-              조건에 맞는 펫메이트가 없어요
-            </h2>
-            <p className="mb-10 text-gray-600 text-lg leading-relaxed">
-              필터 조건을 조정하거나
-              <br />
-              잠시 후 다시 확인해보세요!
-            </p>
-            <div className="flex gap-4 justify-center">
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => setFilterModalOpen(true)}
-                className="h-14 px-8 text-base font-semibold border-2 border-pink-300"
-              >
-                <Settings2 className="mr-2 h-5 w-5" />
-                필터 변경하기
-              </Button>
-              <Button
-                size="lg"
-                onClick={() => setCurrentIndex(0)}
-                className="bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 h-14 px-8 text-base font-semibold shadow-lg"
-              >
-                처음부터 다시 보기
-              </Button>
+          </Card>
+
+          {/* 위치 설정 */}
+          <Card
+            className="p-4 bg-white border-2 border-blue-200 cursor-pointer transition-all hover:shadow-lg hover:border-blue-400"
+            onClick={() => setLocationModalOpen(true)}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-blue-500">
+                <MapPin className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-900 truncate">{currentLocation}</p>
+                <p className="text-xs text-gray-500">클릭하여 변경</p>
+              </div>
+            </div>
+          </Card>
+
+          {/* 필터 설정 */}
+          <Card
+            className="p-4 bg-white border-2 border-purple-200 cursor-pointer transition-all hover:shadow-lg hover:border-purple-400"
+            onClick={() => setFilterModalOpen(true)}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-purple-500">
+                <Settings2 className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900">{distanceFilter}km 이내</p>
+                <p className="text-xs text-gray-500">
+                  {genderFilter === "all" ? "전체" : genderFilter === "male" ? "남성" : "여성"} • {breedFilter === "all" ? "전체 품종" : breedFilter}
+                </p>
+              </div>
             </div>
           </Card>
         </div>
       </div>
-    )
-  }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-orange-50 pt-24 pb-12">
-      <div className="container mx-auto max-w-7xl px-4">
-        <div className="mb-8 text-center">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 via-rose-600 to-orange-600 bg-clip-text text-transparent mb-3">
-            펫메이트 찾기
-          </h1>
-          <p className="text-gray-600 text-xl">우리 동네 반려동물 친구를 만나보세요 🐾</p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* 왼쪽 사이드바 */}
-          <div className="lg:col-span-3 space-y-6">
-            <Card className="p-6 bg-white border-2 border-pink-200 shadow-xl">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="rounded-full bg-gradient-to-br from-blue-100 to-cyan-100 p-3 shadow-md">
-                  <MapPin className="h-6 w-6 text-blue-600" />
-                </div>
-                <h3 className="font-bold text-gray-900 text-lg">위치 설정</h3>
+      {/* 메인 콘텐츠 - 항상 페이지 중앙 */}
+      <div className="flex justify-center px-4">
+        <div className="w-full max-w-3xl">
+          {hasNoCandidates ? (
+            /* 조건에 맞는 펫메이트가 없을 때 */
+            <Card className="p-12 text-center shadow-2xl border-2 border-pink-200 bg-white h-full flex flex-col items-center justify-center min-h-[600px]">
+              <div className="mb-6 mx-auto w-24 h-24 rounded-full bg-gradient-to-br from-pink-100 via-rose-100 to-orange-100 flex items-center justify-center shadow-lg">
+                <Sparkles className="h-12 w-12 text-pink-500" />
               </div>
-              <div className="mb-3 p-3 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
-                <p className="text-sm font-medium text-gray-700">{currentLocation}</p>
-              </div>
-              <Button
-                variant="outline"
-                className="w-full border-2 border-blue-300 hover:border-blue-400 hover:bg-blue-50 bg-transparent"
-                onClick={() => setLocationModalOpen(true)}
-              >
-                <Search className="mr-2 h-4 w-4" />
-                위치 변경하기
-              </Button>
-            </Card>
-
-            <Card className="p-6 bg-white border-2 border-pink-200 shadow-xl">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="rounded-full bg-gradient-to-br from-pink-100 to-rose-100 p-3 shadow-md">
-                  <TrendingUp className="h-6 w-6 text-pink-600" />
-                </div>
-                <h3 className="font-bold text-gray-900 text-lg">매칭 통계</h3>
-              </div>
-              <div className="space-y-5">
-                <div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl p-4 border border-pink-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-600 font-medium">총 매칭 수</span>
-                    <span className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
-                      {stats.totalMatches}
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-gradient-to-br from-rose-50 to-orange-50 rounded-xl p-4 border border-rose-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-600 font-medium">이번 주</span>
-                    <span className="text-3xl font-bold bg-gradient-to-r from-rose-600 to-orange-600 bg-clip-text text-transparent">
-                      {stats.thisWeek}
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm text-gray-600 font-medium">성공률</span>
-                    <span className="text-xl font-bold text-green-600">{stats.successRate}%</span>
-                  </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-gray-200">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-green-400 to-emerald-500 shadow-inner"
-                      style={{ width: `${stats.successRate}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6 bg-white border-2 border-pink-200 shadow-xl">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="rounded-full bg-gradient-to-br from-orange-100 to-rose-100 p-3 shadow-md">
-                  <Users className="h-6 w-6 text-orange-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-gray-900 text-lg">발견한 펫메이트</h3>
-                  <p className="text-sm text-gray-500">{distanceFilter}km 이내</p>
-                </div>
-              </div>
-              <div className="text-center py-4 bg-gradient-to-br from-orange-50 to-rose-50 rounded-xl border border-orange-100">
-                <p className="text-5xl font-bold bg-gradient-to-r from-orange-600 to-rose-600 bg-clip-text text-transparent">
-                  {candidates.length}
-                </p>
-              </div>
-            </Card>
-          </div>
-
-          {/* 중앙 메인 카드 */}
-          <div className="lg:col-span-6">
-            <Card className="overflow-hidden shadow-2xl border-4 border-pink-200 bg-white">
-              <div className="relative h-[500px]">
-                <img
-                  src={currentCandidate.petPhoto || "/placeholder.svg"}
-                  alt={currentCandidate.petName}
-                  className="h-full w-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-
-                {/* 네비게이션 버튼 */}
+              <h2 className="mb-4 text-3xl font-bold bg-gradient-to-r from-pink-600 via-rose-600 to-orange-600 bg-clip-text text-transparent">
+                조건에 맞는 펫메이트가 없어요
+              </h2>
+              <p className="mb-8 text-gray-600 text-lg leading-relaxed">
+                필터 조건을 조정하거나<br />잠시 후 다시 확인해보세요!
+              </p>
+              <div className="flex gap-4 justify-center">
                 <Button
                   size="lg"
-                  variant="ghost"
-                  className="absolute left-6 top-1/2 -translate-y-1/2 h-14 w-14 rounded-full bg-white/95 hover:bg-white shadow-2xl backdrop-blur-sm"
-                  onClick={handlePrevious}
-                >
-                  <ChevronLeft className="h-7 w-7 text-gray-900" />
-                </Button>
-
-                <Button
-                  size="lg"
-                  variant="ghost"
-                  className="absolute right-6 top-1/2 -translate-y-1/2 h-14 w-14 rounded-full bg-white/95 hover:bg-white shadow-2xl backdrop-blur-sm"
-                  onClick={handleNext}
-                >
-                  <ChevronRight className="h-7 w-7 text-gray-900" />
-                </Button>
-
-
-
-                {/* 매칭 점수 */}
-                <div className="absolute right-6 top-6 flex items-center gap-3 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 px-6 py-4 shadow-2xl border-2 border-white/40">
-                  <Star className="h-7 w-7 fill-white text-white" />
-                  <span className="text-xl font-bold text-white">{currentCandidate.matchScore}%</span>
-                </div>
-
-                {/* 거리 */}
-                <div className="absolute left-6 top-6 flex items-center gap-3 rounded-2xl bg-white px-6 py-4 shadow-2xl border-2 border-pink-200">
-                  <MapPin className="h-6 w-6 text-pink-600" />
-                  <span className="text-lg font-bold text-gray-900">{currentCandidate.distance}km</span>
-                </div>
-
-                {/* 온라인 상태 */}
-                {currentCandidate.isOnline && (
-                  <div className="absolute left-6 top-24 flex items-center gap-2 rounded-full bg-green-500 px-5 py-3 shadow-xl border-2 border-white">
-                    <div className="h-3 w-3 rounded-full bg-white animate-pulse" />
-                    <span className="text-sm font-bold text-white">온라인</span>
-                  </div>
-                )}
-
-                {/* 펫 정보 */}
-                <div className="absolute bottom-0 left-0 right-0 p-10 text-white">
-                  <h2 className="text-5xl font-bold mb-3 drop-shadow-2xl">{currentCandidate.petName}</h2>
-                  <p className="text-2xl opacity-95 drop-shadow-lg">
-                    {currentCandidate.petBreed} • {currentCandidate.petAge}살 • {currentCandidate.petGender}
-                  </p>
-                </div>
-              </div>
-
-              {/* 상세 정보 */}
-              <div className="space-y-6 p-8 bg-gradient-to-b from-white to-pink-50/30">
-                <Link
-                  to={`/user/${currentCandidate.id}`}
-                  className="block hover:bg-pink-50 -m-2 p-4 rounded-xl transition-colors"
-                >
-                  <div className="flex items-center gap-5 pb-6 border-b-2 border-pink-100">
-                    <img
-                      src={currentCandidate.userAvatar || "/placeholder.svg"}
-                      alt={currentCandidate.userName}
-                      className="h-20 w-20 rounded-full ring-4 ring-pink-300 object-cover shadow-xl"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <p className="font-bold text-gray-900 text-xl">{currentCandidate.userName}</p>
-                        <User className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <Badge className="bg-gradient-to-r from-pink-100 to-rose-100 text-pink-700 border-2 border-pink-200 px-3 py-1">
-                        {currentCandidate.userGender}
-                      </Badge>
-                    </div>
-                    {/* 매치 요청 버튼 */}
-                    <Button
-                      size="lg"
-                      className={`h-14 w-14 rounded-full shadow-lg hover:scale-110 transition-transform ${currentCandidate && isUserLiked(currentCandidate.userId)
-                        ? "bg-pink-500 hover:bg-pink-600"
-                        : "bg-white hover:bg-gray-100 border-2 border-pink-200"
-                        }`}
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        handleLike()
-                      }}
-                    >
-                      <Heart
-                        className={`h-7 w-7 ${currentCandidate && isUserLiked(currentCandidate.userId)
-                          ? "fill-white text-white"
-                          : "text-pink-500"
-                          }`}
-                      />
-                    </Button>
-                  </div>
-                </Link>
-
-                <div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl p-5 border-2 border-pink-100">
-                  <p className="leading-relaxed text-gray-700 text-lg font-medium">{currentCandidate.bio}</p>
-                </div>
-
-                <div>
-                  <div className="mb-4 flex items-center justify-between">
-                    <span className="font-bold text-gray-900 text-lg">활동성</span>
-                    <span className="text-lg font-bold text-pink-600">{currentCandidate.activityLevel}%</span>
-                  </div>
-                  <div className="h-5 overflow-hidden rounded-full bg-gray-200 shadow-inner">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 transition-all shadow-lg"
-                      style={{ width: `${currentCandidate.activityLevel}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="mb-4 font-bold text-gray-900 text-lg">공통 관심사</h3>
-                  <div className="flex flex-wrap gap-3">
-                    {currentCandidate.commonInterests.map((interest) => (
-                      <Badge
-                        key={interest}
-                        className="rounded-full bg-gradient-to-r from-pink-100 via-rose-100 to-orange-100 px-6 py-3 text-base font-semibold text-pink-700 border-2 border-pink-200 hover:border-pink-300 shadow-md hover:shadow-lg transition-all"
-                      >
-                        {interest}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* 인디케이터 */}
-            <div className="flex items-center justify-center gap-3 mt-6">
-              {candidates.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentIndex(index)}
-                  className={`h-3 rounded-full transition-all shadow-md ${index === currentIndex
-                    ? "w-12 bg-gradient-to-r from-pink-500 to-rose-500"
-                    : "w-3 bg-gray-300 hover:bg-gray-400"
-                    }`}
-                />
-              ))}
-            </div>
-
-            {/* AI 매칭 정보 */}
-            <Card className="mt-6 p-6 bg-white border-2 border-pink-200 shadow-lg">
-              <div className="flex items-center justify-center gap-3">
-                <Sparkles className="h-6 w-6 text-pink-500" />
-                <div className="text-center">
-                  <p className="text-base font-bold text-gray-900 mb-1">AI 스마트 매칭 알고리즘</p>
-                  <p className="text-sm text-gray-600">같은 품종 우선 50% • 거리 30% • 활동성 20% 기준으로 매칭</p>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* 오른쪽 사이드바 */}
-          <div className="lg:col-span-3 space-y-6">
-            <Card className="p-6 bg-white border-2 border-pink-200 shadow-xl">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="rounded-full bg-gradient-to-br from-green-100 to-emerald-100 p-3 shadow-md">
-                  <Power className="h-6 w-6 text-green-600" />
-                </div>
-                <h3 className="font-bold text-gray-900 text-lg">매칭 상태</h3>
-              </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">매칭 활성화</span>
-                  <Button
-                    size="sm"
-                    variant={isOnline ? "default" : "outline"}
-                    onClick={() => setIsOnline(!isOnline)}
-                    className={
-                      isOnline
-                        ? "bg-gradient-to-r from-green-500 to-emerald-500"
-                        : "border-2 border-gray-300 bg-transparent"
-                    }
-                  >
-                    {isOnline ? "ON" : "OFF"}
-                  </Button>
-                </div>
-                {isOnline && (
-                  <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                    <div className="h-3 w-3 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-sm font-medium text-green-700">온라인 상태</span>
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            <Card className="p-6 bg-white border-2 border-pink-200 shadow-xl">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="rounded-full bg-gradient-to-br from-purple-100 to-pink-100 p-3 shadow-md">
-                  <Settings2 className="h-6 w-6 text-purple-600" />
-                </div>
-                <h3 className="font-bold text-gray-900 text-lg">필터 설정</h3>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2 block">거리 범위</Label>
-                  <p className="text-2xl font-bold text-purple-600 mb-2">{distanceFilter}km</p>
-                  <div className="text-sm text-gray-600">
-                    성별: {genderFilter === "all" ? "전체" : genderFilter === "male" ? "남성" : "여성"}
-                    <br />
-                    품종: {breedFilter === "all" ? "전체" : breedFilter}
-                  </div>
-                </div>
-                <Button
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90"
+                  variant="outline"
                   onClick={() => setFilterModalOpen(true)}
+                  className="h-12 px-6 text-base font-semibold border-2 border-pink-300"
                 >
-                  <Settings2 className="mr-2 h-4 w-4" />
+                  <Settings2 className="mr-2 h-5 w-5" />
                   필터 변경하기
                 </Button>
               </div>
             </Card>
+          ) : (
+            /* 펫메이트 카드 */
+            <>
+              <Card className="overflow-hidden shadow-2xl border-4 border-pink-200 bg-white">
+                <div className="relative h-[500px]">
+                  <img
+                    src={currentCandidate?.petPhoto || "/placeholder.svg"}
+                    alt={currentCandidate?.petName}
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
-            <Card className="p-6 bg-white border-2 border-pink-200 shadow-xl">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="rounded-full bg-gradient-to-br from-blue-100 to-cyan-100 p-3 shadow-md">
-                  <Sparkles className="h-6 w-6 text-blue-600" />
+                  {/* 네비게이션 버튼 */}
+                  <Button
+                    size="lg"
+                    variant="ghost"
+                    className="absolute left-6 top-1/2 -translate-y-1/2 h-14 w-14 rounded-full bg-white/95 hover:bg-white shadow-2xl backdrop-blur-sm"
+                    onClick={handlePrevious}
+                  >
+                    <ChevronLeft className="h-7 w-7 text-gray-900" />
+                  </Button>
+
+                  <Button
+                    size="lg"
+                    variant="ghost"
+                    className="absolute right-6 top-1/2 -translate-y-1/2 h-14 w-14 rounded-full bg-white/95 hover:bg-white shadow-2xl backdrop-blur-sm"
+                    onClick={handleNext}
+                  >
+                    <ChevronRight className="h-7 w-7 text-gray-900" />
+                  </Button>
+
+
+                  {/* 매칭 점수 */}
+                  <div className="absolute right-6 top-6 flex items-center gap-3 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 px-6 py-4 shadow-2xl border-2 border-white/40">
+                    <Star className="h-7 w-7 fill-white text-white" />
+                    <span className="text-xl font-bold text-white">{currentCandidate.matchScore}%</span>
+                  </div>
+
+                  {/* 거리 */}
+                  <div className="absolute left-6 top-6 flex items-center gap-3 rounded-2xl bg-white px-6 py-4 shadow-2xl border-2 border-pink-200">
+                    <MapPin className="h-6 w-6 text-pink-600" />
+                    <span className="text-lg font-bold text-gray-900">{currentCandidate.distance}km</span>
+                  </div>
+
+                  {/* 온라인 상태 */}
+                  {currentCandidate.isOnline && (
+                    <div className="absolute left-6 top-24 flex items-center gap-2 rounded-full bg-green-500 px-5 py-3 shadow-xl border-2 border-white">
+                      <div className="h-3 w-3 rounded-full bg-white animate-pulse" />
+                      <span className="text-sm font-bold text-white">온라인</span>
+                    </div>
+                  )}
+
+                  {/* 펫 정보 */}
+                  <div className="absolute bottom-0 left-0 right-0 p-10 text-white">
+                    <h2 className="text-5xl font-bold mb-3 drop-shadow-2xl">{currentCandidate.petName}</h2>
+                    <p className="text-2xl opacity-95 drop-shadow-lg">
+                      {currentCandidate.petBreed} • {currentCandidate.petAge}살 • {currentCandidate.petGender}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="font-bold text-gray-900 text-lg">매칭 팁</h3>
+
+                {/* 상세 정보 */}
+                <div className="space-y-6 p-8 bg-gradient-to-b from-white to-pink-50/30">
+                  <Link
+                    to={`/user/${currentCandidate.id}`}
+                    className="block hover:bg-pink-50 -m-2 p-4 rounded-xl transition-colors"
+                  >
+                    <div className="flex items-center gap-5 pb-6 border-b-2 border-pink-100">
+                      <img
+                        src={currentCandidate.userAvatar || "/placeholder.svg"}
+                        alt={currentCandidate.userName}
+                        className="h-20 w-20 rounded-full ring-4 ring-pink-300 object-cover shadow-xl"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <p className="font-bold text-gray-900 text-xl">{currentCandidate.userName}</p>
+                          <User className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <Badge className="bg-gradient-to-r from-pink-100 to-rose-100 text-pink-700 border-2 border-pink-200 px-3 py-1">
+                          {currentCandidate.userGender}
+                        </Badge>
+                      </div>
+                      {/* 매치 요청 버튼 */}
+                      <Button
+                        size="lg"
+                        className={`h-14 w-14 rounded-full shadow-lg hover:scale-110 transition-transform ${currentCandidate && isUserLiked(currentCandidate.userId)
+                          ? "bg-pink-500 hover:bg-pink-600"
+                          : "bg-white hover:bg-gray-100 border-2 border-pink-200"
+                          }`}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          handleLike()
+                        }}
+                      >
+                        <Heart
+                          className={`h-7 w-7 ${currentCandidate && isUserLiked(currentCandidate.userId)
+                            ? "fill-white text-white"
+                            : "text-pink-500"
+                            }`}
+                        />
+                      </Button>
+                    </div>
+                  </Link>
+
+                  <div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl p-5 border-2 border-pink-100">
+                    <div className="flex items-start gap-3">
+                      {currentCandidate.bioIcon && (
+                        <img
+                          src={currentCandidate.bioIcon}
+                          alt=""
+                          className="w-8 h-8 flex-shrink-0 mt-0.5"
+                        />
+                      )}
+                      <p className="leading-relaxed text-gray-700 text-lg font-medium">{currentCandidate.bio}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="mb-4 flex items-center justify-between">
+                      <span className="font-bold text-gray-900 text-lg">활동성</span>
+                      <span className="text-lg font-bold text-pink-600">{currentCandidate.activityLevel}%</span>
+                    </div>
+                    <div className="h-5 overflow-hidden rounded-full bg-gray-200 shadow-inner">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 transition-all shadow-lg"
+                        style={{ width: `${currentCandidate.activityLevel}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="mb-4 font-bold text-gray-900 text-lg">공통 관심사</h3>
+                    <div className="flex flex-wrap gap-3">
+                      {currentCandidate.commonInterests.map((interest) => (
+                        <Badge
+                          key={interest}
+                          className="rounded-full bg-gradient-to-r from-pink-100 via-rose-100 to-orange-100 px-6 py-3 text-base font-semibold text-pink-700 border-2 border-pink-200 hover:border-pink-300 shadow-md hover:shadow-lg transition-all"
+                        >
+                          {interest}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* 인디케이터 */}
+              <div className="flex items-center justify-center gap-3 mt-6">
+                {candidates.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentIndex(index)}
+                    className={`h-3 rounded-full transition-all shadow-md ${index === currentIndex
+                      ? "w-12 bg-gradient-to-r from-pink-500 to-rose-500"
+                      : "w-3 bg-gray-300 hover:bg-gray-400"
+                      }`}
+                  />
+                ))}
               </div>
-              <div className="space-y-3 text-sm text-gray-600">
-                <p className="leading-relaxed">💡 프로필을 자주 업데이트하면 더 많은 매칭 기회가 생겨요</p>
-                <p className="leading-relaxed">🌟 공통 관심사가 많을수록 매칭 확률이 높아져요</p>
-                <p className="leading-relaxed">🐾 활동성이 비슷한 펫메이트를 추천해드려요</p>
-              </div>
-            </Card>
-          </div>
+
+              {/* AI 매칭 정보 */}
+              <Card className="mt-6 p-6 bg-white border-2 border-pink-200 shadow-lg">
+                <div className="flex items-center justify-center gap-3">
+                  <Sparkles className="h-6 w-6 text-pink-500" />
+                  <div className="text-center">
+                    <p className="text-base font-bold text-gray-900 mb-1">AI 스마트 매칭 알고리즘</p>
+                    <p className="text-sm text-gray-600">같은 품종 우선 50% • 거리 30% • 활동성 20% 기준으로 매칭</p>
+                  </div>
+                </div>
+              </Card>
+            </>
+          )}
         </div>
       </div>
 
@@ -835,6 +730,6 @@ export default function PetMatePage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div >
+    </div>
   )
 }

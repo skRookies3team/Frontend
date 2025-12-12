@@ -28,10 +28,11 @@ const MOCK_CANDIDATES: (PetMateCandidate & { latitude: number; longitude: number
         petGender: "남아",
         petPhoto: "/cute-pomeranian.png",
         distance: 0,  // 동적 계산
-        location: "서울 강남구 역삼동",
-        latitude: 37.5013,   // 역삼역 근처
-        longitude: 127.0396,
-        bio: "매일 저녁 7시에 한강공원에서 산책해요! 같은 포메 친구 찾아요 🐾",
+        location: "서울 중구 동호로",
+        latitude: 37.5562,   // 역삼역 근처
+        longitude: 127.0054,
+        bio: "매일 저녁 7시에 한강공원에서 산책해요! 같은 포메 친구 찾아요",
+        bioIcon: "/icons/paw-print.svg",
         activityLevel: 85,
         commonInterests: ["한강 산책", "소형견 모임", "미용 정보"],
         matchScore: 95,
@@ -52,7 +53,8 @@ const MOCK_CANDIDATES: (PetMateCandidate & { latitude: number; longitude: number
         location: "서울 강남구 삼성동",
         latitude: 37.5088,   // 삼성역 근처
         longitude: 127.0631,
-        bio: "활발한 골댕이와 함께 공원 러닝 즐겨요! 대형견 친구 환영합니다 🏃‍♂️",
+        bio: "활발한 골댕이와 함께 공원 러닝 즐겨요! 대형견 친구 환영합니다",
+        bioIcon: "/icons/running.svg",
         activityLevel: 95,
         commonInterests: ["러닝", "프리스비", "수영"],
         matchScore: 88,
@@ -74,6 +76,7 @@ const MOCK_CANDIDATES: (PetMateCandidate & { latitude: number; longitude: number
         latitude: 37.4923,   // 서초역 근처
         longitude: 127.0276,
         bio: "느긋하게 산책 좋아하는 소형견이에요. 주말 아침 산책 메이트 구해요!",
+        bioIcon: "/icons/paw-print.svg",
         activityLevel: 60,
         commonInterests: ["느긋한 산책", "카페 투어", "사진 찍기"],
         matchScore: 82,
@@ -95,6 +98,7 @@ const MOCK_CANDIDATES: (PetMateCandidate & { latitude: number; longitude: number
         latitude: 37.5133,   // 잠실역 근처
         longitude: 127.1001,
         bio: "산책 좋아하는 시바견이에요. 평일 저녁 함께 산책하실 분!",
+        bioIcon: "/icons/paw-print.svg",
         activityLevel: 75,
         commonInterests: ["산책", "간식", "놀이터"],
         matchScore: 78,
@@ -115,7 +119,8 @@ const MOCK_CANDIDATES: (PetMateCandidate & { latitude: number; longitude: number
         location: "서울 강남구 논현동",
         latitude: 37.5115,   // 논현역 근처
         longitude: 127.0215,
-        bio: "에너지 넘치는 비글이에요! 주말 공원 런 같이 하실 분 찾아요 🏃‍♀️",
+        bio: "에너지 넘치는 비글이에요! 주말 공원 런 같이 하실 분 찾아요",
+        bioIcon: "/icons/running.svg",
         activityLevel: 90,
         commonInterests: ["달리기", "공놀이", "간식 탐험"],
         matchScore: 91,
@@ -136,7 +141,8 @@ const MOCK_CANDIDATES: (PetMateCandidate & { latitude: number; longitude: number
         location: "서울 강남구 신사동",
         latitude: 37.5165,   // 신사역 근처
         longitude: 127.0203,
-        bio: "조용하고 착한 말티즈예요. 카페 투어 좋아하는 분 환영해요 ☕",
+        bio: "조용하고 착한 말티즈예요. 카페 투어 좋아하는 분 환영해요",
+        bioIcon: "/icons/cafe.svg",
         activityLevel: 50,
         commonInterests: ["카페", "미용", "사진"],
         matchScore: 87,
