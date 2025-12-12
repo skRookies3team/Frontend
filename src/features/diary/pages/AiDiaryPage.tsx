@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // --- Import Types and Service Layer ---
 // [수정]: 경로 확인 및 확장자 명시 유지 (./types/diary.ts)
 import { DiaryStep, SelectedImage, LayoutStyle, TextAlign, ImageType } from '../../diary/types/diary.ts';
 // [수정]: 경로 확인 및 확장자 명시 유지 (./services/DiaryService.tsx)
-import { createAiDiary, generateAiDiaryContent } from '../../diary/services/DiaryService.tsx'; 
+import { createAiDiary, generateAiDiaryContent } from '../../diary/services/DiaryService.tsx';
 
 // --- Import Child Components ---
 // [수정]: 경로 확인 및 확장자 명시 유지 (./components/diary/UploadStep.tsx)
@@ -21,14 +21,15 @@ import GalleryModal from '../../diary/components/GalleryModal.tsx';
 
 
 export default function AiDiaryPage() {
-  
+  const navigate = useNavigate();
+
   const [step, setStep] = useState<DiaryStep>("upload");
   // [수정 유지]: SelectedImage[] 타입
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const [showGallery, setShowGallery] = useState(false);
   const [editedDiary, setEditedDiary] = useState("");
   const [progress, setProgress] = useState(0);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]); 
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [layoutStyle, setLayoutStyle] = useState<LayoutStyle>("grid");
   const [textAlign, setTextAlign] = useState<TextAlign>("left");
   const [fontSize, setFontSize] = useState(16);
@@ -46,39 +47,39 @@ export default function AiDiaryPage() {
     const filesToUpload = files.slice(0, availableSlots);
 
     if (filesToUpload.length === 0) {
-        alert("더 이상 업로드할 수 없습니다 (최대 10장).");
-        e.target.value = ''; 
-        return;
+      alert("더 이상 업로드할 수 없습니다 (최대 10장).");
+      e.target.value = '';
+      return;
     }
 
     setIsSubmitting(true);
-    e.target.value = ''; 
-    
+    e.target.value = '';
+
     try {
-        // [수정]: SelectedImage 타입이 객체이므로, 로컬 URL 대신 mock 객체로 변환
-        const newImages: SelectedImage[] = filesToUpload.map(file => ({
-            imageUrl: URL.createObjectURL(file), // Mock URL 사용
-            source: ImageType.GALLERY
-        }));
-        setSelectedImages(prev => [...prev, ...newImages]);
+      // [수정]: SelectedImage 타입이 객체이므로, 로컬 URL 대신 mock 객체로 변환
+      const newImages: SelectedImage[] = filesToUpload.map(file => ({
+        imageUrl: URL.createObjectURL(file), // Mock URL 사용
+        source: ImageType.GALLERY
+      }));
+      setSelectedImages(prev => [...prev, ...newImages]);
 
     } catch (error) {
-        console.error("[ERROR] 이미지 처리 실패:", error);
-        alert("이미지 처리 중 오류가 발생했습니다.");
+      console.error("[ERROR] 이미지 처리 실패:", error);
+      alert("이미지 처리 중 오류가 발생했습니다.");
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
   // 2. 보관함 이미지 선택 핸들러
   const handleSelectFromGallery = (imageUrl: string) => {
     const isSelected = selectedImages.some(img => img.imageUrl === imageUrl);
-    
+
     if (isSelected) {
       setSelectedImages(prev => prev.filter(img => img.imageUrl !== imageUrl));
     } else if (selectedImages.length < 10) {
-      const newImage: SelectedImage = { 
-        imageUrl: imageUrl, 
+      const newImage: SelectedImage = {
+        imageUrl: imageUrl,
         source: ImageType.ARCHIVE
       };
       setSelectedImages(prev => [...prev, newImage]);
@@ -89,8 +90,8 @@ export default function AiDiaryPage() {
   // 3. AI 다이어리 생성 핸들러 (진행 표시 포함)
   const handleGenerate = () => {
     if (selectedImages.length === 0) {
-        alert("사진을 1장 이상 선택해주세요.");
-        return;
+      alert("사진을 1장 이상 선택해주세요.");
+      return;
     }
     setStep("generating");
 
@@ -101,19 +102,19 @@ export default function AiDiaryPage() {
 
       if (currentProgress >= 100) {
         clearInterval(interval);
-        
+
         generateAiDiaryContent().then(diary => {
-            setEditedDiary(diary);
-            setTimeout(() => setStep("edit"), 500);
+          setEditedDiary(diary);
+          setTimeout(() => setStep("edit"), 500);
         }).catch(error => {
-            console.error("AI 생성 실패:", error);
-            alert("AI 일기 생성 중 오류가 발생했습니다.");
-            setStep("upload");
+          console.error("AI 생성 실패:", error);
+          alert("AI 일기 생성 중 오류가 발생했습니다.");
+          setStep("upload");
         });
       }
     }, 200);
   };
-  
+
   // 4. 최종 백엔드 전송 핸들러
   const handleShareToFeed = async () => {
     if (isSubmitting) return;
@@ -127,31 +128,41 @@ export default function AiDiaryPage() {
         imageUrl: img.imageUrl,
         imgOrder: index + 1,
         mainImage: index === 0,
-        source: img.source 
+        source: img.source
       }))
     };
 
     try {
-        const result = await createAiDiary(diaryData);
-        alert(`일기 생성 성공! (ID: ${result.diaryId})`);
-        setStep("complete");
+      const result = await createAiDiary(diaryData);
+      alert(`일기 생성 성공! (ID: ${result.diaryId})`);
+      setStep("complete");
     } catch (error) {
-        console.error("일기 생성 실패:", error);
-        alert(error instanceof Error ? error.message : '일기 생성 중 알 수 없는 오류 발생');
+      console.error("일기 생성 실패:", error);
+      alert(error instanceof Error ? error.message : '일기 생성 중 알 수 없는 오류 발생');
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
-  
+
+  // 5. 완료 후 자동 이동
+  useEffect(() => {
+    if (step === 'complete') {
+      const timer = setTimeout(() => {
+        navigate('/feed');
+      }, 2000); // 2초 후 이동
+      return () => clearTimeout(timer);
+    }
+  }, [step, navigate]);
+
   // --- UI Rendering (Main Switch) ---
 
   const Icon: React.FC<{ className?: string, children: React.ReactNode }> = ({ children, className }) => <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>;
-  
+
   const renderStep = () => {
     switch (step) {
       case 'upload':
         return (
-          <UploadStep 
+          <UploadStep
             selectedImages={selectedImages}
             isSubmitting={isSubmitting}
             handleImageUpload={handleImageUpload}
