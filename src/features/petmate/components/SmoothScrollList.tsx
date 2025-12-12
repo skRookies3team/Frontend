@@ -1,7 +1,7 @@
-import { useRef } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { useRef, useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { PetMateCandidate } from '../api/petmate-api'
-import { MapPin, Star, Heart } from 'lucide-react'
+import { MapPin, Star, Heart, ChevronUp, ChevronDown } from 'lucide-react'
 import './SmoothScrollList.css'
 
 interface SmoothScrollCardProps {
@@ -9,33 +9,54 @@ interface SmoothScrollCardProps {
     isLiked: boolean
     onLike: (e: React.MouseEvent) => void
     onClick: () => void
+    isActive: boolean
+    position: 'prev' | 'current' | 'next' | 'hidden'
 }
 
-export function SmoothScrollCard({ candidate, isLiked, onLike, onClick }: SmoothScrollCardProps) {
-    const ref = useRef<HTMLDivElement>(null)
-
-    const { scrollYProgress } = useScroll({
-        target: ref,
-        offset: ["start end", "end start"]
-    })
-
-    // 중앙에 가까울수록 scale 1.05, 멀어질수록 0.85
-    const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.85, 1.05, 0.85])
-    // 중앙에 가까울수록 opacity 1, 멀어질수록 0.5
-    const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [0.5, 1, 0.5])
+export function SmoothScrollCard({ candidate, isLiked, onLike, onClick, isActive, position }: SmoothScrollCardProps) {
+    const variants = {
+        prev: {
+            y: -100,
+            scale: 0.88,
+            opacity: 0.8,
+            zIndex: 5
+        },
+        current: {
+            y: 0,
+            scale: 1.05,
+            opacity: 1,
+            zIndex: 10
+        },
+        next: {
+            y: 100,
+            scale: 0.88,
+            opacity: 0.8,
+            zIndex: 5
+        },
+        hidden: {
+            y: position === 'prev' ? -150 : 150,
+            scale: 0.8,
+            opacity: 0.5,
+            zIndex: 0
+        }
+    }
 
     return (
         <motion.div
-            ref={ref}
-            style={{ scale, opacity }}
-            className="smooth-scroll-card cursor-pointer scroll-snap-item"
+            className="absolute w-full cursor-pointer"
             onClick={onClick}
-            whileHover={{ scale: 1.08 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            initial={false}
+            animate={position}
+            variants={variants}
+            transition={{
+                type: "spring",
+                stiffness: 300,
+                damping: 30,
+                mass: 0.8
+            }}
         >
-            <div className="bg-white rounded-2xl shadow-lg border-2 border-pink-100 hover:border-pink-300 transition-colors overflow-hidden">
-                {/* 모바일: 세로 레이아웃, 데스크탑: 가로 레이아웃 */}
-                <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 p-3 sm:p-4">
+            <div className={`bg-white rounded-2xl shadow-lg border-2 ${isActive ? 'border-pink-400 shadow-xl' : 'border-pink-100'} transition-colors overflow-hidden`}>
+                <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 p-4 sm:p-5">
                     {/* 펫 이미지 */}
                     <div className="relative flex-shrink-0">
                         <img
@@ -100,21 +121,126 @@ interface SmoothScrollListProps {
 }
 
 export function SmoothScrollList({ candidates, isUserLiked, onLike, onSelect }: SmoothScrollListProps) {
+    const [currentIndex, setCurrentIndex] = useState(0)
+    const containerRef = useRef<HTMLDivElement>(null)
+
+    // 마우스 휠 이벤트 핸들러
+    useEffect(() => {
+        const container = containerRef.current
+        if (!container) return
+
+        let isScrolling = false
+
+        const handleWheel = (e: WheelEvent) => {
+            e.preventDefault()
+
+            if (isScrolling) return
+            isScrolling = true
+
+            if (e.deltaY > 0) {
+                // 아래로 스크롤 - 다음 카드
+                setCurrentIndex(prev => Math.min(prev + 1, candidates.length - 1))
+            } else {
+                // 위로 스크롤 - 이전 카드
+                setCurrentIndex(prev => Math.max(prev - 1, 0))
+            }
+
+            setTimeout(() => {
+                isScrolling = false
+            }, 300)
+        }
+
+        container.addEventListener('wheel', handleWheel, { passive: false })
+        return () => container.removeEventListener('wheel', handleWheel)
+    }, [candidates.length])
+
+    // 키보드 이벤트
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                setCurrentIndex(prev => Math.min(prev + 1, candidates.length - 1))
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                setCurrentIndex(prev => Math.max(prev - 1, 0))
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [candidates.length])
+
+    const getPosition = (index: number): 'prev' | 'current' | 'next' | 'hidden' => {
+        const diff = index - currentIndex
+        if (diff === 0) return 'current'
+        if (diff === -1) return 'prev'
+        if (diff === 1) return 'next'
+        return 'hidden'
+    }
+
+    const goUp = () => setCurrentIndex(prev => Math.max(prev - 1, 0))
+    const goDown = () => setCurrentIndex(prev => Math.min(prev + 1, candidates.length - 1))
+
     return (
-        <div className="smooth-scroll-container">
-            <div className="smooth-scroll-content">
-                {candidates.map((candidate) => (
-                    <SmoothScrollCard
-                        key={candidate.userId}
-                        candidate={candidate}
-                        isLiked={isUserLiked(candidate.userId)}
-                        onLike={(e) => {
-                            e.stopPropagation()
-                            onLike(candidate)
-                        }}
-                        onClick={() => onSelect(candidate)}
+        <div className="carousel-container" ref={containerRef}>
+            {/* 위로 버튼 */}
+            <button
+                onClick={goUp}
+                disabled={currentIndex === 0}
+                className={`absolute top-4 left-1/2 -translate-x-1/2 z-20 p-2 rounded-full bg-white/80 hover:bg-white shadow-lg transition-all ${currentIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'opacity-100'}`}
+            >
+                <ChevronUp className="h-6 w-6 text-pink-600" />
+            </button>
+
+            {/* 카드 컨테이너 */}
+            <div className="relative h-[300px] flex items-center justify-center px-4">
+                <AnimatePresence mode="popLayout">
+                    {candidates.map((candidate, index) => {
+                        const position = getPosition(index)
+                        if (position === 'hidden' && Math.abs(index - currentIndex) > 2) return null
+
+                        return (
+                            <SmoothScrollCard
+                                key={candidate.userId}
+                                candidate={candidate}
+                                isLiked={isUserLiked(candidate.userId)}
+                                onLike={(e) => {
+                                    e.stopPropagation()
+                                    onLike(candidate)
+                                }}
+                                onClick={() => onSelect(candidate)}
+                                isActive={index === currentIndex}
+                                position={position}
+                            />
+                        )
+                    })}
+                </AnimatePresence>
+            </div>
+
+            {/* 아래로 버튼 */}
+            <button
+                onClick={goDown}
+                disabled={currentIndex === candidates.length - 1}
+                className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-20 p-2 rounded-full bg-white/80 hover:bg-white shadow-lg transition-all ${currentIndex === candidates.length - 1 ? 'opacity-30 cursor-not-allowed' : 'opacity-100'}`}
+            >
+                <ChevronDown className="h-6 w-6 text-pink-600" />
+            </button>
+
+            {/* 인디케이터 */}
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 z-20">
+                {candidates.map((_, index) => (
+                    <button
+                        key={index}
+                        onClick={() => setCurrentIndex(index)}
+                        className={`w-2 rounded-full transition-all ${index === currentIndex
+                            ? 'h-6 bg-pink-500'
+                            : 'h-2 bg-pink-200 hover:bg-pink-300'
+                            }`}
                     />
                 ))}
+            </div>
+
+            {/* 카운터 */}
+            <div className="absolute bottom-4 right-4 text-sm font-medium text-gray-500 z-20">
+                {currentIndex + 1} / {candidates.length}
             </div>
         </div>
     )

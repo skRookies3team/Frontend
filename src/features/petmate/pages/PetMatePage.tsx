@@ -212,9 +212,9 @@ export default function PetMatePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-orange-50 pt-24 pb-12">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-orange-50 pt-8 pb-12">
       {/* 제목 - 항상 중앙 */}
-      <div className="text-center mb-8 px-4">
+      <div className="text-center mb-4 px-4">
         <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 via-rose-600 to-orange-600 bg-clip-text text-transparent mb-3">
           펫메이트 찾기
         </h1>
