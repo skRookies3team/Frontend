@@ -22,7 +22,7 @@ export function FeedList({ filter }: FeedListProps) {
         error,
     } = useFeedList(currentUserId, filter); 
 
-    const { mutate: toggleLike } = useFeedLike();
+    const { mutate: toggleLike } = useFeedLike(currentUserId);
     const { ref, inView } = useInView();
 
     useEffect(() => {
@@ -31,15 +31,27 @@ export function FeedList({ filter }: FeedListProps) {
         }
     }, [inView, hasNextPage, fetchNextPage]);
 
-    if (status === 'pending') return <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-    if (status === 'error') return <div className="text-center py-10 text-red-500">Error: {error?.message}</div>;
+    if (status === 'pending') return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-pink-500" /></div>;
+    
+    if (status === 'error') {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 text-center space-y-2">
+                <p className="font-semibold text-gray-800">피드를 불러올 수 없습니다</p>
+                <p className="text-sm text-gray-500">{(error as Error).message}</p>
+                <button onClick={() => window.location.reload()} className="text-xs text-blue-500 hover:underline">
+                    새로고침
+                </button>
+            </div>
+        );
+    }
 
     const isEmpty = !data?.pages[0]?.content.length;
 
     return (
-        <div className="space-y-4 p-4 md:p-0">
+        // ⭐️ max-w-[470px] 제거 -> 부모(680px) 너비를 따라감
+        <div className="flex flex-col items-center w-full mx-auto pb-20">
             {data?.pages.map((page, i) => (
-                <div key={i} className="space-y-4">
+                <div key={i} className="w-full flex flex-col gap-6">
                     {page.content.map((feed) => (
                         <PostCard
                             key={feed.feedId}
@@ -49,9 +61,19 @@ export function FeedList({ filter }: FeedListProps) {
                     ))}
                 </div>
             ))}
-            {isEmpty && <div className="text-center py-10 text-muted-foreground"><p>게시물이 없습니다.</p></div>}
-            <div ref={ref} className="flex justify-center py-4 h-10">
-                {isFetchingNextPage && <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />}
+
+            {isEmpty && (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                        <Loader2 className="h-8 w-8 text-gray-400" /> 
+                    </div>
+                    <p className="text-gray-900 font-medium">게시물이 없습니다</p>
+                    <p className="text-gray-500 text-sm mt-1">친구를 팔로우하고 소식을 받아보세요.</p>
+                </div>
+            )}
+
+            <div ref={ref} className="flex justify-center py-6 h-10 w-full">
+                {isFetchingNextPage && <Loader2 className="h-6 w-6 animate-spin text-gray-400" />}
             </div>
         </div>
     );
