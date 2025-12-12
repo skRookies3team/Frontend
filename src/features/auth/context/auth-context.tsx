@@ -104,11 +104,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 토큰을 메모리(상태)에 저장 - frontsample 패턴 (localStorage 대신)
-  const [token, setTokenState] = useState<string | null>(null);
+  // 토큰을 상태에 저장 - 새로고침 시에도 유지되도록 localStorage에서 초기화
+  const [token, setTokenState] = useState<string | null>(() => {
+    return localStorage.getItem('petlog_token'); // 저장된 토큰 불러오기
+  });
 
-  // 토큰 설정 (메모리에만 저장)
+  // 토큰 설정 (localStorage에도 저장)
   const setToken = (newToken: string | null) => {
+    if (newToken) {
+      localStorage.setItem('petlog_token', newToken); // 토큰 저장
+    } else {
+      localStorage.removeItem('petlog_token'); // 토큰 삭제
+    }
     setTokenState(newToken);
   };
 
@@ -220,9 +227,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 로그아웃 - 토큰 삭제 (메모리에서)
+  // 로그아웃 - 토큰 삭제
   const logout = () => {
-    setToken(null);
+    localStorage.removeItem('petlog_token'); // 토큰 삭제
+    setTokenState(null);
     setUser(null);
     localStorage.removeItem("petlog_user");
     navigate("/");
