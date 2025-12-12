@@ -1,12 +1,15 @@
 import React from 'react';
 
-const Icon: React.FC<{ className?: string }> = ({ children, className }) => <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>;
+// [수정]: children prop의 타입을 명시적으로 React.ReactNode로 추가합니다.
+const Icon: React.FC<{ className?: string, children: React.ReactNode }> = ({ children, className }) => <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>;
 
 export default function CompleteStep() {
     return (
         <div className="flex min-h-[60vh] flex-col items-center justify-center space-y-6">
-            <div className="flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shadow-xl md:h-40 md:w-40">
-                <Icon className="h-16 w-16 text-white md:h-20 md:w-20">{'✓'}</Icon>
+            <div className="relative">
+                <div className="flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shadow-xl md:h-40 md:w-40">
+                    <Icon className="h-16 w-16 text-white md:h-20 md:w-20">{'✓'}</Icon>
+                </div>
             </div>
 
             <div className="text-center">
