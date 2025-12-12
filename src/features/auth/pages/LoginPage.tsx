@@ -100,6 +100,13 @@ export default function LoginPage() {
     }
     setPasswordError("");
     console.log("회원가입:", { signupEmail, signupPassword });
+
+    // Save credentials to sessionStorage
+    sessionStorage.setItem("signup_credentials", JSON.stringify({
+      email: signupEmail,
+      password: signupPassword
+    }));
+
     navigate("/signup/info");
   };
 
