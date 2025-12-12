@@ -1,5 +1,3 @@
-// src/features/social/types/feed.ts
-
 export interface CommentDto {
   commentId: number;
   writerNickname: string;
@@ -9,7 +7,7 @@ export interface CommentDto {
 
 export interface FeedDto {
   feedId: number;
-  writerNickname: string; // 백엔드 필드명에 맞춤
+  writerNickname: string;
   petName: string;
   content: string;
   imageUrl: string | null;
