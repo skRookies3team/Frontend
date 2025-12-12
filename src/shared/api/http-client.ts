@@ -1,11 +1,11 @@
-import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosRequestConfig, AxiosError } from 'axios';
+import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosRequestConfig } from 'axios';
 
 // 환경변수에서 API URL 가져오기 (없으면 로컬 기본값)
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
+const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 // 토큰을 가져오는 함수 (외부에서 주입 가능하도록) - frontsample 패턴
 let getTokenFunction: (() => string | null) | null = null;
-let removeTokenFunction: (() => void) | null = null;
+// let removeTokenFunction: (() => void) | null = null; // 사용되지 않음 (주석 처리됨)
 
 // 토큰 가져오기 함수 설정 (AuthContext에서 호출)
 export const setTokenGetter = (fn: () => string | null) => {
@@ -13,10 +13,11 @@ export const setTokenGetter = (fn: () => string | null) => {
 };
 
 // 토큰 삭제 함수 설정 (AuthContext에서 호출)
-export const setTokenRemover = (fn: () => void) => {
-    removeTokenFunction = fn;
+export const setTokenRemover = (_fn: () => void) => {
+    // removeTokenFunction = fn;
 };
 
+/*
 // 토큰 갱신 중인지 확인하는 플래그
 let isRefreshing = false;
 // 갱신 동안 대기 중인 요청들을 담을 배열
@@ -32,6 +33,7 @@ const processQueue = (error: any, token: string | null = null) => {
     });
     failedQueue = [];
 };
+*/
 
 // Axios 인스턴스 생성
 const axiosInstance: AxiosInstance = axios.create({
