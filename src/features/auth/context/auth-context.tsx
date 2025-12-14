@@ -114,6 +114,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // 토큰 설정 (메모리 및 로컬스토리지 동기화)
   const setToken = (newToken: string | null) => {
+    if (newToken) {
+      localStorage.setItem('petlog_token', newToken); // 토큰 저장
+    } else {
+      localStorage.removeItem('petlog_token'); // 토큰 삭제
+    }
     setTokenState(newToken);
     if (newToken) {
       localStorage.setItem("petlog_token", newToken);
@@ -280,9 +285,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 로그아웃 - 토큰 삭제 (메모리에서)
+  // 로그아웃 - 토큰 삭제
   const logout = () => {
-    setToken(null);
+    localStorage.removeItem('petlog_token'); // 토큰 삭제
+    setTokenState(null);
     setUser(null);
     localStorage.removeItem("petlog_user");
     navigate("/");

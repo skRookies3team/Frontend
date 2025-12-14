@@ -51,7 +51,6 @@ import PortfolioPage from "@/features/diary/pages/PortfolioPage"
 
 // Feature: PetMate
 import PetMatePage from "@/features/petmate/pages/PetMatePage"
-import WalkMatePage from "@/features/petmate/pages/WalkMatePage"
 import MissingPetRegisterPage from "@/features/petmate/pages/MissingPetRegisterPage"
 
 // Feature: Social
@@ -148,7 +147,6 @@ function App() {
                     <Route path="info" element={<SignupInfoPage />} />
                   </Route>
                   <Route path="/user-info" element={<UserInfoPage />} />
-                  <Route path="/walk-mate" element={<WalkMatePage />} />
                   <Route path="/welcome" element={<WelcomePage />} />
                 </Routes>
               </WishlistProvider>
