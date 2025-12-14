@@ -109,12 +109,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 토큰을 메모리(상태)에 저장 - frontsample 패턴 (localStorage 대신)
-  const [token, setTokenState] = useState<string | null>(null);
+  // 토큰을 메모리(상태)와 로컬스토리지에 저장
+  const [token, setTokenState] = useState<string | null>(() => localStorage.getItem("petlog_token"));
 
-  // 토큰 설정 (메모리에만 저장)
+  // 토큰 설정 (메모리 및 로컬스토리지 동기화)
   const setToken = (newToken: string | null) => {
     setTokenState(newToken);
+    if (newToken) {
+      localStorage.setItem("petlog_token", newToken);
+    } else {
+      localStorage.removeItem("petlog_token");
+    }
   };
 
   // 토큰 존재 여부 확인
@@ -300,7 +305,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       // Call Backend API
-      const response = await createPetApi(Number(user.id), petDto, file);
+      const response = await createPetApi(petDto, file);
 
       // Verify response structure matches expected local state
       const newPet = {
