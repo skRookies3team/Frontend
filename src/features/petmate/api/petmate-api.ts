@@ -33,6 +33,7 @@ export interface PetMateCandidate {
     petGender: string;
     petPhoto: string;
     bio: string;
+    bioIcon?: string;  // SVG icon path for bio
     activityLevel: number;
     distance: number;
     location: string;
@@ -139,5 +140,68 @@ export const petMateApi = {
         );
         if (!response.ok) throw new Error('Failed to update status');
     },
+
+    // GPS 좌표 → 주소 변환 (Kakao Maps API)
+    getAddressFromCoords: async (longitude: number, latitude: number): Promise<AddressInfo> => {
+        const response = await fetch(
+            `${API_BASE_URL}/api/geocoding/reverse?x=${longitude}&y=${latitude}`
+        );
+        if (!response.ok) throw new Error('Failed to get address from coordinates');
+        return response.json();
+    },
+
+    // 주소 검색 → 좌표 변환 (Kakao Maps API)
+    searchAddress: async (query: string): Promise<SearchAddressResult[]> => {
+        const response = await fetch(
+            `${API_BASE_URL}/api/geocoding/search?query=${encodeURIComponent(query)}`
+        );
+        if (!response.ok) throw new Error('Failed to search address');
+        return response.json();
+    },
+};
+
+// 주소 정보 인터페이스
+export interface AddressInfo {
+    fullAddress: string;      // 전체 주소 (지번)
+    roadAddress?: string;     // 도로명 주소
+    region1: string;          // 시/도
+    region2: string;          // 구/군
+    region3: string;          // 동/읍/면
+    zoneNo?: string;          // 우편번호
+    buildingName?: string;    // 건물명
+}
+
+// 주소 검색 결과 인터페이스
+export interface SearchAddressResult {
+    addressName: string;      // 전체 주소
+    roadAddress?: string;     // 도로명 주소
+    latitude: number;         // 위도
+    longitude: number;        // 경도
+    region1?: string;         // 시/도
+    region2?: string;         // 구/군
+    region3?: string;         // 동/읍/면
+    zoneNo?: string;          // 우편번호
+}
+
+// GPS 좌표 가져오기 유틸리티
+export const getCurrentPosition = (): Promise<GeolocationPosition> => {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error('Geolocation is not supported by this browser.'));
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        });
+    });
+};
+
+// GPS 좌표로 주소 가져오기 (통합 함수)
+export const getAddressFromGPS = async (): Promise<AddressInfo> => {
+    const position = await getCurrentPosition();
+    const { longitude, latitude } = position.coords;
+    return petMateApi.getAddressFromCoords(longitude, latitude);
 };
 
