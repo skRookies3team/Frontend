@@ -24,18 +24,11 @@ export interface PetResponseDto {
     status: string;
 }
 
-export const createPetApi = async (userId: number, request: CreatePetDto, file: File | null): Promise<PetResponseDto> => {
+export const createPetApi = async (request: CreatePetDto, file: File | null): Promise<PetResponseDto> => {
     const formData = new FormData();
 
     if (file) {
         formData.append("multipartFile", file);
-    } else {
-        // If file is mandatory but missing, backend might reject. 
-        // For now, if no file, we might send empty or handle it.
-        // Assuming file is optional or user will provide it.
-        // If mandatory, we should ensure file exists.
-        // User request says @RequestPart MultipartFile multipartFile, usually implies mandatory.
-        // But let's proceed.
     }
 
     formData.append("request", new Blob([JSON.stringify(request)], {
@@ -45,8 +38,7 @@ export const createPetApi = async (userId: number, request: CreatePetDto, file: 
     // Assuming endpoint is /api/pets/create based on pattern
     const response = await httpClient.post<PetResponseDto>('http://localhost:8000/api/pets/create', formData, {
         headers: {
-            "Content-Type": "multipart/form-data",
-            "X-USER-ID": userId.toString()
+            "Content-Type": "multipart/form-data"
         }
     });
     return response;
