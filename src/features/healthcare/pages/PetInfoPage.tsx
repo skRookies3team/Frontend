@@ -119,6 +119,8 @@ export default function PetInfoPage() {
     birthday: "",
   })
 
+
+
   const analyzePhoto = async (_file: File) => {
     setIsAnalyzing(true)
 
@@ -156,24 +158,28 @@ export default function PetInfoPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    // Prepare pet data
-    const petData = {
-      id: `pet-${Date.now()}`,
-      name: formData.name,
-      species: formData.species,
-      breed: formData.breed,
-      age: formData.age,
-      photo: photoPreview || "/placeholder.svg",
-      gender: formData.gender,
-      neutered: formData.neutered === "yes",
-      birthday: formData.birthday,
-    }
+    console.log("PetInfoPage: handleSubmit called", { user, returnTo, formData });
 
     // 이미 로그인된 사용자인 경우 (returnTo가 있으면 기존 사용자)
     if (user && returnTo) {
-      addPet(petData)
-      navigate(returnTo)
+      console.log("PetInfoPage: processing as existing user");
+      const createPetDto = {
+        petName: formData.name,
+        breed: formData.breed,
+        genderType: formData.gender === "female" ? "FEMALE" : formData.gender === "male" ? "MALE" : "NONE",
+        birth: formData.birthday,
+        species: formData.species === "강아지" ? "DOG" : "CAT",
+        neutered: formData.neutered === "yes"
+      }
+      const fileInput = document.getElementById("photo") as HTMLInputElement;
+      const petFile = fileInput?.files?.[0] || null;
+
+      try {
+        await addPet(createPetDto, petFile);
+        navigate(returnTo)
+      } catch (error) {
+        console.error("Failed to add pet:", error);
+      }
       return
     }
 
@@ -187,18 +193,40 @@ export default function PetInfoPage() {
 
     const userInfo = JSON.parse(userInfoStr)
 
-    // Complete signup with user info and pet data
-    await signup({
-      ...userInfo,
-      pets: [petData],
-    })
+    // CreateUserDto
+    const createUserDto = {
+      email: userInfo.email,
+      password: userInfo.password,
+      username: userInfo.name,
+      social: userInfo.username, // Mapped from frontend username field
+      birth: userInfo.birthday,
+      genderType: userInfo.gender === "female" ? "FEMALE" : userInfo.gender === "male" ? "MALE" : "NONE"
+    }
 
-    // Clean up sessionStorage
-    sessionStorage.removeItem("signup_user_info")
-    sessionStorage.removeItem("signup_credentials")
+    // CreatePetDto
+    const createPetDto = {
+      petName: formData.name,
+      breed: formData.breed,
+      genderType: formData.gender === "female" ? "FEMALE" : formData.gender === "male" ? "MALE" : "NONE",
+      birth: formData.birthday, // LocalDate string format "YYYY-MM-DD" expected
+      species: formData.species === "강아지" ? "DOG" : "CAT", // Simple mapping
+      neutered: formData.neutered === "yes"
+    }
 
-    // Navigate to dashboard
-    navigate("/dashboard")
+    // Pet Photo File
+    const fileInput = document.getElementById("photo") as HTMLInputElement;
+    const petFile = fileInput?.files?.[0] || null;
+
+    // Call signup
+    try {
+      await signup(createUserDto, createPetDto, petFile);
+      // Clean up sessionStorage
+      sessionStorage.removeItem("signup_user_info")
+      sessionStorage.removeItem("signup_credentials")
+    } catch (e) {
+      console.error(e)
+      // Handle error (alert/toast)
+    }
   }
 
   const handleSkip = async () => {
@@ -218,15 +246,29 @@ export default function PetInfoPage() {
 
     const userInfo = JSON.parse(userInfoStr)
 
-    // Complete signup without pet
-    await signup(userInfo)
+    // CreateUserDto for skip case
+    const createUserDto = {
+      email: userInfo.email,
+      password: userInfo.password,
+      username: userInfo.name,
+      social: userInfo.username,
+      birth: userInfo.birthday,
+      genderType: userInfo.gender === "female" ? "FEMALE" : userInfo.gender === "male" ? "MALE" : "NONE"
+    }
 
-    // Clean up sessionStorage
-    sessionStorage.removeItem("signup_user_info")
-    sessionStorage.removeItem("signup_credentials")
+    // Complete signup without pet (pass null for petDto and petFile)
+    try {
+      await signup(createUserDto, null, null)
 
-    // Navigate to dashboard
-    navigate("/dashboard")
+      // Clean up sessionStorage
+      sessionStorage.removeItem("signup_user_info")
+      sessionStorage.removeItem("signup_credentials")
+
+      // Navigate to dashboard
+      navigate("/dashboard")
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   const getBreedOptions = () => {
