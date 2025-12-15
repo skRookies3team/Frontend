@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosRequestConfig, AxiosError } from 'axios';
 
-// 환경변수 or 상대경로 (CORS 해결용)
+
+// 환경변수에서 API URL 가져오기 (없으면 로컬 기본값)
 const baseURL = import.meta.env.VITE_API_URL || '/api';
 
 let getTokenFunction: (() => string | null) | null = null;
