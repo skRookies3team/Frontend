@@ -24,9 +24,12 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8000', // API Gateway 주소
         changeOrigin: true,
-      },
+        secure: false,
+        // 만약 백엔드 경로가 /api로 시작하지 않는다면 rewrite 필요하지만,
+        // Petlog 명세상 /api로 시작하므로 rewrite 불필요
+},
     },
   },
 })
