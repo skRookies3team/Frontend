@@ -1,78 +1,73 @@
 import React from 'react';
-// [수정]: 파일 확장자 (.ts)를 제거하여 모듈 해석 오류를 해결합니다.
-import { SelectedImage, GALLERY_IMAGES } from '../../diary/types/diary'; 
+import { BookOpen, X, Check } from 'lucide-react';
+import { SelectedImage } from '../types/diary';
 
 interface GalleryModalProps {
-    showGallery: boolean;
-    setShowGallery: React.Dispatch<React.SetStateAction<boolean>>;
-    selectedImages: SelectedImage[];
-    handleSelectFromGallery: (imageUrl: string) => void;
+  showGallery: boolean;
+  setShowGallery: (show: boolean) => void;
+  selectedImages: SelectedImage[];
+  handleSelectFromGallery: (url: string) => void;
 }
 
-// [수정 유지]: children prop의 타입을 명시적으로 React.ReactNode로 추가합니다.
-const Icon: React.FC<{ className?: string, children: React.ReactNode }> = ({ children, className }) => <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>;
+const GalleryModal: React.FC<GalleryModalProps> = ({ 
+  showGallery, setShowGallery, selectedImages, handleSelectFromGallery 
+}) => {
+  if (!showGallery) return null;
 
-export default function GalleryModal({
-    showGallery,
-    setShowGallery,
-    selectedImages,
-    handleSelectFromGallery,
-}: GalleryModalProps) {
-    if (!showGallery) return null;
-    
-    return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
-            onClick={() => setShowGallery(false)}
-        >
-            <div className="max-h-[80vh] w-full max-w-4xl overflow-y-auto bg-white rounded-xl" onClick={(e) => e.stopPropagation()}>
-                <div className="p-6">
-                    <div className="mb-4 flex items-center justify-between">
-                        <h3 className="text-xl font-bold text-pink-600">보관함에서 선택 (Source: ARCHIVE)</h3>
-                        <button className="p-2 rounded-full hover:bg-slate-100" onClick={() => setShowGallery(false)}>
-                            <Icon className="h-5 w-5">{'✕'}</Icon>
-                        </button>
-                    </div>
-                    <p className="mb-4 text-sm text-slate-500">선택된 사진: {selectedImages.length}/10</p>
-                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                        {GALLERY_IMAGES.map((image, index) => {
-                            // SelectedImage가 객체({imageUrl, source})이므로, .imageUrl로 비교합니다.
-                            const isSelected = selectedImages.some(img => img.imageUrl === image);
-                            return (
-                                <button
-                                    key={index}
-                                    onClick={() => handleSelectFromGallery(image)}
-                                    disabled={selectedImages.length >= 10 && !isSelected}
-                                    className={`relative aspect-square overflow-hidden rounded-xl transition-all ${
-                                        isSelected
-                                            ? "ring-4 ring-pink-500"
-                                            : selectedImages.length >= 10
-                                                ? "opacity-50 cursor-not-allowed"
-                                                : "hover:scale-105 hover:shadow-lg border border-slate-200"
-                                        }`}
-                                >
-                                    <img
-                                        src={image || "https://placehold.co/200x200/CCCCCC/000000?text=IMG"}
-                                        alt={`Gallery ${index + 1}`}
-                                        className="h-full w-full object-cover"
-                                    />
-                                    {isSelected && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-pink-500/50">
-                                            <Icon className="h-10 w-10 text-white">{'✓'}</Icon>
-                                        </div>
-                                    )}
-                                </button>
-                            )
-                        })}
-                    </div>
-                    <button
-                        onClick={() => setShowGallery(false)}
-                        className="mt-6 w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 transition"
-                    >
-                        선택 완료
-                    </button>
-                </div>
-            </div>
+  // Mock Archive Images
+  const archiveImages = Array.from({ length: 8 }).map((_, i) => 
+    `https://picsum.photos/seed/${i + 100}/200/200`
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-2xl w-full max-w-2xl h-[80vh] flex flex-col shadow-2xl animate-scale-up">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+          <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-pink-500" /> 사진 보관함
+          </h3>
+          <button onClick={() => setShowGallery(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
         </div>
-    );
-}
+        
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+            {archiveImages.map((img, idx) => {
+              const isSelected = selectedImages.some(si => si.imageUrl === img);
+              return (
+                <div 
+                  key={idx} 
+                  onClick={() => handleSelectFromGallery(img)}
+                  className={`aspect-square rounded-xl overflow-hidden cursor-pointer relative group transition-all duration-200 ${
+                    isSelected ? 'ring-4 ring-pink-500 ring-offset-2' : 'hover:opacity-90'
+                  }`}
+                >
+                  <img src={img} alt="archive" className="w-full h-full object-cover" />
+                  {isSelected && (
+                    <div className="absolute inset-0 bg-pink-500/20 flex items-center justify-center">
+                      <div className="bg-pink-500 text-white rounded-full p-1 shadow-sm">
+                        <Check className="w-4 h-4" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-gray-100 flex justify-end">
+          <button 
+            onClick={() => setShowGallery(false)}
+            className="px-6 py-2.5 bg-gray-800 hover:bg-gray-900 text-white rounded-xl font-medium transition-colors"
+          >
+            선택 완료
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default GalleryModal;
