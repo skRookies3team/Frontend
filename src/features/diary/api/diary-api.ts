@@ -31,7 +31,7 @@ export const generateAiDiaryContent = (): Promise<string> => {
 export const createAiDiary = async (data: DiaryRequest): Promise<CreateDiaryResponse> => {
   const token = localStorage.getItem('petlog_token');
   
-  const response = await fetch('http://localhost:8000/api/diaries', {
+  const response = await fetch('http://localhost:8000/api/diaries/ai', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

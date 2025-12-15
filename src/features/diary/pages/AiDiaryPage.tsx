@@ -3,12 +3,53 @@ import { useNavigate } from 'react-router-dom';
 import {
   Camera, Upload, Edit3, Check, Share2, Calendar,
   Image as ImageIcon, X, ChevronLeft, Loader2,
-  Save, Trash2, BookOpen
+  Save, BookOpen
 } from 'lucide-react';
-import { useAuth } from '@/features/auth/context/auth-context';
 
 // ==========================================
-// 1. Types & Interfaces (통합)
+// 0. Auth Logic (JWT Token Parsing)
+// ==========================================
+// [중요] 실제 프로젝트의 useAuth 훅을 import 해서 쓰신다면 아래 로컬 useAuth는 지우고 import문을 사용하세요.
+// import { useAuth } from '@/features/auth/context/auth-context';
+
+const useAuth = () => {
+  const [user, setUser] = useState<{ id: number; username: string; pets: any[] } | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('petlog_token');
+    if (token) {
+      try {
+        // JWT Payload 디코딩
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+
+        const payload = JSON.parse(jsonPayload);
+
+        // 토큰에서 userId 추출 (필드명은 토큰 생성 로직에 따라 다를 수 있음: 'sub', 'userId', 'id' 등 확인 필요)
+        // 여기서는 payload.userId 또는 payload.sub를 사용한다고 가정
+        const userId = Number(payload.userId || payload.sub || payload.id);
+
+        if (!isNaN(userId)) {
+          setUser({
+            id: userId,
+            username: payload.username || 'User',
+            pets: [] // 토큰에 펫 정보가 없다면 빈 배열 (펫 선택 로직 주의)
+          });
+        }
+      } catch (e) {
+        console.error("토큰 파싱 실패:", e);
+      }
+    }
+  }, []);
+
+  return { user };
+};
+
+// ==========================================
+// 1. Types & Interfaces
 // ==========================================
 
 export type DiaryStep = 'upload' | 'generating' | 'edit' | 'complete';
@@ -25,80 +66,86 @@ export interface SelectedImage {
   source: ImageType;
 }
 
-export interface DiaryRequest {
-  userId: number;
-  petId: number;
-  content: string;
-  visibility: string;
-  isAiGen: boolean;
-  weather: string | null;
-  mood: string | null;
-  images: {
-    imageUrl: string;
-    imgOrder: number;
-    mainImage: boolean;
-    source: ImageType;
-  }[];
-}
-
 export interface CreateDiaryResponse {
   diaryId: number;
   message: string;
 }
 
 // ==========================================
-// 2. Services (통합)
+// 2. Services
 // ==========================================
 
-const uploadImagesToS3 = async (files: File[]): Promise<SelectedImage[]> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const newImages = files.map(file => ({
-        imageUrl: URL.createObjectURL(file),
-        source: ImageType.GALLERY
-      }));
-      resolve(newImages);
-    }, 1000);
-  });
-};
+const BASE_URL = 'http://localhost:8000/api/diaries';
 
-const generateAiDiaryContent = async (): Promise<string> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve("오늘 초코는 공원에서 정말 행복한 시간을 보냈어요. 새로운 친구들을 만나고 신나게 뛰어놀았답니다. 햇살이 따스했고, 초코의 웃는 얼굴을 보니 저도 덩달아 행복해졌어요. 이렇게 맑은 날씨에 함께할 수 있어서 감사한 하루였습니다.");
-    }, 1500);
-  });
-};
-
-const createAiDiary = async (data: DiaryRequest): Promise<CreateDiaryResponse> => {
+const getAuthHeaders = (isMultipart = false) => {
   const token = localStorage.getItem('petlog_token');
+  const headers: HeadersInit = {
+    'Authorization': token ? `Bearer ${token}` : ''
+  };
+  if (!isMultipart) {
+    headers['Content-Type'] = 'application/json';
+  }
+  return headers;
+};
 
-  const response = await fetch('http://localhost:8000/api/diaries', {
+export const createAiDiary = async (formData: FormData): Promise<CreateDiaryResponse> => {
+  // 백엔드 엔드포인트 확인 (/api/diaries/ai)
+  const response = await fetch(`${BASE_URL}/ai`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : ''
-    },
-    body: JSON.stringify(data)
+    headers: getAuthHeaders(true),
+    body: formData
   });
+
+  if (response.status === 401) {
+    throw new Error('인증 토큰이 만료되었습니다. 다시 로그인해주세요.');
+  }
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || '일기 생성 실패');
+    throw new Error(errorData.message || 'AI 일기 생성 실패');
   }
-
   return await response.json();
 };
 
+export const getDiary = async (diaryId: number): Promise<any> => {
+  const response = await fetch(`${BASE_URL}/${diaryId}`, {
+    method: 'GET',
+    headers: getAuthHeaders()
+  });
+
+  if (!response.ok) throw new Error('일기 조회 실패');
+  return await response.json();
+};
+
+export const updateDiary = async (diaryId: number, data: any): Promise<void> => {
+  const response = await fetch(`${BASE_URL}/${diaryId}`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+
+  if (!response.ok) throw new Error('일기 저장 실패');
+};
+
+export const uploadImagesToS3 = async (files: File[]): Promise<SelectedImage[]> => {
+  return new Promise<SelectedImage[]>((resolve) => {
+    const newImages = files.map(file => ({
+      imageUrl: URL.createObjectURL(file),
+      source: ImageType.GALLERY
+    }));
+    setTimeout(() => resolve(newImages), 500);
+  });
+};
+
 // ==========================================
-// 3. Components (통합)
+// 3. Sub-Components
 // ==========================================
 
 const Icon: React.FC<{ className?: string, children: React.ReactNode }> = ({ children, className }) => (
   <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>
 );
 
-// 3-1. UploadStep
+// --- UploadStep ---
 interface UploadStepProps {
   selectedImages: SelectedImage[];
   isSubmitting: boolean;
@@ -217,7 +264,7 @@ const UploadStep: React.FC<UploadStepProps> = ({
   );
 };
 
-// 3-2. GeneratingStep
+// --- GeneratingStep ---
 const GeneratingStep: React.FC<{ progress: number }> = ({ progress }) => (
   <div className="flex flex-col items-center justify-center py-20 space-y-8 animate-fade-in">
     <div className="relative w-32 h-32">
@@ -234,7 +281,7 @@ const GeneratingStep: React.FC<{ progress: number }> = ({ progress }) => (
   </div>
 );
 
-// 3-3. EditStep
+// --- EditStep ---
 interface EditStepProps {
   selectedImages: SelectedImage[];
   editedDiary: string;
@@ -379,7 +426,7 @@ const EditStep: React.FC<EditStepProps> = ({
   );
 };
 
-// 3-4. CompleteStep
+// --- CompleteStep ---
 const CompleteStep: React.FC = () => (
   <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in-up">
     <div className="bg-green-100 p-6 rounded-full mb-6 animate-bounce-short">
@@ -401,7 +448,7 @@ const CompleteStep: React.FC = () => (
   </div>
 );
 
-// 3-5. GalleryModal
+// --- GalleryModal ---
 interface GalleryModalProps {
   showGallery: boolean;
   setShowGallery: (show: boolean) => void;
@@ -468,21 +515,30 @@ const GalleryModal: React.FC<GalleryModalProps> = ({
   );
 };
 
+
 // ==========================================
 // 4. Main Page: AiDiaryPage
 // ==========================================
 
 export default function AiDiaryPage() {
   const navigate = useNavigate();
-  const { user } = useAuth(); // AuthContext 사용
+  // [수정] 위에서 정의한 JWT 파싱 로직의 useAuth 사용
+  const { user } = useAuth();
 
+  // --- States ---
   const [step, setStep] = useState<DiaryStep>("upload");
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+
+  // 생성된 다이어리 ID (저장/공유 단계에서 사용)
+  const [createdDiaryId, setCreatedDiaryId] = useState<number | null>(null);
+
   const [showGallery, setShowGallery] = useState(false);
   const [editedDiary, setEditedDiary] = useState("");
   const [progress, setProgress] = useState(0);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
 
+  // Style States
   const [layoutStyle, setLayoutStyle] = useState<LayoutStyle>("grid");
   const [textAlign, setTextAlign] = useState<TextAlign>("left");
   const [fontSize, setFontSize] = useState(16);
@@ -492,29 +548,33 @@ export default function AiDiaryPage() {
 
   // --- Handlers ---
 
+  // 1. 이미지 선택 (로컬)
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []) as File[];
     if (files.length === 0) return;
 
     if (selectedImages.length + files.length > 10) {
-      alert("더 이상 업로드할 수 없습니다 (최대 10장).");
+      alert("최대 10장까지 업로드 가능합니다.");
       return;
     }
 
     setIsSubmitting(true);
-    e.target.value = '';
+    // [중요] 원본 파일 저장
+    setImageFiles(prev => [...prev, ...files]);
 
     try {
       const newImages = await uploadImagesToS3(files);
       setSelectedImages(prev => [...prev, ...newImages]);
     } catch (error) {
-      console.error("이미지 업로드 실패:", error);
+      console.error("이미지 처리 실패:", error);
       alert("이미지 처리 중 오류가 발생했습니다.");
     } finally {
       setIsSubmitting(false);
+      e.target.value = ''; // Input 초기화
     }
   };
 
+  // 2. 보관함에서 선택 (ARCHIVE)
   const handleSelectFromGallery = (imageUrl: string) => {
     const isSelected = selectedImages.some(img => img.imageUrl === imageUrl);
     if (isSelected) {
@@ -524,94 +584,104 @@ export default function AiDiaryPage() {
     }
   };
 
-  const handleGenerate = () => {
-    if (selectedImages.length === 0) {
-      alert("사진을 1장 이상 선택해주세요.");
+  // 3. [핵심] AI 다이어리 생성 (POST /api/diaries/ai)
+  const handleGenerate = async () => {
+    if (imageFiles.length === 0) {
+      alert("AI 일기를 생성하려면 최소 1장의 로컬 사진이 필요합니다.");
       return;
     }
+    if (!user) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
     setStep("generating");
 
+    // 진행률 애니메이션
     let currentProgress = 0;
     const interval = setInterval(() => {
-      currentProgress += 10;
-      setProgress(currentProgress);
-
-      if (currentProgress >= 100) {
-        clearInterval(interval);
-        generateAiDiaryContent().then(diary => {
-          setEditedDiary(diary);
-          setTimeout(() => setStep("edit"), 500);
-        }).catch(error => {
-          console.error(error);
-          alert("AI 생성 실패");
-          setStep("upload");
-        });
-      }
+      currentProgress += 5;
+      if (currentProgress < 90) setProgress(currentProgress);
     }, 200);
+
+    try {
+      // [수정] 토큰에서 추출한 실제 userId 사용
+      const userId = Number(user.id);
+
+      // 펫 ID 추출 (없으면 1로 Fallback - 주의: 사용자가 펫을 선택하게 하는 UI가 있다면 그 값을 써야 함)
+      let petId = 1;
+      if (user.pets && user.pets.length > 0) {
+        // @ts-ignore
+        petId = Number(user.pets[0].id || user.pets[0].petId);
+        if (isNaN(petId) || petId === 0) petId = 1;
+      }
+
+      // [FormData 생성]
+      const formData = new FormData();
+      formData.append("image", imageFiles[0]);
+
+      // 데이터 키 "data" (백엔드 @RequestPart("data")와 일치)
+      const requestData = {
+        userId,
+        petId,
+        content: "",
+        visibility: "PRIVATE",
+        isAiGen: true,
+        weather: "맑음",
+        mood: "행복"
+      };
+
+      formData.append("data", new Blob([JSON.stringify(requestData)], {
+        type: "application/json"
+      }));
+
+      console.log(`Sending AI Diary Request for User: ${userId}, Pet: ${petId}`);
+
+      // [API 호출] 생성
+      const response = await createAiDiary(formData);
+      const diaryId = response.diaryId;
+      setCreatedDiaryId(diaryId);
+
+      // [API 호출] 생성된 내용 조회
+      const diaryDetail = await getDiary(diaryId);
+
+      clearInterval(interval);
+      setProgress(100);
+
+      // 편집 화면으로 이동
+      setEditedDiary(diaryDetail.content || "AI가 내용을 생성하지 못했습니다.");
+      setTimeout(() => setStep("edit"), 500);
+
+    } catch (error: any) {
+      clearInterval(interval);
+      console.error("생성 실패:", error);
+      alert(`일기 생성 실패: ${error.message}`);
+      setStep("upload");
+    }
   };
 
+  // 4. [핵심] 최종 저장 및 공유 (PATCH /api/diaries/{id})
   const handleShareToFeed = async () => {
-    if (isSubmitting) return;
-
-    if (!user) {
-      alert("로그인이 필요한 서비스입니다.");
-      return;
-    }
-
+    if (!createdDiaryId) return;
     setIsSubmitting(true);
 
     try {
-      const userId = Number(user.id);
+      // 사용자가 편집한 내용 업데이트
+      await updateDiary(createdDiaryId, {
+        content: editedDiary,
+        visibility: "PUBLIC"
+      });
 
-      // [핵심 수정] petId 추출 로직 강화
-      let petId: number;
-
-      if (user.pets && Array.isArray(user.pets) && user.pets.length > 0) {
-        const firstPet = user.pets[0];
-        petId = Number(firstPet.id);
-        if (isNaN(petId)) {
-          // @ts-ignore
-          petId = Number(firstPet.petId);
-        }
-      } else {
-        console.warn("등록된 펫이 없어 기본 ID(1)를 사용합니다.");
-        petId = 1;
-      }
-
-      if (isNaN(petId) || petId <= 0) {
-        throw new Error("유효한 반려동물 ID를 찾을 수 없습니다.");
-      }
-
-      const diaryRequest: DiaryRequest = {
-        userId,
-        petId,
-        content: editedDiary || "내용 없음",
-        visibility: "PUBLIC",
-        isAiGen: true,
-        weather: "맑음",
-        mood: "행복",
-        images: selectedImages.map((img, index) => ({
-          imageUrl: img.imageUrl,
-          imgOrder: index + 1,
-          mainImage: index === 0,
-          source: img.source
-        }))
-      };
-
-      console.log("Sending Diary Request:", diaryRequest);
-
-      const result = await createAiDiary(diaryRequest);
-      console.log(`Created Diary ID: ${result.diaryId}`);
       setStep("complete");
-
     } catch (error: any) {
-      console.error("일기 저장 실패:", error);
-      alert(`일기 저장 실패: ${error.message}`);
+      console.error("저장 실패:", error);
+      alert(`저장 실패: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // 5. 완료 후 이동
   useEffect(() => {
     if (step === 'complete') {
       const timer = setTimeout(() => {
@@ -657,14 +727,10 @@ export default function AiDiaryPage() {
             selectedImages={selectedImages}
             editedDiary={editedDiary}
             setEditedDiary={setEditedDiary}
-            layoutStyle={layoutStyle}
-            setLayoutStyle={setLayoutStyle}
-            textAlign={textAlign}
-            setTextAlign={setTextAlign}
-            fontSize={fontSize}
-            setFontSize={setFontSize}
-            backgroundColor={backgroundColor}
-            setBackgroundColor={setBackgroundColor}
+            layoutStyle={layoutStyle} setLayoutStyle={setLayoutStyle}
+            textAlign={textAlign} setTextAlign={setTextAlign}
+            fontSize={fontSize} setFontSize={setFontSize}
+            backgroundColor={backgroundColor} setBackgroundColor={setBackgroundColor}
             handleShareToFeed={handleShareToFeed}
             isSubmitting={isSubmitting}
           />
