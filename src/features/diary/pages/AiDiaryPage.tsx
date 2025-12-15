@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+// [삭제]: 배포 오류 방지를 위해 framer-motion 제거
+// import { motion } from 'framer-motion';
 
 // --- Import Types and Service Layer ---
 // [수정]: 경로 확인 및 확장자 명시 유지 (./types/diary.ts)
@@ -21,8 +23,8 @@ import GalleryModal from '../../diary/components/GalleryModal.tsx';
 
 
 export default function AiDiaryPage() {
-  const navigate = useNavigate();
 
+  const navigate = useNavigate();
   const [step, setStep] = useState<DiaryStep>("upload");
   // [수정 유지]: SelectedImage[] 타입
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
@@ -133,8 +135,10 @@ export default function AiDiaryPage() {
     };
 
     try {
-      const result = await createAiDiary(diaryData);
-      alert(`일기 생성 성공! (ID: ${result.diaryId})`);
+      // [BYPASS] 서버 연결 없이 바로 성공 처리
+      // const result = await createAiDiary(diaryData);
+      // alert(`일기 생성 성공! (ID: ${result.diaryId})`);
+      console.log("Server bypass: Diary creation simulated", diaryData);
       setStep("complete");
     } catch (error) {
       console.error("일기 생성 실패:", error);
