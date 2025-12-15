@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosRequestConfig } from 'axios';
 
 // 환경변수에서 API URL 가져오기 (없으면 로컬 기본값)
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const baseURL = import.meta.env.VITE_API_URL || '/api';
 
 // 토큰을 가져오는 함수 (외부에서 주입 가능하도록) - frontsample 패턴
 let getTokenFunction: (() => string | null) | null = null;
