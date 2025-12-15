@@ -32,6 +32,13 @@ export const createAiDiary = async (diaryData: DiaryRequest): Promise<CreateDiar
     // 1. 로컬 스토리지에서 토큰 직접 가져오기
     const token = localStorage.getItem('petlog_token');
 
+    // [수정] 펫 ID 문제 해결을 위해 강제로 Mock ID(1) 사용
+    // 실제 petId가 무엇이든 1로 덮어씌워 전송합니다.
+    const payload = {
+        ...diaryData,
+        petId: 1
+    };
+
     // 2. fetch로 요청 보내기 (헤더에 토큰 수동 추가)
     const response = await fetch('http://localhost:8000/api/diaries', {
         method: 'POST',
@@ -40,7 +47,7 @@ export const createAiDiary = async (diaryData: DiaryRequest): Promise<CreateDiar
             // 토큰이 있을 때만 Authorization 헤더 추가
             ...(token && { 'Authorization': `Bearer ${token}` }),
         },
-        body: JSON.stringify(diaryData),
+        body: JSON.stringify(payload),
     });
 
     // 3. 에러 처리

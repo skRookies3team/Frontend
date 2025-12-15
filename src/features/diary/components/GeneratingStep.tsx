@@ -1,6 +1,10 @@
 import React from 'react';
 
-const GeneratingStep: React.FC<{ progress: number }> = ({ progress }) => (
+interface GeneratingStepProps {
+  progress: number;
+}
+
+const GeneratingStep: React.FC<GeneratingStepProps> = ({ progress }) => (
   <div className="flex flex-col items-center justify-center py-20 space-y-8 animate-fade-in">
     <div className="relative w-32 h-32">
       <div className="absolute inset-0 border-4 border-pink-100 rounded-full"></div>

@@ -24,39 +24,44 @@ const EditStep: React.FC<EditStepProps> = ({
   fontSize, setFontSize, backgroundColor, setBackgroundColor,
   handleShareToFeed, isSubmitting
 }) => {
+  const backgroundColors = ["#ffffff", "#fff5f5", "#fef2f2", "#fdf4ff", "#f0f9ff"];
+
   return (
     <div className="flex flex-col lg:flex-row gap-8 items-start">
-      {/* Preview Area */}
       <div className="w-full lg:flex-1 bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 sticky top-24"
-           style={{ backgroundColor }}>
+        style={{ backgroundColor }}>
         <div className={`p-8 ${textAlign === 'center' ? 'text-center' : textAlign === 'right' ? 'text-right' : 'text-left'}`}>
           <div className="flex items-center gap-2 text-gray-400 mb-6 text-sm font-medium">
             <Calendar className="w-4 h-4" />
             {new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
           </div>
           
-          {/* Images Layout */}
           <div className={`mb-8 gap-2 ${
             layoutStyle === 'grid' ? 'grid grid-cols-2' : 
             layoutStyle === 'masonry' ? 'columns-2 space-y-2' : 
+            layoutStyle === 'slide' ? 'flex overflow-x-auto pb-2 snap-x' : 
             'flex flex-col space-y-4'
           }`}>
             {selectedImages.map((img, idx) => (
-              <img key={idx} src={img.imageUrl} alt="diary" className="w-full rounded-lg object-cover shadow-sm hover:shadow-md transition-shadow" />
+              <img 
+                key={idx} 
+                src={img.imageUrl} 
+                alt="diary" 
+                className={`rounded-lg object-cover shadow-sm w-full ${layoutStyle === 'slide' ? 'min-w-[80%] snap-center' : ''}`} 
+              />
             ))}
           </div>
 
           <textarea
             value={editedDiary}
             onChange={(e) => setEditedDiary(e.target.value)}
-            className="w-full bg-transparent border-none focus:ring-0 resize-none leading-relaxed text-gray-700 placeholder-gray-300 outline-none"
+            className="w-full bg-transparent border-none focus:ring-0 resize-none leading-relaxed text-gray-700 placeholder-gray-300 outline-none p-0"
             style={{ fontSize: `${fontSize}px`, minHeight: '200px' }}
             spellCheck={false}
           />
         </div>
       </div>
 
-      {/* Controls Area */}
       <div className="w-full lg:w-80 space-y-6">
         <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 space-y-6">
           <h3 className="font-bold text-gray-800 flex items-center gap-2">
@@ -66,7 +71,7 @@ const EditStep: React.FC<EditStepProps> = ({
           <div className="space-y-3">
             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">레이아웃</label>
             <div className="grid grid-cols-4 gap-2">
-              {['grid', 'masonry', 'slider', 'classic'].map((style) => (
+              {['grid', 'masonry', 'slide', 'classic'].map((style) => (
                 <button
                   key={style}
                   onClick={() => setLayoutStyle(style as LayoutStyle)}
@@ -85,19 +90,15 @@ const EditStep: React.FC<EditStepProps> = ({
           <div className="space-y-3">
             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">정렬</label>
             <div className="flex bg-gray-50 rounded-lg p-1">
-              {[
-                { val: 'left', icon: '⫷' },
-                { val: 'center', icon: '≣' },
-                { val: 'right', icon: '⫸' }
-              ].map(({ val, icon }) => (
+              {['left', 'center', 'right'].map((align) => (
                 <button
-                  key={val}
-                  onClick={() => setTextAlign(val as TextAlign)}
+                  key={align}
+                  onClick={() => setTextAlign(align as TextAlign)}
                   className={`flex-1 py-1.5 rounded-md text-sm transition-all ${
-                    textAlign === val ? 'bg-white shadow text-gray-800' : 'text-gray-400 hover:text-gray-600'
+                    textAlign === align ? 'bg-white shadow text-gray-800' : 'text-gray-400 hover:text-gray-600'
                   }`}
                 >
-                  {icon}
+                  {align === 'left' ? 'L' : align === 'center' ? 'C' : 'R'}
                 </button>
               ))}
             </div>
@@ -114,6 +115,20 @@ const EditStep: React.FC<EditStepProps> = ({
               onChange={(e) => setFontSize(Number(e.target.value))}
               className="w-full accent-pink-500 h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer"
             />
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">배경 색상</label>
+            <div className="grid grid-cols-5 gap-2">
+              {backgroundColors.map((color) => (
+                <button
+                  key={color}
+                  onClick={() => setBackgroundColor(color)}
+                  className={`h-8 rounded-full border transition-all ${backgroundColor === color ? "border-pink-500 scale-110 ring-1 ring-pink-500" : "border-gray-200"}`}
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
