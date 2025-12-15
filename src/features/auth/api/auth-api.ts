@@ -2,13 +2,12 @@ import httpClient from '@/shared/api/http-client';
 
 // 로그인 응답 타입
 interface LoginResponse {
-    accessToken: string;
-    user: {
-        id: string;
-        name: string;
-        email: string;
-        avatar?: string;
-    };
+    token: string;
+    userId: number;
+    role: string;
+    email: string;
+    username: string; // 사용자 이름 (Name)
+    social: string;   // 소셜 ID/핸들 (Username)
 }
 
 // 회원가입 응답 타입
@@ -22,7 +21,8 @@ interface SignupResponse {
 
 // 로그인 (토큰 불필요 - 공개 API)
 export const loginApi = async (email: string, password: string): Promise<LoginResponse> => {
-    const response = await httpClient.post<LoginResponse>('/auth/login', {
+    // URL 하드코딩 (8000 포트)
+    const response = await httpClient.post<LoginResponse>('http://localhost:8000/api/users/login', {
         email,
         password
     }, { skipAuth: true });
