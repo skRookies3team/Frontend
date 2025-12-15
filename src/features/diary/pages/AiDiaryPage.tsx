@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Camera, Upload, Edit3, Check, Share2, Calendar, 
-  Image as ImageIcon, X, ChevronLeft, Loader2, 
-  Save, Trash2, BookOpen 
+import {
+  Camera, Upload, Edit3, Check, Share2, Calendar,
+  Image as ImageIcon, X, ChevronLeft, Loader2,
+  Save, Trash2, BookOpen
 } from 'lucide-react';
+import { useAuth } from '@/features/auth/context/auth-context';
 
 // ==========================================
-// 1. Types & Interfaces
+// 1. Types & Interfaces (통합)
 // ==========================================
 
 export type DiaryStep = 'upload' | 'generating' | 'edit' | 'complete';
@@ -24,7 +25,6 @@ export interface SelectedImage {
   source: ImageType;
 }
 
-// 백엔드 요청 DTO
 export interface DiaryRequest {
   userId: number;
   petId: number;
@@ -41,30 +41,27 @@ export interface DiaryRequest {
   }[];
 }
 
-// 백엔드 응답 DTO
 export interface CreateDiaryResponse {
   diaryId: number;
   message: string;
 }
 
 // ==========================================
-// 2. Services (내장 구현)
+// 2. Services (통합)
 // ==========================================
 
-// [Service] S3 업로드 시뮬레이션
 const uploadImagesToS3 = async (files: File[]): Promise<SelectedImage[]> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       const newImages = files.map(file => ({
-        imageUrl: URL.createObjectURL(file), // 실제 구현 시엔 서버 응답 URL 사용
-        source: ImageType.GALLERY 
+        imageUrl: URL.createObjectURL(file),
+        source: ImageType.GALLERY
       }));
       resolve(newImages);
     }, 1000);
   });
 };
 
-// [Service] AI 일기 생성 시뮬레이션
 const generateAiDiaryContent = async (): Promise<string> => {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -73,17 +70,9 @@ const generateAiDiaryContent = async (): Promise<string> => {
   });
 };
 
-// [Service] 다이어리 생성 (실제 API 호출)
 const createAiDiary = async (data: DiaryRequest): Promise<CreateDiaryResponse> => {
   const token = localStorage.getItem('petlog_token');
 
-  // [추가] 토큰이 없으면 명시적으로 에러 발생
-  if (!token) {
-    alert("인증 토큰이 없습니다. 로그인 페이지에서 먼저 로그인을 해주세요.");
-    throw new Error("No Access Token");
-  }
-  
-  // fetch를 사용하여 직접 호출 (의존성 제거)
   const response = await fetch('http://localhost:8000/api/diaries', {
     method: 'POST',
     headers: {
@@ -102,7 +91,7 @@ const createAiDiary = async (data: DiaryRequest): Promise<CreateDiaryResponse> =
 };
 
 // ==========================================
-// 3. Components
+// 3. Components (통합)
 // ==========================================
 
 const Icon: React.FC<{ className?: string, children: React.ReactNode }> = ({ children, className }) => (
@@ -273,25 +262,24 @@ const EditStep: React.FC<EditStepProps> = ({
   return (
     <div className="flex flex-col lg:flex-row gap-8 items-start">
       <div className="w-full lg:flex-1 bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 sticky top-24"
-           style={{ backgroundColor }}>
+        style={{ backgroundColor }}>
         <div className={`p-8 ${textAlign === 'center' ? 'text-center' : textAlign === 'right' ? 'text-right' : 'text-left'}`}>
           <div className="flex items-center gap-2 text-gray-400 mb-6 text-sm font-medium">
             <Calendar className="w-4 h-4" />
             {new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
           </div>
-          
-          <div className={`mb-8 gap-2 ${
-            layoutStyle === 'grid' ? 'grid grid-cols-2' : 
-            layoutStyle === 'masonry' ? 'columns-2 space-y-2' : 
-            layoutStyle === 'slide' ? 'flex overflow-x-auto pb-2 snap-x' : 
-            'flex flex-col space-y-4'
-          }`}>
+
+          <div className={`mb-8 gap-2 ${layoutStyle === 'grid' ? 'grid grid-cols-2' :
+            layoutStyle === 'masonry' ? 'columns-2 space-y-2' :
+              layoutStyle === 'slide' ? 'flex overflow-x-auto pb-2 snap-x' :
+                'flex flex-col space-y-4'
+            }`}>
             {selectedImages.map((img, idx) => (
-              <img 
-                key={idx} 
-                src={img.imageUrl} 
-                alt="diary" 
-                className={`rounded-lg object-cover shadow-sm w-full ${layoutStyle === 'slide' ? 'min-w-[80%] snap-center' : ''}`} 
+              <img
+                key={idx}
+                src={img.imageUrl}
+                alt="diary"
+                className={`rounded-lg object-cover shadow-sm w-full ${layoutStyle === 'slide' ? 'min-w-[80%] snap-center' : ''}`}
               />
             ))}
           </div>
@@ -311,7 +299,7 @@ const EditStep: React.FC<EditStepProps> = ({
           <h3 className="font-bold text-gray-800 flex items-center gap-2">
             <Edit3 className="w-4 h-4 text-pink-500" /> 스타일 편집
           </h3>
-          
+
           <div className="space-y-3">
             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">레이아웃</label>
             <div className="grid grid-cols-4 gap-2">
@@ -319,11 +307,10 @@ const EditStep: React.FC<EditStepProps> = ({
                 <button
                   key={style}
                   onClick={() => setLayoutStyle(style as LayoutStyle)}
-                  className={`p-2 rounded-lg text-xs font-medium transition-all ${
-                    layoutStyle === style 
-                      ? 'bg-pink-50 text-pink-600 border border-pink-200 shadow-sm' 
-                      : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
-                  }`}
+                  className={`p-2 rounded-lg text-xs font-medium transition-all ${layoutStyle === style
+                    ? 'bg-pink-50 text-pink-600 border border-pink-200 shadow-sm'
+                    : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                    }`}
                 >
                   {style}
                 </button>
@@ -338,9 +325,8 @@ const EditStep: React.FC<EditStepProps> = ({
                 <button
                   key={align}
                   onClick={() => setTextAlign(align as TextAlign)}
-                  className={`flex-1 py-1.5 rounded-md text-sm transition-all ${
-                    textAlign === align ? 'bg-white shadow text-gray-800' : 'text-gray-400 hover:text-gray-600'
-                  }`}
+                  className={`flex-1 py-1.5 rounded-md text-sm transition-all ${textAlign === align ? 'bg-white shadow text-gray-800' : 'text-gray-400 hover:text-gray-600'
+                    }`}
                 >
                   {align === 'left' ? 'L' : align === 'center' ? 'C' : 'R'}
                 </button>
@@ -353,9 +339,9 @@ const EditStep: React.FC<EditStepProps> = ({
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">글자 크기</label>
               <span className="text-xs font-medium text-pink-500">{fontSize}px</span>
             </div>
-            <input 
-              type="range" min="12" max="24" step="1" 
-              value={fontSize} 
+            <input
+              type="range" min="12" max="24" step="1"
+              value={fontSize}
               onChange={(e) => setFontSize(Number(e.target.value))}
               className="w-full accent-pink-500 h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer"
             />
@@ -401,7 +387,7 @@ const CompleteStep: React.FC = () => (
     </div>
     <h2 className="text-3xl font-bold text-gray-800 mb-4">일기 작성이 완료되었어요!</h2>
     <p className="text-gray-500 mb-8 max-w-md">
-      소중한 추억이 안전하게 저장되었습니다.<br/>
+      소중한 추억이 안전하게 저장되었습니다.<br />
       이제 피드에서 친구들과 공유해보세요.
     </p>
     <div className="flex gap-4">
@@ -423,12 +409,12 @@ interface GalleryModalProps {
   handleSelectFromGallery: (url: string) => void;
 }
 
-const GalleryModal: React.FC<GalleryModalProps> = ({ 
-  showGallery, setShowGallery, selectedImages, handleSelectFromGallery 
+const GalleryModal: React.FC<GalleryModalProps> = ({
+  showGallery, setShowGallery, selectedImages, handleSelectFromGallery
 }) => {
   if (!showGallery) return null;
 
-  const archiveImages = Array.from({ length: 8 }).map((_, i) => 
+  const archiveImages = Array.from({ length: 8 }).map((_, i) =>
     `https://picsum.photos/seed/${i + 100}/200/200`
   );
 
@@ -443,18 +429,17 @@ const GalleryModal: React.FC<GalleryModalProps> = ({
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto p-6">
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
             {archiveImages.map((img, idx) => {
               const isSelected = selectedImages.some(si => si.imageUrl === img);
               return (
-                <div 
-                  key={idx} 
+                <div
+                  key={idx}
                   onClick={() => handleSelectFromGallery(img)}
-                  className={`aspect-square rounded-xl overflow-hidden cursor-pointer relative group transition-all duration-200 ${
-                    isSelected ? 'ring-4 ring-pink-500 ring-offset-2' : 'hover:opacity-90'
-                  }`}
+                  className={`aspect-square rounded-xl overflow-hidden cursor-pointer relative group transition-all duration-200 ${isSelected ? 'ring-4 ring-pink-500 ring-offset-2' : 'hover:opacity-90'
+                    }`}
                 >
                   <img src={img} alt="archive" className="w-full h-full object-cover" />
                   {isSelected && (
@@ -471,7 +456,7 @@ const GalleryModal: React.FC<GalleryModalProps> = ({
         </div>
 
         <div className="p-6 border-t border-gray-100 flex justify-end">
-          <button 
+          <button
             onClick={() => setShowGallery(false)}
             className="px-6 py-2.5 bg-gray-800 hover:bg-gray-900 text-white rounded-xl font-medium transition-colors"
           >
@@ -489,20 +474,7 @@ const GalleryModal: React.FC<GalleryModalProps> = ({
 
 export default function AiDiaryPage() {
   const navigate = useNavigate();
-  
-  // [Auth Integration] 로컬 스토리지에서 유저 정보 직접 파싱 (의존성 문제 해결)
-  const [user, setUser] = useState<any>(null);
-  
-  useEffect(() => {
-    const storedUser = localStorage.getItem('petlog_user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error("User parsing failed", e);
-      }
-    }
-  }, []);
+  const { user } = useAuth(); // AuthContext 사용
 
   const [step, setStep] = useState<DiaryStep>("upload");
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
@@ -510,12 +482,12 @@ export default function AiDiaryPage() {
   const [editedDiary, setEditedDiary] = useState("");
   const [progress, setProgress] = useState(0);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
-  
+
   const [layoutStyle, setLayoutStyle] = useState<LayoutStyle>("grid");
   const [textAlign, setTextAlign] = useState<TextAlign>("left");
   const [fontSize, setFontSize] = useState(16);
   const [backgroundColor, setBackgroundColor] = useState("#ffffff");
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // --- Handlers ---
@@ -525,8 +497,8 @@ export default function AiDiaryPage() {
     if (files.length === 0) return;
 
     if (selectedImages.length + files.length > 10) {
-        alert("최대 10장까지만 업로드 가능합니다.");
-        return;
+      alert("더 이상 업로드할 수 없습니다 (최대 10장).");
+      return;
     }
 
     setIsSubmitting(true);
@@ -590,9 +562,25 @@ export default function AiDiaryPage() {
 
     try {
       const userId = Number(user.id);
-      const petId = (user.pets && Array.isArray(user.pets) && user.pets.length > 0) 
-        ? Number(user.pets[0].id) 
-        : 1;
+
+      // [핵심 수정] petId 추출 로직 강화
+      let petId: number;
+
+      if (user.pets && Array.isArray(user.pets) && user.pets.length > 0) {
+        const firstPet = user.pets[0];
+        petId = Number(firstPet.id);
+        if (isNaN(petId)) {
+          // @ts-ignore
+          petId = Number(firstPet.petId);
+        }
+      } else {
+        console.warn("등록된 펫이 없어 기본 ID(1)를 사용합니다.");
+        petId = 1;
+      }
+
+      if (isNaN(petId) || petId <= 0) {
+        throw new Error("유효한 반려동물 ID를 찾을 수 없습니다.");
+      }
 
       const diaryRequest: DiaryRequest = {
         userId,
@@ -609,6 +597,8 @@ export default function AiDiaryPage() {
           source: img.source
         }))
       };
+
+      console.log("Sending Diary Request:", diaryRequest);
 
       const result = await createAiDiary(diaryRequest);
       console.log(`Created Diary ID: ${result.diaryId}`);

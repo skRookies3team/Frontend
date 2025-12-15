@@ -1,88 +1,127 @@
 import React from 'react';
-import { Camera, Upload, Trash2, X, Image as ImageIcon } from 'lucide-react';
+import { Camera, Upload, Trash2, X, Image as ImageIcon, Edit } from 'lucide-react';
 import { SelectedImage, ImageType } from '../types/diary';
 
 interface UploadStepProps {
-  selectedImages: SelectedImage[];
-  isSubmitting: boolean;
-  handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleGenerate: () => void;
-  setSelectedImages: React.Dispatch<React.SetStateAction<SelectedImage[]>>;
-  setShowGallery: (show: boolean) => void;
+    selectedImages: SelectedImage[];
+    isSubmitting: boolean;
+    handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    handleGenerate: () => void;
+    setSelectedImages: React.Dispatch<React.SetStateAction<SelectedImage[]>>;
+    setShowGallery: (show: boolean) => void;
 }
 
-const Icon: React.FC<{ className?: string, children: React.ReactNode }> = ({ children, className }) => <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>;
+const Icon: React.FC<{ className?: string, children: React.ReactNode }> = ({ children, className }) => (
+    <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>
+);
 
 const UploadStep: React.FC<UploadStepProps> = ({
-  selectedImages, isSubmitting, handleImageUpload, handleGenerate, setSelectedImages, setShowGallery
+    selectedImages, isSubmitting, handleImageUpload, handleGenerate, setSelectedImages, setShowGallery
 }) => {
-  return (
-    <div className="flex flex-col items-center justify-center space-y-8 py-10">
-      <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-lg text-center">
-        <div className="mb-6 flex justify-center">
-          <div className="bg-pink-100 p-4 rounded-full">
-            <Camera className="w-10 h-10 text-pink-500" />
-          </div>
-        </div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">오늘의 추억을 선택해주세요</h2>
-        <p className="text-gray-500 mb-8">사진을 분석하여 AI가 특별한 일기를 써드려요.</p>
-        
-        <div className="space-y-4">
-          <label className="block w-full cursor-pointer">
-            <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} disabled={isSubmitting} />
-            <div className="w-full bg-pink-500 hover:bg-pink-600 text-white font-medium py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform active:scale-95">
-              <Upload className="w-5 h-5" />
-              <span>사진 업로드하기</span>
+    return (
+        <div className="space-y-6">
+            <div className="text-center">
+                <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shadow-xl md:h-24 md:w-24">
+                    <Icon className="h-10 w-10 text-white md:h-12 md:w-12"><Camera className="w-full h-full" /></Icon>
+                </div>
+                <h2 className="text-2xl font-bold text-pink-600 md:text-3xl">AI 다이어리 작성하기</h2>
+                <p className="mt-2 text-slate-500 md:text-lg">
+                    반려동물의 하루를 담은 사진 1-10장을 업로드하면 AI가 아름다운 일기를 작성해드려요
+                </p>
             </div>
-          </label>
-          
-          <button 
-            onClick={() => setShowGallery(true)}
-            className="w-full bg-white border-2 border-pink-200 text-pink-500 hover:bg-pink-50 font-medium py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
-          >
-            <ImageIcon className="w-5 h-5" />
-            <span>보관함에서 선택</span>
-          </button>
-        </div>
-      </div>
 
-      {selectedImages.length > 0 && (
-        <div className="w-full max-w-3xl">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-gray-800">선택된 사진 ({selectedImages.length})</h3>
-            <button onClick={() => setSelectedImages([])} className="text-gray-400 hover:text-red-500 text-sm flex items-center gap-1">
-              <Trash2 className="w-4 h-4" /> 전체 삭제
-            </button>
-          </div>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-            {selectedImages.map((img, idx) => (
-              <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-gray-200 shadow-sm">
-                <img src={img.imageUrl} alt="selected" className="w-full h-full object-cover" />
-                <button 
-                  onClick={() => setSelectedImages(prev => prev.filter((_, i) => i !== idx))}
-                  className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-                {img.source === ImageType.ARCHIVE && (
-                  <span className="absolute bottom-1 right-1 bg-blue-500/80 text-[10px] text-white px-1.5 py-0.5 rounded-full">Archive</span>
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="mt-8 flex justify-center">
-            <button 
-              onClick={handleGenerate}
-              className="bg-gray-800 hover:bg-gray-900 text-white text-lg font-bold py-4 px-12 rounded-full shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 flex items-center gap-2"
-            >
-              <Icon className="w-5 h-5"><ImageIcon /></Icon>
-              AI 일기 생성하기
-            </button>
-          </div>
+            <div className="border border-pink-100 shadow-xl rounded-xl bg-white">
+                <div className="p-6 md:p-8">
+                    {selectedImages.length === 0 ? (
+                        <div className="space-y-4">
+                            <label className="flex w-full cursor-pointer flex-col items-center gap-6 rounded-3xl border-2 border-dashed border-pink-300 bg-gradient-to-br from-pink-50 to-rose-50 p-16 transition-all hover:border-pink-500 hover:from-white hover:to-pink-50 md:p-24">
+                                <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="hidden" disabled={isSubmitting} />
+                                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shadow-lg">
+                                    <Icon className="h-10 w-10 text-white"><Upload /></Icon>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-xl font-bold text-pink-600">{isSubmitting ? '업로드 중...' : '로컬 사진 선택 (Source: GALLERY)'}</p>
+                                    <p className="mt-2 text-slate-500">최대 10장까지 업로드 가능 • JPG, PNG</p>
+                                </div>
+                            </label>
+
+                            <button
+                                onClick={() => setShowGallery(true)}
+                                className="w-full border-2 border-pink-300 text-pink-600 hover:bg-pink-50 bg-transparent py-3 px-4 rounded-full font-bold transition flex items-center justify-center gap-2"
+                                disabled={isSubmitting}
+                            >
+                                <Icon className="w-5 h-5"><ImageIcon /></Icon>
+                                보관함에서 선택하기 (Source: ARCHIVE)
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+                            <div className="rounded-2xl bg-gradient-to-br from-pink-50 to-rose-50 p-4">
+                                <div className="mb-3 flex items-center justify-between">
+                                    <p className="font-semibold text-pink-600">선택된 사진 {selectedImages.length}/10</p>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => setShowGallery(true)}
+                                            className="border border-pink-200 text-pink-600 hover:bg-pink-50 bg-transparent py-2 px-3 text-sm rounded-lg font-medium flex items-center gap-1"
+                                        >
+                                            <Icon className="w-4 h-4"><ImageIcon /></Icon>
+                                            보관함
+                                        </button>
+                                        <label className="cursor-pointer">
+                                            <input
+                                                type="file"
+                                                multiple
+                                                accept="image/*"
+                                                onChange={handleImageUpload}
+                                                className="hidden"
+                                                disabled={isSubmitting || selectedImages.length >= 10}
+                                            />
+                                            <span className="border border-pink-200 text-pink-600 hover:bg-pink-50 bg-transparent py-2 px-3 text-sm rounded-lg font-medium flex items-center cursor-pointer h-full gap-1">
+                                                <Icon className="w-4 h-4"><Upload /></Icon>
+                                                추가
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-3 md:grid-cols-5">
+                                    {selectedImages.map((image, index) => (
+                                        <div
+                                            key={index}
+                                            className="group relative aspect-square overflow-hidden rounded-xl shadow-md transition-transform"
+                                        >
+                                            <img
+                                                src={image.imageUrl}
+                                                alt={`Upload ${index + 1}`}
+                                                className="h-full w-full object-cover transition-transform group-hover:scale-110"
+                                            />
+                                            <div className={`absolute bottom-0 left-0 px-2 py-1 text-xs font-bold text-white rounded-tr-lg ${image.source === ImageType.GALLERY ? 'bg-indigo-600' : 'bg-emerald-600'}`}>
+                                                {image.source}
+                                            </div>
+                                            <button
+                                                onClick={() => setSelectedImages(selectedImages.filter((_, i) => i !== index))}
+                                                className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white opacity-0 transition-opacity hover:bg-black group-hover:opacity-100"
+                                            >
+                                                <Icon className="h-4 w-4"><X /></Icon>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={handleGenerate}
+                                disabled={isSubmitting || selectedImages.length === 0}
+                                className="w-full rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-lg font-bold shadow-xl py-3 transition-all hover:scale-[1.01] hover:from-pink-600 hover:to-rose-600 md:text-xl text-white disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                <Icon className="h-6 w-6"><Edit /></Icon>
+                                AI 다이어리 생성하기
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default UploadStep;

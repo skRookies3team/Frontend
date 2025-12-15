@@ -14,7 +14,6 @@ const GalleryModal: React.FC<GalleryModalProps> = ({
 }) => {
   if (!showGallery) return null;
 
-  // Mock Archive Images
   const archiveImages = Array.from({ length: 8 }).map((_, i) => 
     `https://picsum.photos/seed/${i + 100}/200/200`
   );
