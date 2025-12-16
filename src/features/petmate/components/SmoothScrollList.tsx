@@ -10,52 +10,34 @@ interface SmoothScrollCardProps {
     onLike: (e: React.MouseEvent) => void
     onClick: () => void
     isActive: boolean
-    position: 'prev2' | 'prev' | 'current' | 'next' | 'next2' | 'hidden'
+    position: 'prev' | 'current' | 'next' | 'hidden'
 }
 
 export function SmoothScrollCard({ candidate, isLiked, onLike, onClick, isActive, position }: SmoothScrollCardProps) {
     const variants = {
-        prev2: {
-            y: -200,
-            scale: 0.75,
-            opacity: 0.4,
-            zIndex: 1,
-            filter: 'grayscale(80%)'
-        },
         prev: {
             y: -100,
-            scale: 0.85,
-            opacity: 0.6,
-            zIndex: 5,
-            filter: 'grayscale(50%)'
+            scale: 0.88,
+            opacity: 0.8,
+            zIndex: 5
         },
         current: {
             y: 0,
             scale: 1.05,
             opacity: 1,
-            zIndex: 10,
-            filter: 'grayscale(0%)'
+            zIndex: 10
         },
         next: {
             y: 100,
-            scale: 0.85,
-            opacity: 0.6,
-            zIndex: 5,
-            filter: 'grayscale(50%)'
-        },
-        next2: {
-            y: 200,
-            scale: 0.75,
-            opacity: 0.4,
-            zIndex: 1,
-            filter: 'grayscale(80%)'
+            scale: 0.88,
+            opacity: 0.8,
+            zIndex: 5
         },
         hidden: {
-            y: position === 'prev' || position === 'prev2' ? -250 : 250,
-            scale: 0.7,
-            opacity: 0,
-            zIndex: 0,
-            filter: 'grayscale(100%)'
+            y: position === 'prev' ? -150 : 150,
+            scale: 0.8,
+            opacity: 0.5,
+            zIndex: 0
         }
     }
 
@@ -186,13 +168,11 @@ export function SmoothScrollList({ candidates, isUserLiked, onLike, onSelect }: 
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [candidates.length])
 
-    const getPosition = (index: number): 'prev2' | 'prev' | 'current' | 'next' | 'next2' | 'hidden' => {
+    const getPosition = (index: number): 'prev' | 'current' | 'next' | 'hidden' => {
         const diff = index - currentIndex
         if (diff === 0) return 'current'
         if (diff === -1) return 'prev'
-        if (diff === -2) return 'prev2'
         if (diff === 1) return 'next'
-        if (diff === 2) return 'next2'
         return 'hidden'
     }
 
@@ -205,17 +185,17 @@ export function SmoothScrollList({ candidates, isUserLiked, onLike, onSelect }: 
             <button
                 onClick={goUp}
                 disabled={currentIndex === 0}
-                className={`absolute top-20 left-1/2 -translate-x-1/2 z-20 p-2 rounded-full bg-white/80 hover:bg-white shadow-lg transition-all ${currentIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'opacity-100'}`}
+                className={`absolute top-4 left-1/2 -translate-x-1/2 z-20 p-2 rounded-full bg-white/80 hover:bg-white shadow-lg transition-all ${currentIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'opacity-100'}`}
             >
                 <ChevronUp className="h-6 w-6 text-pink-600" />
             </button>
 
             {/* 카드 컨테이너 */}
-            <div className="relative h-[480px] flex items-center justify-center px-4">
+            <div className="relative h-[300px] flex items-center justify-center px-4">
                 <AnimatePresence mode="popLayout">
                     {candidates.map((candidate, index) => {
                         const position = getPosition(index)
-                        if (position === 'hidden' && Math.abs(index - currentIndex) > 3) return null
+                        if (position === 'hidden' && Math.abs(index - currentIndex) > 2) return null
 
                         return (
                             <SmoothScrollCard
