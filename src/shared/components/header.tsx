@@ -151,35 +151,9 @@ export function Header() {
           )}
         </div>
 
-        {/* 모바일용 아이콘 바 + 햄버거 메뉴 */}
-        <div className="flex items-center gap-2 md:hidden">
-          {user && (
-            <>
-              <Button variant="ghost" size="icon" onClick={() => setSearchModalOpen(true)} className="h-9 w-9">
-                <Search className="h-5 w-5" />
-              </Button>
-              <NotificationsDropdown />
-              <Link to="/messages">
-                <Button variant="ghost" size="icon" className="relative h-9 w-9">
-                  <MessageSquare className="h-5 w-5" />
-                  <Badge className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 p-0 text-[10px] flex items-center justify-center">
-                    3
-                  </Badge>
-                </Button>
-              </Link>
-              <Link to="/profile">
-                <img
-                  src={user.avatar || "/placeholder.svg"}
-                  alt={user.name}
-                  className="h-8 w-8 rounded-full object-cover border-2 border-pink-200"
-                />
-              </Link>
-            </>
-          )}
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
-        </div>
+        <button className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">
+          {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
       </div>
 
       {mobileMenuOpen && (
@@ -225,12 +199,27 @@ export function Header() {
                 )
               )}
             <div className="flex flex-col gap-2 pt-4">
-              {!user && (
-                <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="outline" className="w-full bg-transparent">
-                    로그인
+              {user ? (
+                <>
+                  <Button variant="ghost" size="icon" onClick={() => setSearchModalOpen(true)}>
+                    <Search className="h-5 w-5" />
                   </Button>
-                </Link>
+                  <NotificationsDropdown />
+                  <Link to="/messages" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="outline" className="w-full bg-transparent justify-between">
+                      메시지
+                      <Badge className="bg-pink-500">3</Badge>
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="outline" className="w-full bg-transparent">
+                      로그인
+                    </Button>
+                  </Link>
+                </>
               )}
             </div>
           </nav>
