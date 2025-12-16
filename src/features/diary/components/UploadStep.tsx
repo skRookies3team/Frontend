@@ -1,5 +1,5 @@
-import React from 'react';
-import { Camera, Upload, Trash2, X, Image as ImageIcon, Edit } from 'lucide-react';
+import { PetResponseDto } from '../../healthcare/api/pet-api';
+import { Check, Heart, Camera, Upload, Image as ImageIcon, X, Edit } from 'lucide-react';
 import { SelectedImage, ImageType } from '../types/diary';
 
 interface UploadStepProps {
@@ -9,6 +9,9 @@ interface UploadStepProps {
     handleGenerate: () => void;
     setSelectedImages: React.Dispatch<React.SetStateAction<SelectedImage[]>>;
     setShowGallery: (show: boolean) => void;
+    pets: PetResponseDto[];
+    selectedPetId: number | null;
+    setSelectedPetId: (id: number) => void;
 }
 
 const Icon: React.FC<{ className?: string, children: React.ReactNode }> = ({ children, className }) => (
@@ -16,7 +19,8 @@ const Icon: React.FC<{ className?: string, children: React.ReactNode }> = ({ chi
 );
 
 const UploadStep: React.FC<UploadStepProps> = ({
-    selectedImages, isSubmitting, handleImageUpload, handleGenerate, setSelectedImages, setShowGallery
+    selectedImages, isSubmitting, handleImageUpload, handleGenerate, setSelectedImages, setShowGallery,
+    pets, selectedPetId, setSelectedPetId
 }) => {
     return (
         <div className="space-y-6">
@@ -28,6 +32,43 @@ const UploadStep: React.FC<UploadStepProps> = ({
                 <p className="mt-2 text-slate-500 md:text-lg">
                     반려동물의 하루를 담은 사진 1-10장을 업로드하면 AI가 아름다운 일기를 작성해드려요
                 </p>
+            </div>
+
+            {/* Pet Selection */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-pink-100">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <Heart className="w-5 h-5 text-pink-500" /> 주인공 선택
+                </h3>
+                {pets.length === 0 ? (
+                    <p className="text-gray-500 text-sm">등록된 반려동물이 없습니다.</p>
+                ) : (
+                    <div className="flex gap-4 overflow-x-auto pb-2">
+                        {pets.map((pet) => (
+                            <button
+                                key={pet.petId}
+                                onClick={() => setSelectedPetId(pet.petId)}
+                                className={`flex flex-col items-center gap-2 min-w-[80px] p-2 rounded-xl transition-all ${selectedPetId === pet.petId
+                                    ? 'bg-pink-50 ring-2 ring-pink-500 scale-105'
+                                    : 'hover:bg-gray-50 opacity-70 hover:opacity-100'
+                                    }`}
+                            >
+                                <div className="relative">
+                                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md">
+                                        <img src={pet.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${pet.petName}`} alt={pet.petName} className="w-full h-full object-cover" />
+                                    </div>
+                                    {selectedPetId === pet.petId && (
+                                        <div className="absolute -bottom-1 -right-1 bg-pink-500 text-white rounded-full p-1 shadow-sm">
+                                            <Check className="w-3 h-3" />
+                                        </div>
+                                    )}
+                                </div>
+                                <span className={`text-sm font-medium ${selectedPetId === pet.petId ? 'text-pink-600' : 'text-gray-600'}`}>
+                                    {pet.petName}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <div className="border border-pink-100 shadow-xl rounded-xl bg-white">
@@ -110,11 +151,11 @@ const UploadStep: React.FC<UploadStepProps> = ({
 
                             <button
                                 onClick={handleGenerate}
-                                disabled={isSubmitting || selectedImages.length === 0}
+                                disabled={isSubmitting || selectedImages.length === 0 || !selectedPetId}
                                 className="w-full rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-lg font-bold shadow-xl py-3 transition-all hover:scale-[1.01] hover:from-pink-600 hover:to-rose-600 md:text-xl text-white disabled:opacity-50 flex items-center justify-center gap-2"
                             >
                                 <Icon className="h-6 w-6"><Edit /></Icon>
-                                AI 다이어리 생성하기
+                                {selectedPetId ? 'AI 다이어리 생성하기' : '주인공을 선택해주세요'}
                             </button>
                         </div>
                     )}
