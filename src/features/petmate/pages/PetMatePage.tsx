@@ -53,9 +53,6 @@ export default function PetMatePage() {
   // 새로고침 로딩 상태
   const [isRefreshing, setIsRefreshing] = useState(false)
 
-  // 위치 로딩 상태
-  const [isLocationLoading, setIsLocationLoading] = useState(false)
-
   // 상세 모달 상태
   const [selectedCandidate, setSelectedCandidate] = useState<PetMateCandidate | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
@@ -129,63 +126,32 @@ export default function PetMatePage() {
 
   // 현재 위치 가져오기
   const handleCurrentLocation = () => {
-    setIsLocationLoading(true)
-
-    if (!navigator.geolocation) {
-      setIsLocationLoading(false)
-      toast.error('이 브라우저에서는 위치 서비스를 지원하지 않습니다.')
-      alert('이 브라우저에서는 위치 서비스를 지원하지 않습니다.')
-      return
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const coords = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
-        }
-        setUserCoords(coords)
-
-        try {
-          const addressInfo = await petMateApi.getAddressFromCoords(coords.longitude, coords.latitude)
-          if (addressInfo) {
-            setCurrentLocation(addressInfo.fullAddress)
-            toast.success('현재 위치로 설정되었습니다')
-            setLocationModalOpen(false)
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const coords = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
           }
-        } catch (error) {
-          console.error('Failed to get address:', error)
-          toast.error('주소를 가져오는데 실패했습니다')
-        } finally {
-          setIsLocationLoading(false)
-        }
-      },
-      (error) => {
-        setIsLocationLoading(false)
-        console.error('Geolocation error:', error)
+          setUserCoords(coords)
 
-        let errorMessage = '위치를 찾을 수 없습니다.'
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = '위치 권한이 거부되었습니다. 브라우저 설정에서 위치 권한을 허용해주세요.'
-            break
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = '위치를 찾을 수 없습니다. GPS가 켜져있는지 확인해주세요.'
-            break
-          case error.TIMEOUT:
-            errorMessage = '위치 요청 시간이 초과되었습니다. 다시 시도해주세요.'
-            break
+          try {
+            const addressInfo = await petMateApi.getAddressFromCoords(coords.longitude, coords.latitude)
+            if (addressInfo) {
+              setCurrentLocation(addressInfo.fullAddress)
+              toast.success('현재 위치로 설정되었습니다')
+            }
+          } catch (error) {
+            console.error('Failed to get address:', error)
+            toast.error('주소를 가져오는데 실패했습니다')
+          }
+        },
+        (error) => {
+          console.error('Geolocation error:', error)
+          toast.error('위치 정보를 가져올 수 없습니다')
         }
-
-        toast.error(errorMessage)
-        alert(errorMessage)
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 5000,
-        maximumAge: 0
-      }
-    )
+      )
+    }
   }
 
   // 주소 검색
@@ -248,15 +214,15 @@ export default function PetMatePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-orange-50 pt-8 pb-12">
       {/* 제목 - 항상 중앙 */}
-      <div className="text-center mb-6 px-4">
+      <div className="text-center mb-4 px-4">
         <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 via-rose-600 to-orange-600 bg-clip-text text-transparent mb-3">
           펫메이트 찾기
         </h1>
         <p className="text-gray-600 text-xl">우리 동네 반려동물 친구를 만나보세요 🐾</p>
       </div>
 
-      {/* 모바일용 사이드바 - 제목과 콘텐츠 사이 */}
-      <div className="lg:hidden px-4 mb-6">
+      {/* 사이드바 - 데스크탑: 왼쪽 고정, 모바일: 일반 흐름 */}
+      <div className="lg:fixed lg:left-56 lg:top-72 lg:w-72 lg:z-10 px-4 lg:px-0 mb-6 lg:mb-0">
         <div className="space-y-4">
           {/* 매칭 상태 */}
           <Card
@@ -330,85 +296,9 @@ export default function PetMatePage() {
         </div>
       </div>
 
-      {/* 메인 레이아웃 */}
-      <div className="relative max-w-7xl mx-auto px-4">
-        {/* 사이드바 - 콘텐츠 왼쪽에 고정 */}
-        <div className="hidden lg:block lg:absolute lg:right-[calc(50%+400px)] lg:top-0 lg:w-72">
-          <div className="lg:sticky lg:top-24 space-y-4">
-            {/* 매칭 상태 */}
-            <Card
-              className={`p-4 cursor-pointer transition-all hover:shadow-lg ${isOnline
-                ? "bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300"
-                : "bg-white border-2 border-gray-200"
-                }`}
-              onClick={() => setIsOnline(!isOnline)}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-full ${isOnline ? "bg-green-500" : "bg-gray-300"}`}>
-                  <Power className="h-5 w-5 text-white" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900">{isOnline ? "온라인" : "오프라인"}</p>
-                  <p className="text-xs text-gray-500">클릭하여 전환</p>
-                </div>
-                {isOnline && <div className="h-3 w-3 rounded-full bg-green-500 animate-pulse" />}
-              </div>
-            </Card>
-
-            {/* 위치 설정 */}
-            <Card
-              className="p-4 bg-white border-2 border-blue-200 cursor-pointer transition-all hover:shadow-lg hover:border-blue-400"
-              onClick={() => setLocationModalOpen(true)}
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-blue-500">
-                  <MapPin className="h-5 w-5 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">{currentLocation}</p>
-                  <p className="text-xs text-gray-500">클릭하여 변경</p>
-                </div>
-              </div>
-            </Card>
-
-            {/* 필터 설정 */}
-            <Card
-              className="p-4 bg-white border-2 border-purple-200 cursor-pointer transition-all hover:shadow-lg hover:border-purple-400"
-              onClick={() => setFilterModalOpen(true)}
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-purple-500">
-                  <Settings2 className="h-5 w-5 text-white" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900">{distanceFilter}km 이내</p>
-                  <p className="text-xs text-gray-500">
-                    {genderFilter === "all" ? "전체" : genderFilter === "male" ? "남성" : "여성"} • {breedFilter === "all" ? "전체 품종" : breedFilter}
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            {/* 새로운 사용자 불러오기 */}
-            <Card
-              className={`p-4 bg-white border-2 border-pink-200 cursor-pointer transition-all hover:shadow-lg hover:border-pink-400 ${isRefreshing ? 'opacity-50' : ''}`}
-              onClick={handleRefresh}
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-pink-500">
-                  <RefreshCw className={`h-5 w-5 text-white ${isRefreshing ? 'animate-spin' : ''}`} />
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900">다른 사용자 보기</p>
-                  <p className="text-xs text-gray-500">클릭하여 새로고침</p>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-
-        {/* 메인 콘텐츠 - 제목과 중앙 정렬 */}
-        <div className="w-full max-w-2xl mx-auto">
+      {/* 메인 콘텐츠 - 항상 페이지 중앙 */}
+      <div className="flex justify-center px-4">
+        <div className="w-full max-w-2xl">
           {hasNoCandidates ? (
             /* 조건에 맞는 펫메이트가 없을 때 */
             <Card className="p-12 text-center shadow-2xl border-2 border-pink-200 bg-white h-full flex flex-col items-center justify-center min-h-[600px]">
@@ -766,11 +656,10 @@ export default function PetMatePage() {
             <Button
               variant="outline"
               onClick={handleCurrentLocation}
-              disabled={isLocationLoading}
               className="w-full"
             >
-              <Navigation className={`mr-2 h-4 w-4 ${isLocationLoading ? 'animate-spin' : ''}`} />
-              {isLocationLoading ? '위치 찾는 중...' : '현재 위치 사용'}
+              <Navigation className="mr-2 h-4 w-4" />
+              현재 위치 사용
             </Button>
           </div>
           <Button
