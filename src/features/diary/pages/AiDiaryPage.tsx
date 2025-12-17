@@ -6,6 +6,9 @@ import {
   Save, BookOpen, PawPrint, Sun, Smile, MapPin
 } from 'lucide-react';
 import { createRoot } from 'react-dom/client';
+// [중요] LocationTracker import (파일 경로에 맞게 수정해주세요)
+import LocationTracker from '../components/LocationTracker';
+// 만약 같은 파일에 넣으셨다면 import 필요 없음
 
 // ==========================================
 // [환경 변수 및 유틸 설정]
@@ -52,7 +55,7 @@ const useAuth = () => {
 
         if (!isNaN(userId)) {
           const petsFromToken = payload.pets || [
-            { id: 47, name: '초코', species: '강아지', breed: '푸들', gender: '남아', neutered: true, age: 3 },
+            { id: 1, name: '초코', species: '강아지', breed: '푸들', gender: '남아', neutered: true, age: 3 },
             { id: 2, name: '나비', species: '고양이', breed: '코숏', gender: '여아', neutered: false, age: 2 }
           ];
 
@@ -750,6 +753,12 @@ export default AiDiaryPage;
 
 const App = () => (
   <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    {/* 여기서 LocationTracker를 렌더링하면, 
+      로그인 상태일 때 자동으로 백그라운드에서 위치를 저장합니다.
+      어떤 페이지(일기 쓰기, 홈 등)로 이동해도 Router 안에 있으므로 계속 동작합니다.
+    */}
+    <LocationTracker />
+
     <AiDiaryPage />
   </Router>
 );
