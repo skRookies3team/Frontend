@@ -19,20 +19,21 @@ const getEnv = (key: string) => {
   }
 };
 
-const BASE_URL = '/api';
+// [수정] 프록시 없이 백엔드 포트(8087)로 직접 요청하도록 변경
+const BASE_URL = 'http://localhost:8087/api';
 
 // [중요] 토큰 가져오기 (petlog_token 우선, 없으면 accessToken 확인)
 const getAccessToken = () => localStorage.getItem('petlog_token') || localStorage.getItem('accessToken');
 
 // ==========================================
-// 1. Auth Logic (Requested JWT Decoder)
+// 1. Auth Logic (Restored Local Implementation)
 // ==========================================
 
 const useAuth = () => {
   const [user, setUser] = useState<{ id: number; username: string; pets: any[] } | null>(null);
 
   useEffect(() => {
-    // 1. 토큰 키 확인 ('petlog_token' 또는 'accessToken')
+    // 1. 토큰 키 확인
     const token = getAccessToken();
 
     if (token) {
@@ -46,12 +47,10 @@ const useAuth = () => {
 
         const payload = JSON.parse(jsonPayload);
 
-        // 3. ID 추출 (sub, userId, id 등 다양한 필드 대응)
+        // 3. ID 추출
         const userId = Number(payload.userId || payload.sub || payload.id);
 
         if (!isNaN(userId)) {
-          // 4. 펫 정보 설정 (토큰에 없으면 Mock 데이터 사용 - 요청하신 로직 유지)
-          // 실제 운영 시에는 여기서 API를 호출하여 최신 펫 목록을 가져오는 것이 좋습니다.
           const petsFromToken = payload.pets || [
             { id: 47, name: '초코', species: '강아지', breed: '푸들', gender: '남아', neutered: true, age: 3 },
             { id: 2, name: '나비', species: '고양이', breed: '코숏', gender: '여아', neutered: false, age: 2 }
@@ -63,7 +62,7 @@ const useAuth = () => {
             pets: petsFromToken
           });
 
-          console.log("[Auth] 사용자 인증 성공:", userId);
+          console.log("[Auth] 사용자 인증 성공 (Local Parsing):", userId);
         }
       } catch (e) {
         console.error("[Auth] 토큰 파싱 실패:", e);
@@ -80,9 +79,36 @@ const useAuth = () => {
 // 2. Services (API Calls)
 // ==========================================
 
-/**
- * AI 일기 생성 요청 (POST /api/diaries/ai)
- */
+// [NEW] 과거 위치 이력 조회 추가
+const getLocationHistory = async (userId: number, date: string) => {
+  try {
+    const token = getAccessToken();
+    const url = `${BASE_URL}/locations/history?userId=${userId}&date=${date}`;
+    console.log(`[Service] 위치 조회 요청 URL: ${url}`); // URL 확인용 로그
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(`[Service] 위치 조회 실패: Status ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log("[Service] 과거 위치 조회 성공:", data);
+    // 백엔드 LocationResponse DTO: { latitude: number, longitude: number }
+    return data;
+  } catch (error) {
+    console.error("[Service] 위치 조회 중 에러 발생:", error);
+    return null;
+  }
+};
+
 const createAiDiary = async (formData: FormData) => {
   try {
     console.log("[Service] createAiDiary 요청 전송...");
@@ -91,7 +117,6 @@ const createAiDiary = async (formData: FormData) => {
     const response = await fetch(`${BASE_URL}/diaries/ai`, {
       method: 'POST',
       headers: {
-        // FormData 전송 시 Content-Type은 자동 설정됨
         ...(token && { 'Authorization': `Bearer ${token}` }),
       },
       body: formData,
@@ -99,21 +124,20 @@ const createAiDiary = async (formData: FormData) => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      if (response.status === 401) throw new Error("로그인이 필요합니다.");
-      throw new Error(errorData.message || `서버 오류: ${response.status}`);
+      // 에러 메시지 상세화
+      const errorMessage = errorData.message || `서버 오류: ${response.status} ${response.statusText}`;
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
     return data;
   } catch (error) {
     console.error("[Service] createAiDiary 실패:", error);
+    // [수정] Mock Fallback 제거 - 에러를 상위로 전파하여 프로세스 중단
     throw error;
   }
 };
 
-/**
- * 일기 상세 조회 (GET /api/diaries/{diaryId})
- */
 const getDiary = async (diaryId: number) => {
   try {
     const token = getAccessToken();
@@ -125,17 +149,18 @@ const getDiary = async (diaryId: number) => {
       },
     });
 
-    if (!response.ok) throw new Error('일기 조회 실패');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || '일기 조회 실패');
+    }
     return await response.json();
   } catch (error) {
     console.error("[Service] getDiary 실패:", error);
+    // [수정] Mock Fallback 제거
     throw error;
   }
 };
 
-/**
- * 일기 수정/저장 (PATCH /api/diaries/{diaryId})
- */
 const updateDiary = async (diaryId: number, data: any) => {
   try {
     const token = getAccessToken();
@@ -155,7 +180,6 @@ const updateDiary = async (diaryId: number, data: any) => {
   }
 };
 
-// S3 업로드 시뮬레이션
 const uploadImagesToS3 = async (files: File[]) => {
   return new Promise((resolve) => {
     const newImages = files.map(file => ({
@@ -174,7 +198,6 @@ const Icon = ({ children, className }: { children: React.ReactNode, className?: 
   <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>
 );
 
-// --- Kakao Map Component ---
 const KakaoMap = ({ lat, lng }: { lat: number; lng: number }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -182,7 +205,7 @@ const KakaoMap = ({ lat, lng }: { lat: number; lng: number }) => {
 
   useEffect(() => {
     const envKey = getEnv('VITE_KAKAO_API_KEY');
-    const KAKAO_API_KEY = envKey || "9852c4d5baa8c8c30254fe67de447bc3"; // Fallback Key
+    const KAKAO_API_KEY = envKey || "9852c4d5baa8c8c30254fe67de447bc3";
 
     if (document.getElementById('kakao-map-script')) {
       if (window.kakao && window.kakao.maps) {
@@ -223,7 +246,7 @@ const KakaoMap = ({ lat, lng }: { lat: number; lng: number }) => {
   );
 };
 
-// --- Step Components (Upload, Generate, Edit, Complete) ---
+// --- Step Components ---
 
 const UploadStep = ({
   selectedImages, isSubmitting, handleImageUpload, handleGenerate, setSelectedImages, setShowGallery,
@@ -347,7 +370,7 @@ const EditStep = ({
             <div className="flex gap-2">
               <div className="flex items-center gap-1 bg-green-50 px-3 py-1 rounded-full text-green-600 text-sm">
                 <MapPin className="w-3 h-3" />
-                <input value={locationName} onChange={(e) => setLocationName(e.target.value)} className="bg-transparent w-32 outline-none text-center" />
+                <input value={locationName} onChange={(e) => setLocationName(e.target.value)} className="bg-transparent w-48 outline-none text-center truncate" />
               </div>
               <div className="flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full text-blue-600 text-sm">
                 <Sun className="w-3 h-3" />
@@ -493,7 +516,7 @@ const AiDiaryPage = () => {
 
       // 데이터 구조 매핑 (토큰 데이터 또는 Mock 데이터 구조 대응)
       const mappedPets = userPets.map((p: any) => ({
-        petId: p.petId || p.id,
+        petId: Number(p.petId || p.id),
         petName: p.petName || p.name,
         species: (p.species === 'CAT' || p.species === '고양이') ? 'CAT' : 'DOG',
       }));
@@ -554,9 +577,10 @@ const AiDiaryPage = () => {
     }
 
     setStep("generating");
+    console.log("=== [Frontend] Diary Generation Started ===");
 
-    // 위치 정보 가져오기
-    const getPosition = () => {
+    // 현재 위치 가져오기 함수 (기존 로직)
+    const getCurrentPosition = () => {
       return new Promise<{ lat: number, lng: number } | null>((resolve) => {
         if (!navigator.geolocation) { resolve(null); return; }
         navigator.geolocation.getCurrentPosition(
@@ -574,7 +598,28 @@ const AiDiaryPage = () => {
     }, 200);
 
     try {
-      const location = await getPosition();
+      // 날짜 비교 로직 추가 (오늘 vs 과거)
+      const today = new Date().toISOString().split("T")[0];
+      let location: { lat: number, lng: number } | null = null;
+
+      if (selectedDate === today) {
+        console.log("=== [Frontend] 오늘 날짜 선택: 현재 위치 조회 시도 ===");
+        location = await getCurrentPosition();
+      } else {
+        console.log(`=== [Frontend] 과거 날짜(${selectedDate}) 선택: 위치 기록 조회 시도 (PostGIS) ===`);
+        console.log(`=== [Frontend] 현재 User ID: ${user.id} ===`); // User ID 확인용 로그 추가
+
+        const historyLocation = await getLocationHistory(user.id, selectedDate);
+
+        if (historyLocation && typeof historyLocation.latitude === 'number' && typeof historyLocation.longitude === 'number') {
+          location = { lat: historyLocation.latitude, lng: historyLocation.longitude };
+          console.log("=== [Frontend] 과거 위치 기록 발견(DB 사용) ===", location);
+        } else {
+          console.warn(`=== [Frontend] 과거 위치 기록 없음(DB 데이터 없음). 현재 위치로 대체합니다. (검색 조건: UserID=${user.id}, Date=${selectedDate}) ===`);
+          location = await getCurrentPosition();
+        }
+      }
+
       if (location) {
         setLocationCoords({ lat: location.lat, lng: location.lng });
         setLocationName("주소 불러오는 중...");
@@ -586,7 +631,7 @@ const AiDiaryPage = () => {
       if (imageFiles.length > 0) formData.append("image", imageFiles[0]);
 
       const requestData = {
-        userId: user.id, // [IMPORTANT] Decoded ID from Token
+        userId: Number(user.id), // [IMPORTANT] Decoded ID from Token
         petId: selectedPetId,
         content: "",
         visibility: "PRIVATE",
@@ -595,16 +640,22 @@ const AiDiaryPage = () => {
         mood: "행복",
         date: selectedDate,
         latitude: location ? location.lat : null,
-        longitude: location ? location.lng : null
+        longitude: location ? location.lng : null,
+        locationName: locationName // [추가] 초기값 전달
       };
+
+      console.log("=== [Frontend] Request Payload ===", requestData);
 
       formData.append("data", new Blob([JSON.stringify(requestData)], { type: "application/json" }));
 
       const response = await createAiDiary(formData);
+
       const diaryId = response.diaryId;
       setCreatedDiaryId(diaryId);
 
       const diaryDetail = await getDiary(diaryId);
+
+      console.log("=== [Frontend] getDiary API Response ===", diaryDetail);
 
       clearInterval(interval);
       setProgress(100);
@@ -612,13 +663,27 @@ const AiDiaryPage = () => {
       setEditedDiary(diaryDetail.content || "AI가 일기를 생성하지 못했습니다.");
       setWeather(diaryDetail.weather || "맑음");
       setMood(diaryDetail.mood || "행복");
-      if (diaryDetail.locationName) setLocationName(diaryDetail.locationName);
+
+      // [수정] 백엔드 응답에서 주소 확인 및 상태 업데이트
+      if (diaryDetail.locationName && diaryDetail.locationName !== "위치 정보 없음") {
+        setLocationName(diaryDetail.locationName);
+      } else {
+        setLocationName("위치 정보 없음");
+      }
 
       setTimeout(() => setStep("edit"), 500);
 
     } catch (error: any) {
       clearInterval(interval);
-      alert(`일기 생성 실패: ${error.message}`);
+      console.error("=== [Frontend] Diary Generation Error ===", error);
+
+      // [NEW] 에러 메시지에 따른 사용자 안내 추가
+      let errorMessage = error.message || "알 수 없는 오류";
+      if (errorMessage.includes("사용자를 찾을 수 없습니다")) {
+        errorMessage += "\n\n[안내] 로그인 정보가 만료되었거나 DB와 일치하지 않습니다.\n로그아웃 후 다시 로그인해주세요.";
+      }
+
+      alert(`일기 생성 실패: ${errorMessage}`);
       setStep("upload");
     }
   };
