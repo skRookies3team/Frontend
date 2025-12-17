@@ -50,29 +50,32 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      {/* 모달 컨테이너 스타일 수정:
-        - md:max-w-[1200px]: 너비를 훨씬 넓게 설정
-        - md:h-[90vh]: 높이를 화면의 90%로 설정하여 꽉 차게 보이게 함
+      {/* DialogContent 수정:
+        - overlayClassName: "bg-transparent backdrop-blur-none"로 설정하여 블라인드 처리 제거
+        - showCloseButton={false}: 기본 닫기 버튼 숨김 (겹침 방지 및 커스텀 위치 사용)
       */}
-      <DialogContent className="max-w-full md:max-w-[1200px] w-full p-0 gap-0 overflow-hidden h-full md:h-[90vh] flex flex-col md:flex-row bg-white border-none sm:rounded-xl z-50">
+      <DialogContent 
+        className="max-w-full md:max-w-[1200px] w-full p-0 gap-0 overflow-hidden h-full md:h-[90vh] flex flex-col md:flex-row bg-white border-none sm:rounded-xl z-50 shadow-2xl"
+        overlayClassName="bg-black/30 backdrop-blur-none" // 블라인드(배경 흐림) 제거, 약간의 어두움만 유지 (원하면 bg-transparent로 변경 가능)
+        showCloseButton={false}
+      >
         <DialogTitle className="sr-only">게시물 상세</DialogTitle>
         
-        {/* 닫기 버튼 (모바일 우측 상단) */}
-        <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground md:hidden z-50 bg-white/50 p-1">
-            <X className="h-6 w-6 text-black" />
+        {/* 커스텀 닫기 버튼 (X 버튼)
+          - 모달 내부가 아닌 화면 우측 상단(fixed)으로 빼서 배치
+          - 설정 버튼(점 3개)과의 겹침 문제 해결
+        */}
+        <DialogClose className="fixed right-6 top-6 z-[60] p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors cursor-pointer">
+            <X className="h-6 w-6" />
             <span className="sr-only">Close</span>
         </DialogClose>
 
-        {/* 1. 좌측 이미지 영역 
-          - md:flex-[1.5_1_0%]: 댓글 영역보다 더 많은 공간(약 60%)을 차지하도록 설정
-          - bg-black: 인스타그램처럼 배경을 검게 처리
-        */}
+        {/* 1. 좌측 이미지 영역 */}
         <div className="relative bg-black flex items-center justify-center w-full h-[45vh] md:h-full md:flex-[1.5_1_0%] overflow-hidden bg-gray-100/10">
            {post.imageUrl ? (
              <img 
                src={post.imageUrl} 
                alt="Post" 
-               // w-full h-full object-contain: 검은 영역 안에 이미지가 비율을 유지하며 가득 차게 설정
                className="w-full h-full object-contain" 
              />
            ) : (
@@ -84,13 +87,10 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
            )}
         </div>
 
-        {/* 2. 우측 정보 및 댓글 영역
-          - md:flex-1: 남은 공간을 차지
-          - border-l: 이미지 영역과 구분선 추가
-        */}
-        <div className="flex flex-col w-full h-[55vh] md:h-full md:flex-1 bg-white border-l border-gray-100">
+        {/* 2. 우측 정보 및 댓글 영역 */}
+        <div className="flex flex-col w-full h-[55vh] md:h-full md:flex-1 bg-white border-l border-gray-100 relative">
           
-          {/* 헤더 */}
+          {/* 헤더 - 설정 버튼(MoreHorizontal)은 여기에 그대로 유지 (X버튼이 밖으로 나가서 안 겹침) */}
           <div className="flex items-center justify-between p-4 border-b border-gray-100 shrink-0">
              <div className="flex items-center gap-3">
                 <Link to={`/user/${post.writerNickname}`} className="flex items-center gap-3 group">
@@ -103,7 +103,9 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
                     </span>
                 </Link>
              </div>
-             <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-5 w-5" /></Button>
+             <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100 rounded-full">
+                <MoreHorizontal className="h-5 w-5" />
+             </Button>
           </div>
 
           {/* 댓글 목록 (스크롤 영역) */}
