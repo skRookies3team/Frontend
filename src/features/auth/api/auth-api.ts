@@ -31,6 +31,7 @@ export interface GetPetDto {
     age: number;
     birth: string; // LocalDate as string (YYYY-MM-DD)
     status: string;
+    vaccinated: boolean;
 }
 
 // 사용자 정보 조회 응답 타입
