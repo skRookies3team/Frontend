@@ -33,6 +33,7 @@ import { RECAPS, Recap } from "@/features/diary/data/recap-data"
 import { RecapModal } from "@/features/diary/components/recap-modal"
 import { Link, useNavigate, Outlet } from "react-router-dom"
 import { useState, useRef, type ChangeEvent, useEffect } from "react"
+import { getUserApi, type GetUserDto } from "@/features/auth/api/auth-api"
 
 
 
@@ -95,6 +96,33 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null)
 
+  // API state
+  const [apiUserData, setApiUserData] = useState<GetUserDto | null>(null)
+  const [isLoadingApi, setIsLoadingApi] = useState(false)
+
+  // Fetch user data from API
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setIsLoadingApi(true)
+        const storedUser = localStorage.getItem('petlog_user')
+        if (storedUser) {
+          const userData = JSON.parse(storedUser)
+          const userId = parseInt(userData.id)
+          if (userId) {
+            const response = await getUserApi(userId)
+            setApiUserData(response)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch user data:', err)
+      } finally {
+        setIsLoadingApi(false)
+      }
+    }
+    fetchUserData()
+  }, [])
+
   useEffect(() => {
     if (selectedPhoto) {
       console.log("Selected photo:", selectedPhoto)
@@ -109,10 +137,19 @@ export default function ProfilePage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [dialogDate, setDialogDate] = useState<string>("")
 
-  // Pet Management State
-  // Pet Management State
-  // const [pets, setPets] = useState<Pet[]>(MY_PETS) // Removed local state
-  const pets = user?.pets || []
+  // Pet Management State - use API data if available
+  const pets = apiUserData?.pets.map(pet => ({
+    id: pet.petId.toString(),
+    name: pet.petName,
+    species: pet.species === 'DOG' ? '강아지' : '고양이',
+    breed: pet.breed,
+    age: pet.age,
+    photo: pet.profileImage || '/placeholder-pet.jpg',
+    gender: pet.genderType === 'MALE' ? '남아' : '여아',
+    neutered: pet.is_neutered,
+    birthday: pet.birth,
+    isMemorial: false, // Default to false for API pets
+  })) || user?.pets || []
   const [showAddPetDialog, setShowAddPetDialog] = useState(false)
   const [showAddPetConfirmDialog, setShowAddPetConfirmDialog] = useState(false)
   const [showManagePetsDialog, setShowManagePetsDialog] = useState(false)
@@ -268,8 +305,8 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center gap-6 md:flex-row md:items-start">
                 <div className="relative">
                   <Avatar className="h-24 w-24 border-4 border-border md:h-32 md:w-32">
-                    <AvatarImage src={user?.avatar || "/placeholder-user.jpg"} alt={user?.name || "User"} />
-                    <AvatarFallback>{user?.name?.[0] || "U"}</AvatarFallback>
+                    <AvatarImage src={apiUserData?.profileImage || user?.avatar || "/placeholder-user.jpg"} alt={apiUserData?.username || user?.name || "User"} />
+                    <AvatarFallback>{apiUserData?.username?.[0] || user?.name?.[0] || "U"}</AvatarFallback>
                   </Avatar>
                   <button
                     className="absolute -bottom-2 -right-2 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 p-2 text-white shadow-md hover:opacity-90"
@@ -288,7 +325,7 @@ export default function ProfilePage() {
 
                 <div className="flex-1 text-center md:text-left">
                   <div className="mb-4 flex items-center justify-center gap-3 md:justify-between">
-                    <h2 className="text-2xl font-bold text-foreground md:text-3xl">{user?.name || "김서연"}</h2>
+                    <h2 className="text-2xl font-bold text-foreground md:text-3xl">{apiUserData?.username || user?.name || "김서연"}</h2>
                     <div className="flex gap-2">
                       <Link to="/settings">
                         <Button
@@ -311,25 +348,7 @@ export default function ProfilePage() {
                       </Button>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">@{user?.username || user?.email?.split('@')[0] || "user"}</p>
-                  {user?.bio && (
-                    <p className="mt-2 text-sm text-foreground">{user.bio}</p>
-                  )}
-
-                  <div className="flex justify-center gap-8 md:justify-start mt-4">
-                    <div>
-                      <p className="text-xl font-bold text-foreground md:text-2xl">1</p>
-                      <p className="text-sm text-muted-foreground">게시물</p>
-                    </div>
-                    <div>
-                      <p className="text-xl font-bold text-foreground md:text-2xl">9548M</p>
-                      <p className="text-sm text-muted-foreground">팔로워</p>
-                    </div>
-                    <div>
-                      <p className="text-xl font-bold text-foreground md:text-2xl">1</p>
-                      <p className="text-sm text-muted-foreground">팔로잉</p>
-                    </div>
-                  </div>
+                  <p className="text-sm text-muted-foreground">@{apiUserData?.social || user?.username || user?.email?.split('@')[0] || "user"}</p>
                 </div>
               </div>
             </CardContent>
