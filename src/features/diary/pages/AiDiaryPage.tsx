@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // BrowserRouter, Routes, Route 제거 (상위에서 처리)
 import {
   Camera, Upload, Edit3, Check, Share2, Calendar,
   Image as ImageIcon, X, ChevronLeft, Loader2,
@@ -56,25 +56,25 @@ const useAuth = () => {
       try {
         const base64Url = token.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
         }).join(''));
-        
+
         const payload = JSON.parse(jsonPayload);
         const userId = Number(payload.userId || payload.sub || payload.id);
 
         if (!isNaN(userId)) {
-            // 실제 환경에서는 API로 펫 정보를 가져오거나 토큰에 포함된 정보를 사용
-            const petsFromToken = payload.pets || [
-                { id: 47, name: '초코', species: '강아지', breed: '푸들', gender: '남아', neutered: true, age: 3 },
-                { id: 2, name: '나비', species: '고양이', breed: '코숏', gender: '여아', neutered: false, age: 2 }
-            ];
+          // 실제 환경에서는 API로 펫 정보를 가져오거나 토큰에 포함된 정보를 사용
+          const petsFromToken = payload.pets || [
+            { id: 47, name: '초코', species: '강아지', breed: '푸들', gender: '남아', neutered: true, age: 3 },
+            { id: 2, name: '나비', species: '고양이', breed: '코숏', gender: '여아', neutered: false, age: 2 }
+          ];
 
-            setUser({
-                id: userId,
-                username: payload.username || 'User',
-                pets: petsFromToken
-            });
+          setUser({
+            id: userId,
+            username: payload.username || 'User',
+            pets: petsFromToken
+          });
         }
       } catch (e) {
         console.error("토큰 파싱 실패:", e);
@@ -108,7 +108,7 @@ export const createAiDiary = async (formData: FormData): Promise<CreateDiaryResp
     headers: getAuthHeaders(true),
     body: formData
   });
-  
+
   if (response.status === 401) throw new Error('인증 토큰이 만료되었습니다.');
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -195,13 +195,13 @@ const UploadStep: React.FC<UploadStepProps> = ({
           >
             <option value="" disabled>어떤 아이의 일기인가요?</option>
             {pets && pets.length > 0 ? (
-                pets.map((pet) => (
-                    <option key={pet.petId} value={pet.petId}>
-                        {pet.petName} ({pet.species === 'DOG' ? '강아지' : '고양이'})
-                    </option>
-                ))
+              pets.map((pet) => (
+                <option key={pet.petId} value={pet.petId}>
+                  {pet.petName} ({pet.species === 'DOG' ? '강아지' : '고양이'})
+                </option>
+              ))
             ) : (
-                <option value="1">기본 펫 (등록된 펫 없음)</option>
+              <option value="1">기본 펫 (등록된 펫 없음)</option>
             )}
           </select>
         </div>
@@ -554,44 +554,44 @@ const GalleryModal: React.FC<GalleryModalProps> = ({
 
 
 // ==========================================
-// 5. Main Page Component
+// Main Page Component
 // ==========================================
 
 export default function AiDiaryPage() {
   const navigate = useNavigate();
-  const { user } = useAuth(); 
+  const { user } = useAuth();
 
   // --- States ---
   const [step, setStep] = useState<DiaryStep>("upload");
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
-  const [imageFiles, setImageFiles] = useState<File[]>([]); 
-  
-  // [추가] 펫 선택을 위한 State (기본값 null)
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+
+  // [추가] 펫 선택을 위한 State
   const [pets, setPets] = useState<PetResponseDto[]>([]);
   const [selectedPetId, setSelectedPetId] = useState<number | null>(null);
 
   // 펫 목록 로딩 및 매핑
   useEffect(() => {
     if (user?.pets && Array.isArray(user.pets)) {
-        // user.pets 데이터를 PetResponseDto 형식으로 변환
-        const mappedPets: PetResponseDto[] = user.pets.map((p: any) => ({
-            petId: Number(p.id || p.petId),
-            petName: p.name,
-            species: p.species === 'CAT' || p.species === '고양이' ? 'CAT' : 'DOG',
-            breed: p.breed || '품종 미상',
-            genderType: p.gender === 'FEMALE' || p.gender === '여아' ? 'FEMALE' : 'MALE',
-            is_neutered: !!p.neutered,
-            profileImage: p.photo || '',
-            age: Number(p.age || 0),
-            birth: p.birthday || '',
-            status: 'ACTIVE'
-        }));
-        setPets(mappedPets);
-        
-        // 첫 번째 펫 자동 선택
-        if (mappedPets.length > 0 && !selectedPetId) {
-            setSelectedPetId(mappedPets[0].petId);
-        }
+      // user.pets 데이터를 PetResponseDto 형식으로 변환
+      const mappedPets: PetResponseDto[] = user.pets.map((p: any) => ({
+        petId: Number(p.id || p.petId),
+        petName: p.name,
+        species: p.species === 'CAT' || p.species === '고양이' ? 'CAT' : 'DOG',
+        breed: p.breed || '품종 미상',
+        genderType: p.gender === 'FEMALE' || p.gender === '여아' ? 'FEMALE' : 'MALE',
+        is_neutered: !!p.neutered,
+        profileImage: p.photo || '',
+        age: Number(p.age || 0),
+        birth: p.birthday || '',
+        status: 'ACTIVE'
+      }));
+      setPets(mappedPets);
+
+      // 첫 번째 펫 자동 선택
+      if (mappedPets.length > 0 && !selectedPetId) {
+        setSelectedPetId(mappedPets[0].petId);
+      }
     }
   }, [user]);
 
@@ -656,33 +656,44 @@ export default function AiDiaryPage() {
     }
     // [검증] 펫 선택 여부 확인
     if (!selectedPetId) {
-        alert("일기를 작성할 반려동물을 선택해주세요.");
-        return;
+      alert("일기를 작성할 반려동물을 선택해주세요.");
+      return;
     }
 
     setStep("generating");
-    
-    // [추가] 위치 정보 가져오기 (Promise로 감싸서 비동기 처리)
+
+    // [추가] 위치 정보 가져오기 (Promise로 감싸서 비동기 처리, Timeout 적용)
     const getPosition = () => {
-        return new Promise<{ lat: number, lng: number } | null>((resolve) => {
-            if (!navigator.geolocation) {
-                console.log("Geolocation is not supported by your browser");
-                resolve(null);
-            } else {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        resolve({
-                            lat: position.coords.latitude,
-                            lng: position.coords.longitude
-                        });
-                    },
-                    (error) => {
-                        console.error("Unable to retrieve your location", error);
-                        resolve(null);
-                    }
-                );
-            }
-        });
+      return new Promise<{ lat: number, lng: number } | null>((resolve) => {
+        if (!navigator.geolocation) {
+          console.log("Geolocation is not supported by your browser");
+          resolve(null);
+          return;
+        }
+
+        // 타임아웃 5초 설정
+        const options = {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0
+        };
+
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            console.log("위치 정보 획득 성공:", position.coords);
+            resolve({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            });
+          },
+          (error) => {
+            console.error("위치 정보 획득 실패 (Code " + error.code + "): " + error.message);
+            // 권한 거부(1), 위치 불가(2), 타임아웃(3) 등
+            resolve(null);
+          },
+          options
+        );
+      });
     };
 
     let currentProgress = 0;
@@ -693,7 +704,7 @@ export default function AiDiaryPage() {
 
     try {
       const userId = Number(user.id);
-      
+
       // [수정] 사용자가 선택한 petId 사용
       const petId = selectedPetId;
 
@@ -701,11 +712,11 @@ export default function AiDiaryPage() {
       const location = await getPosition();
 
       const formData = new FormData();
-      formData.append("image", imageFiles[0]); 
+      formData.append("image", imageFiles[0]);
 
       const requestData = {
         userId,
-        petId, 
+        petId,
         content: "",
         visibility: "PRIVATE",
         isAiGen: true,
@@ -714,7 +725,7 @@ export default function AiDiaryPage() {
         latitude: location ? location.lat : null, // [추가] 위도
         longitude: location ? location.lng : null // [추가] 경도
       };
-      
+
       formData.append("data", new Blob([JSON.stringify(requestData)], {
         type: "application/json"
       }));
@@ -726,7 +737,7 @@ export default function AiDiaryPage() {
       setCreatedDiaryId(diaryId);
 
       const diaryDetail = await getDiary(diaryId);
-      
+
       clearInterval(interval);
       setProgress(100);
 
@@ -750,7 +761,7 @@ export default function AiDiaryPage() {
         content: editedDiary,
         visibility: "PUBLIC"
       });
-      
+
       setStep("complete");
     } catch (error: any) {
       console.error("저장 실패:", error);
@@ -797,6 +808,7 @@ export default function AiDiaryPage() {
             handleGenerate={handleGenerate}
             setSelectedImages={setSelectedImages}
             setShowGallery={setShowGallery}
+            // [추가] Props 전달
             pets={pets}
             selectedPetId={selectedPetId}
             setSelectedPetId={setSelectedPetId}
