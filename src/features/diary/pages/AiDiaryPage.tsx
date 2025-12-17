@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Camera, Upload, Edit3, Check, Share2, Calendar,
   Image as ImageIcon, X, ChevronLeft, Loader2,
-  Save, BookOpen, PawPrint, Cloud, Sun, Smile // [추가] 아이콘
+  Save, BookOpen, PawPrint, Cloud, Sun, Smile 
 } from 'lucide-react';
 
 // ==========================================
@@ -63,6 +63,7 @@ const useAuth = () => {
         const userId = Number(payload.userId || payload.sub || payload.id);
 
         if (!isNaN(userId)) {
+            // 실제로는 API로 펫 정보를 가져와야 함 (여기선 토큰 정보나 Mock 사용)
             const petsFromToken = payload.pets || [
                 { id: 47, name: '초코', species: '강아지', breed: '푸들', gender: '남아', neutered: true, age: 3 },
                 { id: 2, name: '나비', species: '고양이', breed: '코숏', gender: '여아', neutered: false, age: 2 }
