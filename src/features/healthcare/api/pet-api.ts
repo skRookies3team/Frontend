@@ -36,8 +36,7 @@ export const createPetApi = async (request: CreatePetDto, file: File | null): Pr
         type: "application/json"
     }));
 
-    // Assuming endpoint is /api/pets/create based on pattern
-    const response = await httpClient.post<PetResponseDto>('http://localhost:8000/api/pets/create', formData, {
+    const response = await httpClient.post<PetResponseDto>(`/pets/create`, formData, {
         headers: {
             "Content-Type": "multipart/form-data"
         }
