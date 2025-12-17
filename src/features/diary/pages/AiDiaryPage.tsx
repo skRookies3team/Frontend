@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createAiDiary, getDiary, updateDiary, uploadImagesToS3, createStyle, getMyStyle } from '../api/diary-api';
-import { SelectedImage, DiaryStep, LayoutStyle, TextAlign, ImageType, CreateDiaryResponse } from '../types/diary';
+import { createAiDiary, getDiary, updateDiary, uploadImagesToS3 } from '../api/diary-api';
+import { SelectedImage, DiaryStep, LayoutStyle, TextAlign, ImageType } from '../types/diary';
 import { PetResponseDto } from '../../healthcare/api/pet-api';
 import { ChevronLeft } from 'lucide-react';
 import { useAuth } from '@/features/auth/context/auth-context';
