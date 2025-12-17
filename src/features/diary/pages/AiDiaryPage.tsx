@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // BrowserRouter, Routes, Route 제거 (상위에서 처리)
+import { useNavigate } from 'react-router-dom';
 import {
   Camera, Upload, Edit3, Check, Share2, Calendar,
   Image as ImageIcon, X, ChevronLeft, Loader2,
-  Save, BookOpen, PawPrint
+  Save, BookOpen, PawPrint, Cloud, Sun, Smile // [추가] 아이콘
 } from 'lucide-react';
 
 // ==========================================
-// 1. Types & Interfaces (Originally from ../types/diary)
+// 1. Types & Interfaces (Internal Definition)
 // ==========================================
 
 export type DiaryStep = 'upload' | 'generating' | 'edit' | 'complete';
@@ -29,7 +29,6 @@ export interface CreateDiaryResponse {
   message: string;
 }
 
-// (Originally from ../../healthcare/api/pet-api)
 export interface PetResponseDto {
   petId: number;
   petName: string;
@@ -44,7 +43,7 @@ export interface PetResponseDto {
 }
 
 // ==========================================
-// 2. Auth Logic (Mocking @/features/auth/context/auth-context)
+// 2. Auth Logic (Mock)
 // ==========================================
 
 const useAuth = () => {
@@ -56,25 +55,24 @@ const useAuth = () => {
       try {
         const base64Url = token.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
-          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
         }).join(''));
-
+        
         const payload = JSON.parse(jsonPayload);
         const userId = Number(payload.userId || payload.sub || payload.id);
 
         if (!isNaN(userId)) {
-          // 실제 환경에서는 API로 펫 정보를 가져오거나 토큰에 포함된 정보를 사용
-          const petsFromToken = payload.pets || [
-            { id: 47, name: '초코', species: '강아지', breed: '푸들', gender: '남아', neutered: true, age: 3 },
-            { id: 2, name: '나비', species: '고양이', breed: '코숏', gender: '여아', neutered: false, age: 2 }
-          ];
+            const petsFromToken = payload.pets || [
+                { id: 47, name: '초코', species: '강아지', breed: '푸들', gender: '남아', neutered: true, age: 3 },
+                { id: 2, name: '나비', species: '고양이', breed: '코숏', gender: '여아', neutered: false, age: 2 }
+            ];
 
-          setUser({
-            id: userId,
-            username: payload.username || 'User',
-            pets: petsFromToken
-          });
+            setUser({
+                id: userId,
+                username: payload.username || 'User',
+                pets: petsFromToken
+            });
         }
       } catch (e) {
         console.error("토큰 파싱 실패:", e);
@@ -86,7 +84,7 @@ const useAuth = () => {
 };
 
 // ==========================================
-// 3. Services (Originally from ../api/diary-api)
+// 3. Services (API Calls)
 // ==========================================
 
 const BASE_URL = 'http://localhost:8000/api/diaries';
@@ -108,7 +106,7 @@ export const createAiDiary = async (formData: FormData): Promise<CreateDiaryResp
     headers: getAuthHeaders(true),
     body: formData
   });
-
+  
   if (response.status === 401) throw new Error('인증 토큰이 만료되었습니다.');
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -195,13 +193,13 @@ const UploadStep: React.FC<UploadStepProps> = ({
           >
             <option value="" disabled>어떤 아이의 일기인가요?</option>
             {pets && pets.length > 0 ? (
-              pets.map((pet) => (
-                <option key={pet.petId} value={pet.petId}>
-                  {pet.petName} ({pet.species === 'DOG' ? '강아지' : '고양이'})
-                </option>
-              ))
+                pets.map((pet) => (
+                    <option key={pet.petId} value={pet.petId}>
+                        {pet.petName} ({pet.species === 'DOG' ? '강아지' : '고양이'})
+                    </option>
+                ))
             ) : (
-              <option value="1">기본 펫 (등록된 펫 없음)</option>
+                <option value="1">기본 펫 (등록된 펫 없음)</option>
             )}
           </select>
         </div>
@@ -323,6 +321,12 @@ interface EditStepProps {
   selectedImages: SelectedImage[];
   editedDiary: string;
   setEditedDiary: (val: string) => void;
+  // [추가] 날씨 & 기분 Props
+  weather: string;
+  setWeather: (val: string) => void;
+  mood: string;
+  setMood: (val: string) => void;
+  // 스타일 관련 Props
   layoutStyle: LayoutStyle;
   setLayoutStyle: (val: LayoutStyle) => void;
   textAlign: TextAlign;
@@ -337,6 +341,7 @@ interface EditStepProps {
 
 const EditStep: React.FC<EditStepProps> = ({
   selectedImages, editedDiary, setEditedDiary,
+  weather, setWeather, mood, setMood,
   layoutStyle, setLayoutStyle, textAlign, setTextAlign,
   fontSize, setFontSize, backgroundColor, setBackgroundColor,
   handleShareToFeed, isSubmitting
@@ -348,9 +353,36 @@ const EditStep: React.FC<EditStepProps> = ({
       <div className="w-full lg:flex-1 bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 sticky top-24"
         style={{ backgroundColor }}>
         <div className={`p-8 ${textAlign === 'center' ? 'text-center' : textAlign === 'right' ? 'text-right' : 'text-left'}`}>
-          <div className="flex items-center gap-2 text-gray-400 mb-6 text-sm font-medium">
-            <Calendar className="w-4 h-4" />
-            {new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
+          {/* 상단 메타데이터: 날짜, 날씨, 기분 */}
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6 border-b border-gray-100 pb-4">
+            <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
+              <Calendar className="w-4 h-4 text-pink-400" />
+              {new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
+            </div>
+            
+            {/* [추가] 날씨 및 기분 표시/수정 영역 */}
+            <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-full text-sm text-blue-600">
+                    <Sun className="w-4 h-4" />
+                    <input 
+                        type="text" 
+                        value={weather} 
+                        onChange={(e) => setWeather(e.target.value)}
+                        className="bg-transparent border-none outline-none w-16 text-center text-blue-700 font-medium placeholder-blue-300"
+                        placeholder="날씨"
+                    />
+                </div>
+                <div className="flex items-center gap-1.5 bg-yellow-50 px-3 py-1.5 rounded-full text-sm text-yellow-600">
+                    <Smile className="w-4 h-4" />
+                    <input 
+                        type="text" 
+                        value={mood} 
+                        onChange={(e) => setMood(e.target.value)}
+                        className="bg-transparent border-none outline-none w-16 text-center text-yellow-700 font-medium placeholder-yellow-300"
+                        placeholder="기분"
+                    />
+                </div>
+            </div>
           </div>
 
           <div className={`mb-8 gap-2 ${layoutStyle === 'grid' ? 'grid grid-cols-2' :
@@ -554,44 +586,46 @@ const GalleryModal: React.FC<GalleryModalProps> = ({
 
 
 // ==========================================
-// Main Page Component
+// 5. Main Page Component
 // ==========================================
 
 export default function AiDiaryPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useAuth(); 
 
   // --- States ---
   const [step, setStep] = useState<DiaryStep>("upload");
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
-
-  // [추가] 펫 선택을 위한 State
+  const [imageFiles, setImageFiles] = useState<File[]>([]); 
+  
+  // 펫 선택 State
   const [pets, setPets] = useState<PetResponseDto[]>([]);
   const [selectedPetId, setSelectedPetId] = useState<number | null>(null);
+
+  // [추가] 날씨 & 기분 State
+  const [weather, setWeather] = useState("");
+  const [mood, setMood] = useState("");
 
   // 펫 목록 로딩 및 매핑
   useEffect(() => {
     if (user?.pets && Array.isArray(user.pets)) {
-      // user.pets 데이터를 PetResponseDto 형식으로 변환
-      const mappedPets: PetResponseDto[] = user.pets.map((p: any) => ({
-        petId: Number(p.id || p.petId),
-        petName: p.name,
-        species: p.species === 'CAT' || p.species === '고양이' ? 'CAT' : 'DOG',
-        breed: p.breed || '품종 미상',
-        genderType: p.gender === 'FEMALE' || p.gender === '여아' ? 'FEMALE' : 'MALE',
-        is_neutered: !!p.neutered,
-        profileImage: p.photo || '',
-        age: Number(p.age || 0),
-        birth: p.birthday || '',
-        status: 'ACTIVE'
-      }));
-      setPets(mappedPets);
-
-      // 첫 번째 펫 자동 선택
-      if (mappedPets.length > 0 && !selectedPetId) {
-        setSelectedPetId(mappedPets[0].petId);
-      }
+        const mappedPets: PetResponseDto[] = user.pets.map((p: any) => ({
+            petId: Number(p.id || p.petId),
+            petName: p.name,
+            species: p.species === 'CAT' || p.species === '고양이' ? 'CAT' : 'DOG',
+            breed: p.breed || '품종 미상',
+            genderType: p.gender === 'FEMALE' || p.gender === '여아' ? 'FEMALE' : 'MALE',
+            is_neutered: !!p.neutered,
+            profileImage: p.photo || '',
+            age: Number(p.age || 0),
+            birth: p.birthday || '',
+            status: 'ACTIVE'
+        }));
+        setPets(mappedPets);
+        
+        if (mappedPets.length > 0 && !selectedPetId) {
+            setSelectedPetId(mappedPets[0].petId);
+        }
     }
   }, [user]);
 
@@ -654,46 +688,46 @@ export default function AiDiaryPage() {
       alert("로그인이 필요합니다.");
       return;
     }
-    // [검증] 펫 선택 여부 확인
+    // 펫 선택 확인
     if (!selectedPetId) {
-      alert("일기를 작성할 반려동물을 선택해주세요.");
-      return;
+        alert("일기를 작성할 반려동물을 선택해주세요.");
+        return;
     }
 
     setStep("generating");
-
-    // [추가] 위치 정보 가져오기 (Promise로 감싸서 비동기 처리, Timeout 적용)
+    
+    // [위치 정보 가져오기] Promise로 비동기 처리
     const getPosition = () => {
-      return new Promise<{ lat: number, lng: number } | null>((resolve) => {
-        if (!navigator.geolocation) {
-          console.log("Geolocation is not supported by your browser");
-          resolve(null);
-          return;
-        }
+        return new Promise<{ lat: number, lng: number } | null>((resolve) => {
+            if (!navigator.geolocation) {
+                console.log("Geolocation is not supported by your browser");
+                resolve(null);
+                return;
+            }
 
-        // 타임아웃 5초 설정
-        const options = {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 0
-        };
+            // 타임아웃 5초 설정
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0
+            };
 
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            console.log("위치 정보 획득 성공:", position.coords);
-            resolve({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            });
-          },
-          (error) => {
-            console.error("위치 정보 획득 실패 (Code " + error.code + "): " + error.message);
-            // 권한 거부(1), 위치 불가(2), 타임아웃(3) 등
-            resolve(null);
-          },
-          options
-        );
-      });
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    console.log("위치 정보 획득 성공:", position.coords);
+                    resolve({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    });
+                },
+                (error) => {
+                    console.error("위치 정보 획득 실패 (Code " + error.code + "): " + error.message);
+                    // 실패해도 null 반환하여 프로세스는 진행
+                    resolve(null);
+                },
+                options
+            );
+        });
     };
 
     let currentProgress = 0;
@@ -704,28 +738,26 @@ export default function AiDiaryPage() {
 
     try {
       const userId = Number(user.id);
-
-      // [수정] 사용자가 선택한 petId 사용
       const petId = selectedPetId;
 
-      // 위치 정보 획득
+      // 위치 정보 대기
       const location = await getPosition();
 
       const formData = new FormData();
-      formData.append("image", imageFiles[0]);
+      formData.append("image", imageFiles[0]); 
 
       const requestData = {
         userId,
-        petId,
+        petId, 
         content: "",
         visibility: "PRIVATE",
         isAiGen: true,
         weather: "맑음",
         mood: "행복",
-        latitude: location ? location.lat : null, // [추가] 위도
-        longitude: location ? location.lng : null // [추가] 경도
+        latitude: location ? location.lat : null, // 위도 (없으면 null)
+        longitude: location ? location.lng : null // 경도 (없으면 null)
       };
-
+      
       formData.append("data", new Blob([JSON.stringify(requestData)], {
         type: "application/json"
       }));
@@ -737,11 +769,15 @@ export default function AiDiaryPage() {
       setCreatedDiaryId(diaryId);
 
       const diaryDetail = await getDiary(diaryId);
-
+      
       clearInterval(interval);
       setProgress(100);
 
+      // [추가] 받아온 일기 내용, 날씨, 기분 설정
       setEditedDiary(diaryDetail.content || "AI가 내용을 생성하지 못했습니다.");
+      setWeather(diaryDetail.weather || "맑음"); // 기본값 제공
+      setMood(diaryDetail.mood || "행복");       // 기본값 제공
+
       setTimeout(() => setStep("edit"), 500);
 
     } catch (error: any) {
@@ -759,9 +795,11 @@ export default function AiDiaryPage() {
     try {
       await updateDiary(createdDiaryId, {
         content: editedDiary,
-        visibility: "PUBLIC"
+        visibility: "PUBLIC",
+        weather: weather, // [추가] 수정된 날씨 전송
+        mood: mood        // [추가] 수정된 기분 전송
       });
-
+      
       setStep("complete");
     } catch (error: any) {
       console.error("저장 실패:", error);
@@ -808,7 +846,6 @@ export default function AiDiaryPage() {
             handleGenerate={handleGenerate}
             setSelectedImages={setSelectedImages}
             setShowGallery={setShowGallery}
-            // [추가] Props 전달
             pets={pets}
             selectedPetId={selectedPetId}
             setSelectedPetId={setSelectedPetId}
@@ -820,6 +857,8 @@ export default function AiDiaryPage() {
             selectedImages={selectedImages}
             editedDiary={editedDiary}
             setEditedDiary={setEditedDiary}
+            weather={weather} setWeather={setWeather} // [추가]
+            mood={mood} setMood={setMood}             // [추가]
             layoutStyle={layoutStyle} setLayoutStyle={setLayoutStyle}
             textAlign={textAlign} setTextAlign={setTextAlign}
             fontSize={fontSize} setFontSize={setFontSize}
