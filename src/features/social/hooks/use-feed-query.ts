@@ -1,8 +1,8 @@
 import { useInfiniteQuery, useMutation, useQueryClient, InfiniteData } from '@tanstack/react-query';
-import { feedApi, TEST_USER_ID } from '../api/feed-api';
+import { feedApi } from '../api/feed-api';
 import { FeedSliceResponse } from '../types/feed';
 
-// 쿼리 키 관리 (필터링 및 유저별 캐싱 분리)
+// 쿼리 키 관리
 export const FEED_KEYS = {
     all: ['feeds'] as const,
     list: (userId: number, filter: string) => [...FEED_KEYS.all, userId, filter] as const,
@@ -10,23 +10,22 @@ export const FEED_KEYS = {
 
 /**
  * 피드 목록 무한 스크롤 훅
- * @param userId 로그인한 유저 ID (없으면 0)
- * @param filter 필터 옵션 (all, my-posts 등)
+ * @param userId 로그인한 유저 ID
+ * @param filter 필터 옵션
  */
 export const useFeedList = (userId: number, filter: string = 'all') => {
-    // 유저 ID가 없으면(0) 테스트 ID(1)를 사용하도록 처리 -> 회원서비스 없어도 조회 가능
-    const effectiveUserId = userId === 0 ? TEST_USER_ID : userId;
-
     return useInfiniteQuery<FeedSliceResponse, Error>({
-        queryKey: FEED_KEYS.list(effectiveUserId, filter),
+        // 테스트 유저 변환 로직 제거하고 바로 userId 사용
+        queryKey: FEED_KEYS.list(userId, filter),
         queryFn: ({ pageParam = 0 }) => {
-            return feedApi.getFeeds(effectiveUserId, pageParam as number, 10);
+            return feedApi.getFeeds(userId, pageParam as number, 10);
         },
         initialPageParam: 0,
         getNextPageParam: (lastPage) => {
-            // Slice 방식: last가 false면 다음 페이지 번호 반환
             return lastPage.last ? undefined : lastPage.number + 1;
         },
+        // userId가 유효할 때만 쿼리 실행 (0이거나 없으면 실행 안 함)
+        enabled: !!userId, 
     });
 };
 
@@ -35,12 +34,11 @@ export const useFeedList = (userId: number, filter: string = 'all') => {
  */
 export const useFeedLike = (userId: number) => {
     const queryClient = useQueryClient();
-    const effectiveUserId = userId === 0 ? TEST_USER_ID : userId;
 
     return useMutation({
-        mutationFn: (feedId: number) => feedApi.toggleLike(feedId, effectiveUserId),
+        // 테스트 유저 변환 로직 제거
+        mutationFn: (feedId: number) => feedApi.toggleLike(feedId, userId),
         
-        // API 요청 보내기 전에 UI 먼저 업데이트 (인스타그램처럼 즉시 반응)
         onMutate: async (feedId) => {
             await queryClient.cancelQueries({ queryKey: FEED_KEYS.all });
             const previousFeeds = queryClient.getQueriesData<InfiniteData<FeedSliceResponse>>({ queryKey: FEED_KEYS.all });
@@ -71,7 +69,6 @@ export const useFeedLike = (userId: number) => {
 
             return { previousFeeds };
         },
-        // 에러 발생 시 롤백
         onError: (_err, _feedId, context) => {
             if (context?.previousFeeds) {
                 context.previousFeeds.forEach(([queryKey, data]) => {
@@ -79,7 +76,6 @@ export const useFeedLike = (userId: number) => {
                 });
             }
         },
-        // 완료 후 최신 데이터 동기화
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: FEED_KEYS.all });
         },
