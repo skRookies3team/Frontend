@@ -19,6 +19,35 @@ interface SignupResponse {
     };
 }
 
+// 펫 정보 타입
+export interface GetPetDto {
+    petId: number;
+    petName: string;
+    species: 'DOG' | 'CAT';
+    breed: string;
+    genderType: 'MALE' | 'FEMALE';
+    is_neutered: boolean;
+    profileImage: string;
+    age: number;
+    birth: string; // LocalDate as string (YYYY-MM-DD)
+    status: string;
+}
+
+// 사용자 정보 조회 응답 타입
+export interface GetUserDto {
+    username: string; // 사용자 이름(닉네임)
+    genderType: 'MALE' | 'FEMALE';
+    profileImage: string;
+    social: string; // 소셜
+    statusMessage: string;
+    age: number;
+    birth: string; // LocalDate as string (YYYY-MM-DD)
+    currentLat: number;
+    currentLng: number;
+    petCoin: number;
+    pets: GetPetDto[];
+}
+
 // 로그인 (토큰 불필요 - 공개 API)
 export const loginApi = async (email: string, password: string): Promise<LoginResponse> => {
 
@@ -72,6 +101,12 @@ export const getCurrentUserApi = async () => {
     return response;
 };
 
+// 사용자 정보 조회 (ID로 조회)
+export const getUserApi = async (userId: number): Promise<GetUserDto> => {
+    const response = await httpClient.get<GetUserDto>(`/users/${userId}`);
+    return response;
+};
+
 // Google 로그인
 export const googleLoginApi = async (idToken: string): Promise<LoginResponse> => {
     const response = await httpClient.post<LoginResponse>('/users/google', {
@@ -79,3 +114,4 @@ export const googleLoginApi = async (idToken: string): Promise<LoginResponse> =>
     }, { skipAuth: true });
     return response;
 };
+
