@@ -116,3 +116,36 @@ export const googleLoginApi = async (idToken: string): Promise<LoginResponse> =>
     return response;
 };
 
+// 프로필 수정 요청 DTO
+export interface UpdateProfileRequestDto {
+    username: string; // 이름
+    social: string;   // 사용자 이름
+}
+
+// 프로필 수정 응답 DTO
+export interface UpdateProfileResponseDto {
+    username: string;
+    profileImage: string;
+    social: string;
+}
+
+// 프로필 수정 API
+export const updateProfileApi = async (userId: number, request: UpdateProfileRequestDto, userProfile: File | null): Promise<UpdateProfileResponseDto> => {
+    const formData = new FormData();
+
+    if (userProfile) {
+        formData.append("userProfile", userProfile);
+    }
+
+    formData.append("request", new Blob([JSON.stringify(request)], {
+        type: "application/json"
+    }));
+
+    const response = await httpClient.patch<UpdateProfileResponseDto>(`/users/me`, formData, {
+        headers: {
+            "Content-Type": "multipart/form-data"
+        }
+    });
+    return response;
+};
+

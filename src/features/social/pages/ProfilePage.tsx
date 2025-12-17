@@ -33,7 +33,7 @@ import { RECAPS, Recap } from "@/features/diary/data/recap-data"
 import { RecapModal } from "@/features/diary/components/recap-modal"
 import { Link, useNavigate, Outlet } from "react-router-dom"
 import { useState, useRef, type ChangeEvent, useEffect } from "react"
-import { getUserApi, type GetUserDto } from "@/features/auth/api/auth-api"
+import { getUserApi, updateProfileApi, type GetUserDto } from "@/features/auth/api/auth-api"
 
 
 
@@ -159,26 +159,47 @@ export default function ProfilePage() {
   const [showEditProfileDialog, setShowEditProfileDialog] = useState(false)
   const [editName, setEditName] = useState("")
   const [editUsername, setEditUsername] = useState("")
-  const [editBio, setEditBio] = useState("")
   const [editAvatar, setEditAvatar] = useState<string | null>(null)
+
+  const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null)
 
   // Initialize edit state when dialog opens
   const handleOpenEditProfile = () => {
-    setEditName(user?.name || "")
-    setEditUsername(user?.username || "")
-    setEditBio(user?.bio || "")
-    setEditAvatar(user?.avatar || null)
+    setEditName(apiUserData?.username || user?.name || "")
+    setEditUsername(apiUserData?.social || user?.username || "")
+    // Bio removed
+    setEditAvatar(apiUserData?.profileImage || user?.avatar || null)
+    setSelectedPhotoFile(null)
     setShowEditProfileDialog(true)
   }
 
-  const handleUpdateProfile = () => {
-    updateUser({
-      name: editName,
-      username: editUsername,
-      bio: editBio,
-      ...(editAvatar && { avatar: editAvatar })
-    })
-    setShowEditProfileDialog(false)
+  const handleUpdateProfile = async () => {
+    try {
+      if (!user) return
+
+      const userId = parseInt(user.id)
+      await updateProfileApi(
+        userId,
+        {
+          username: editName,
+          social: editUsername
+        },
+        selectedPhotoFile
+      )
+
+      // Refresh user data
+      const response = await getUserApi(userId)
+      setApiUserData(response)
+      updateUser({
+        name: response.username,
+        username: response.social,
+        avatar: response.profileImage
+      })
+
+      setShowEditProfileDialog(false)
+    } catch (error) {
+      console.error("Failed to update profile", error)
+    }
   }
 
   // New Pet Form State
@@ -190,6 +211,7 @@ export default function ProfilePage() {
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      setSelectedPhotoFile(file)
       const reader = new FileReader()
       reader.onloadend = () => {
         setEditAvatar(reader.result as string)
@@ -769,18 +791,7 @@ export default function ProfilePage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-bio" className="text-right">
-                소개
-              </Label>
-              <Input
-                id="edit-bio"
-                value={editBio}
-                onChange={(e) => setEditBio(e.target.value)}
-                className="col-span-3"
-                placeholder="자기소개를 입력하세요"
-              />
-            </div>
+
           </div>
           <DialogFooter>
             <Button onClick={handleUpdateProfile}>저장하기</Button>
