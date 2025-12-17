@@ -193,7 +193,7 @@ export default function ProfilePage() {
           photos: 0
         }
       }
-      addPet(newPet)
+      addPet(newPet, null)
     }
 
     setShowAddPetDialog(false)

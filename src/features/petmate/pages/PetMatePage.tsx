@@ -82,33 +82,66 @@ export default function PetMatePage() {
 
   const hasNoCandidates = candidates.length === 0
 
-  // 초기 위치 가져오기
+  // 초기 위치 가져오기 (저장된 위치 우선, 없으면 GPS)
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const coords = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
+    const loadLocation = async () => {
+      // 1. 먼저 DB에서 저장된 위치 확인
+      if (user?.id) {
+        try {
+          const savedLocation = await petMateApi.getSavedLocation(Number(user.id))
+          if (savedLocation && savedLocation.latitude && savedLocation.longitude) {
+            setUserCoords({
+              latitude: savedLocation.latitude,
+              longitude: savedLocation.longitude
+            })
+            setCurrentLocation(savedLocation.location || '저장된 위치')
+            console.log('저장된 기본 위치를 불러왔습니다.')
+            return // 저장된 위치가 있으면 GPS 호출 안 함
           }
-          setUserCoords(coords)
-
-          try {
-            const addressInfo = await petMateApi.getAddressFromCoords(coords.longitude, coords.latitude)
-            if (addressInfo) {
-              setCurrentLocation(addressInfo.fullAddress)
-            }
-          } catch (error) {
-            console.error('Failed to get address:', error)
-          }
-        },
-        (error) => {
-          console.error('Geolocation error:', error)
-          setUserCoords({ latitude: 37.5007, longitude: 127.0365 })
+        } catch (error) {
+          console.log('저장된 위치 없음, GPS로 대체')
         }
-      )
+      }
+
+      // 2. 저장된 위치가 없으면 GPS로 현재 위치 가져오기
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const coords = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude
+            }
+            setUserCoords(coords)
+
+            try {
+              const addressInfo = await petMateApi.getAddressFromCoords(coords.longitude, coords.latitude)
+              if (addressInfo) {
+                setCurrentLocation(addressInfo.fullAddress)
+                // 위치 정보를 DB에 저장 (기본 위치로 설정)
+                if (user?.id) {
+                  await petMateApi.updateLocation(
+                    Number(user.id),
+                    coords.latitude,
+                    coords.longitude,
+                    addressInfo.fullAddress
+                  )
+                  console.log('GPS 위치가 기본 위치로 저장되었습니다.')
+                }
+              }
+            } catch (error) {
+              console.error('Failed to get address:', error)
+            }
+          },
+          (error) => {
+            console.error('Geolocation error:', error)
+            setUserCoords({ latitude: 37.5007, longitude: 127.0365 })
+          }
+        )
+      }
     }
-  }, [])
+
+    loadLocation()
+  }, [user?.id])
 
   // 좋아요 핸들러
   const handleLikeForCandidate = async (candidate: PetMateCandidate) => {
@@ -150,6 +183,15 @@ export default function PetMatePage() {
           const addressInfo = await petMateApi.getAddressFromCoords(coords.longitude, coords.latitude)
           if (addressInfo) {
             setCurrentLocation(addressInfo.fullAddress)
+            // 위치 정보를 DB에 저장
+            if (user?.id) {
+              await petMateApi.updateLocation(
+                Number(user.id),
+                coords.latitude,
+                coords.longitude,
+                addressInfo.fullAddress
+              )
+            }
             toast.success('현재 위치로 설정되었습니다')
             setLocationModalOpen(false)
           }
@@ -205,12 +247,28 @@ export default function PetMatePage() {
   }
 
   // 검색 결과 선택
-  const handleSelectSearchResult = (result: SearchAddressResult) => {
+  const handleSelectSearchResult = async (result: SearchAddressResult) => {
     setCurrentLocation(result.addressName)
     setUserCoords({ latitude: result.latitude, longitude: result.longitude })
     setSearchResults([])
     setLocationSearch("")
     setLocationModalOpen(false)
+
+    // 위치 정보를 DB에 저장
+    if (user?.id) {
+      try {
+        await petMateApi.updateLocation(
+          Number(user.id),
+          result.latitude,
+          result.longitude,
+          result.addressName
+        )
+        console.log('검색 위치가 DB에 저장되었습니다.')
+      } catch (error) {
+        console.error('Failed to save location:', error)
+      }
+    }
+
     toast.success('위치가 설정되었습니다')
   }
 
