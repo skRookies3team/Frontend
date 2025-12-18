@@ -822,7 +822,14 @@ export default function PetMatePage() {
                     onClick={() => handleSelectSearchResult(result)}
                     className="w-full text-left p-3 rounded-lg hover:bg-pink-50 transition-colors"
                   >
-                    <p className="font-medium text-gray-900">{result.addressName}</p>
+                    {/* 키워드 검색: buildingName(장소명) 우선, 주소 검색: addressName 표시 */}
+                    <p className="font-medium text-gray-900">
+                      {result.buildingName || result.addressName}
+                    </p>
+                    {/* buildingName이 있으면 주소를 부가정보로 표시 */}
+                    {result.buildingName && (
+                      <p className="text-sm text-gray-500 mt-1">{result.addressName}</p>
+                    )}
                   </button>
                 ))}
               </div>
