@@ -21,6 +21,9 @@ import OnboardingPage from "@/features/auth/pages/OnboardingPage"
 import WelcomePage from "@/features/auth/pages/WelcomePage"
 import UserInfoPage from "@/features/auth/pages/UserInfoPage"
 import SettingsPage from "@/features/auth/pages/SettingsPage"
+import PhotoPage from "@/features/auth/pages/PhotoPage"
+
+
 
 // Feature: Shop
 import { CartProvider } from "@/features/shop/context/cart-context"
@@ -138,6 +141,7 @@ function App() {
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/onboarding" element={<OnboardingPage />} />
                   <Route path="/pet-info" element={<PetInfoPage />} />
+                  <Route path="/photo/upload" element={<PhotoPage />} />
                   <Route path="/register-pet" element={<RegisterPetPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="/signup" element={<SignupPage />}>

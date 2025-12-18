@@ -31,67 +31,16 @@ import { useAuth } from "@/features/auth/context/auth-context"
 import { AI_DIARIES } from "@/features/healthcare/data/pet-data"
 import { RECAPS, Recap } from "@/features/diary/data/recap-data"
 import { RecapModal } from "@/features/diary/components/recap-modal"
-import { Link, useNavigate, Outlet } from "react-router-dom"
+import { Link, useNavigate, Outlet, useLocation } from "react-router-dom"
 import { useState, useRef, type ChangeEvent, useEffect } from "react"
-import { getUserApi, updateProfileApi, type GetUserDto } from "@/features/auth/api/auth-api"
+import { getUserApi, updateProfileApi, getAllArchivesApi, type GetUserDto, type CreateArchiveDto } from "@/features/auth/api/auth-api"
 
-
-
-const ALL_PHOTOS = [
-  {
-    id: "1",
-    url: "/golden-retriever-playing-park.jpg",
-    category: "산책",
-    date: "2024.01.15",
-    likes: 124,
-    comments: 18,
-  },
-  {
-    id: "2",
-    url: "/dog-running-grass.jpg",
-    category: "놀이",
-    date: "2024.01.14",
-    likes: 98,
-    comments: 12,
-  },
-  {
-    id: "3",
-    url: "/cat-in-box.jpg",
-    category: "일상",
-    date: "2024.01.13",
-    likes: 145,
-    comments: 24,
-  },
-  {
-    id: "4",
-    url: "/tabby-cat-sunbeam.png",
-    category: "휴식",
-    date: "2024.01.12",
-    likes: 167,
-    comments: 31,
-  },
-  {
-    id: "5",
-    url: "/corgi.jpg",
-    category: "훈련",
-    date: "2024.01.11",
-    likes: 89,
-    comments: 15,
-  },
-  {
-    id: "6",
-    url: "/golden-retriever.png",
-    category: "식사",
-    date: "2024.01.10",
-    likes: 112,
-    comments: 19,
-  },
-]
 
 
 
 export default function ProfilePage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user, logout, updateUser, addPet, updatePet, deletePet } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null)
@@ -129,7 +78,39 @@ export default function ProfilePage() {
     }
   }, [selectedPhoto])
 
-  const [selectedCategory] = useState("전체")
+  const [photos, setPhotos] = useState<any[]>([])
+
+  const fetchArchives = async () => {
+    try {
+      const response = await getAllArchivesApi()
+      const mappedPhotos = response.archives.map((archive) => ({
+        id: archive.archiveId.toString(),
+        url: archive.url,
+        category: "일상", // Default as API doesn't return category yet
+        date: archive.uploadTime?.split('T')[0]?.replace(/-/g, '.') || new Date().toISOString().split('T')[0].replace(/-/g, '.'),
+        likes: 0,
+        comments: 0
+      }))
+      setPhotos(mappedPhotos)
+    } catch (error) {
+      console.error("Failed to fetch archives:", error)
+    }
+  }
+
+  useEffect(() => {
+    fetchArchives()
+  }, [])
+
+  // Re-fetch when returning from upload page (optional if we just rely on mount, but good for UX)
+  useEffect(() => {
+    if (location.state?.refresh) {
+      fetchArchives()
+      // Clear state
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [location.state, navigate, location.pathname])
+
+
   const [selectedRecap, setSelectedRecap] = useState<Recap | null>(null)
 
   const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -275,8 +256,7 @@ export default function ProfilePage() {
     deletePet(id)
   }
 
-  const filteredPhotos =
-    selectedCategory === "전체" ? ALL_PHOTOS : ALL_PHOTOS.filter((photo) => photo.category === selectedCategory)
+
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear()
@@ -622,12 +602,9 @@ export default function ProfilePage() {
             {/* 사진 보관함 탭 */}
             <TabsContent value="gallery" className="mt-6">
               <Tabs defaultValue="all" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="all" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary">
-                    전체 <Badge className="ml-1.5 bg-muted text-muted-foreground">{ALL_PHOTOS.length}</Badge>
-                  </TabsTrigger>
-                  <TabsTrigger value="post" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary">
-                    내 게시물
+                    사진 <Badge className="ml-1.5 bg-muted text-muted-foreground">{photos.length}</Badge>
                   </TabsTrigger>
                   <TabsTrigger value="diary" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary">
                     다이어리 <Badge className="ml-1.5 bg-muted text-muted-foreground">{AI_DIARIES.length}</Badge>
@@ -636,8 +613,14 @@ export default function ProfilePage() {
 
                 {/* 전체 탭 */}
                 <TabsContent value="all">
+                  <div className="mb-4 flex justify-end">
+                    <Button onClick={() => navigate('/photo/upload')} size="sm" className="gap-1">
+                      <Plus className="h-4 w-4" />
+                      사진 업로드
+                    </Button>
+                  </div>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-                    {ALL_PHOTOS.map((photo) => (
+                    {photos.map((photo) => (
                       <div
                         key={photo.id}
                         className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg"
@@ -671,38 +654,7 @@ export default function ProfilePage() {
                   </div>
                 </TabsContent>
 
-                {/* 내 게시물 탭 */}
-                <TabsContent value="post">
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-                    {filteredPhotos.map((photo) => (
-                      <div
-                        key={photo.id}
-                        className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg"
-                        onClick={() => setSelectedPhoto(photo.url)}
-                      >
-                        <img
-                          src={photo.url}
-                          alt={`Photo ${photo.id}`}
-                          className="h-full w-full object-cover transition-transform group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100">
-                          <div className="absolute bottom-2 left-2 right-2 text-white">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="flex items-center gap-1">
-                                <Heart className="h-3 w-3" />
-                                {photo.likes}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <MessageCircle className="h-3 w-3" />
-                                {photo.comments}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </TabsContent>
+
 
                 {/* 다이어리 탭 */}
                 <TabsContent value="diary">
