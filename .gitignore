@@ -3,4 +3,5 @@
 .env
 /other
 
+.env.env
 .env
