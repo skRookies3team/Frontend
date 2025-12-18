@@ -22,8 +22,8 @@ const getEnv = (key: string) => {
   }
 };
 
-// [수정] 프록시 없이 백엔드 포트(8087)로 직접 요청하도록 변경
-const BASE_URL = 'http://localhost:8087/api';
+// [수정] 프록시(게이트웨이)를 통해 요청하도록 변경
+const BASE_URL = '/api';
 
 // [중요] 토큰 가져오기 (petlog_token 우선, 없으면 accessToken 확인)
 const getAccessToken = () => localStorage.getItem('petlog_token') || localStorage.getItem('accessToken');
@@ -208,7 +208,7 @@ const KakaoMap = ({ lat, lng }: { lat: number; lng: number }) => {
 
   useEffect(() => {
     const envKey = getEnv('VITE_KAKAO_API_KEY');
-    const KAKAO_API_KEY = envKey || "9852c4d5baa8c8c30254fe67de447bc3";
+    const KAKAO_API_KEY = envKey;
 
     if (document.getElementById('kakao-map-script')) {
       if (window.kakao && window.kakao.maps) {
