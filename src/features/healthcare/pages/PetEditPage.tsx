@@ -97,6 +97,8 @@ const CAT_BREEDS = [
     "뱅갈", "메인쿤", "아메리칸 숏헤어", "노르웨이 숲", "기타"
 ]
 
+import { getPetApi, updatePetApi } from "@/features/healthcare/api/pet-api"
+
 export default function PetEditPage() {
     const navigate = useNavigate()
     const params = useParams()
@@ -108,6 +110,8 @@ export default function PetEditPage() {
     const [photoPreview, setPhotoPreview] = useState<string>("")
     const [isAnalyzing, setIsAnalyzing] = useState(false)
     const [aiAnalysisComplete, setAiAnalysisComplete] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
+    const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [formData, setFormData] = useState({
         name: "",
         species: "",
@@ -116,27 +120,56 @@ export default function PetEditPage() {
         gender: "",
         neutered: "",
         birthday: "",
+        vaccinated: "",
     })
 
     useEffect(() => {
-        if (user && petId) {
-            const pet = user.pets.find(p => p.id === petId)
-            if (pet) {
+        const fetchPetData = async () => {
+            if (!petId) return
+
+            // 1. Try to find in local user state
+            if (user) {
+                const localPet = user.pets.find(p => p.id === petId)
+                if (localPet) {
+                    setFormData({
+                        name: localPet.name,
+                        species: localPet.species,
+                        breed: localPet.breed,
+                        age: localPet.age != null ? String(localPet.age) : "",
+                        gender: localPet.gender === "남아" ? "male" : "female",
+                        neutered: localPet.neutered ? "yes" : "no",
+                        birthday: localPet.birthday || "",
+                        vaccinated: localPet.healthStatus?.vaccination === "접종 완료" ? "yes" : "no", // Basic mapping for local data
+                    })
+                    setPhotoPreview(localPet.photo)
+                    return
+                }
+            }
+
+            // 2. Fallback to API
+            try {
+                setIsLoading(true)
+                const apiPet = await getPetApi(Number(petId))
                 setFormData({
-                    name: pet.name,
-                    species: pet.species,
-                    breed: pet.breed,
-                    age: pet.age != null ? String(pet.age) : "",
-                    gender: pet.gender === "남아" ? "male" : "female",
-                    neutered: pet.neutered ? "yes" : "no",
-                    birthday: pet.birthday || "",
+                    name: apiPet.petName,
+                    species: apiPet.species === "DOG" ? "강아지" : "고양이",
+                    breed: apiPet.breed,
+                    age: String(apiPet.age),
+                    gender: apiPet.genderType === "MALE" ? "male" : "female",
+                    neutered: apiPet.neutered ? "yes" : "no",
+                    birthday: apiPet.birth || "",
+                    vaccinated: apiPet.vaccinated ? "yes" : "no",
                 })
-                setPhotoPreview(pet.photo)
-            } else {
-                // Pet not found
+                setPhotoPreview(apiPet.profileImage)
+            } catch (error) {
+                console.error("Failed to fetch pet:", error)
                 navigate("/profile")
+            } finally {
+                setIsLoading(false)
             }
         }
+
+        fetchPetData()
     }, [user, petId, navigate])
 
     const analyzePhoto = async (_file: File) => {
@@ -159,6 +192,7 @@ export default function PetEditPage() {
     const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (file) {
+            setSelectedFile(file)
             const reader = new FileReader()
             reader.onload = () => {
                 setPhotoPreview(reader.result as string)
@@ -171,24 +205,55 @@ export default function PetEditPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        updatePet(petId, {
-            name: formData.name,
-            species: formData.species,
-            breed: formData.breed,
-            age: formData.age,
-            photo: photoPreview || "/placeholder.svg",
-            gender: formData.gender === "male" ? "남아" : "여아",
-            neutered: formData.neutered === "yes",
-            birthday: formData.birthday,
-        })
+        try {
+            setIsLoading(true)
+            await updatePetApi(Number(petId), {
+                petName: formData.name,
+                breed: formData.breed,
+                genderType: formData.gender === "male" ? "MALE" : "FEMALE",
+                age: Number(formData.age),
+                birth: formData.birthday,
+                species: formData.species === "강아지" ? "DOG" : "CAT",
+                neutered: formData.neutered === "yes",
+                vaccinated: formData.vaccinated === "yes"
+            }, selectedFile)
 
-        navigate(`/profile/pet/${petId}?returnTo=${encodeURIComponent(returnTo)}`)
+            // Local state update fallback (optional, if context acts as cache)
+            updatePet(petId, {
+                name: formData.name,
+                species: formData.species,
+                breed: formData.breed,
+                age: formData.age,
+                photo: photoPreview || "/placeholder.svg",
+                gender: formData.gender === "male" ? "남아" : "여아",
+                neutered: formData.neutered === "yes",
+                birthday: formData.birthday,
+            })
+
+            navigate(`/profile/pet/${petId}?returnTo=${encodeURIComponent(returnTo)}`)
+        } catch (error) {
+            console.error("Failed to update pet:", error)
+            alert("정보 수정에 실패했습니다.")
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     const getBreedOptions = () => {
         if (formData.species === "강아지") return DOG_BREEDS
         if (formData.species === "고양이") return CAT_BREEDS
         return ["직접 입력"]
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-white">
+                <div className="flex flex-col items-center gap-4">
+                    <Sparkles className="h-8 w-8 animate-spin text-pink-500" />
+                    <p className="text-pink-600 font-medium">반려동물 정보를 불러오는 중...</p>
+                </div>
+            </div>
+        )
     }
 
     return (
@@ -420,6 +485,32 @@ export default function PetEditPage() {
                                         type="button"
                                         onClick={() => setFormData({ ...formData, neutered: "no" })}
                                         className={`rounded-xl border-2 p-3 text-sm font-medium transition-all ${formData.neutered === "no"
+                                            ? "border-pink-500 bg-gradient-to-r from-pink-500 to-rose-500 text-white"
+                                            : "border-pink-200 hover:border-pink-500"
+                                            }`}
+                                    >
+                                        안 했어요
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <Label>예방접종 여부</Label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, vaccinated: "yes" })}
+                                        className={`rounded-xl border-2 p-3 text-sm font-medium transition-all ${formData.vaccinated === "yes"
+                                            ? "border-pink-500 bg-gradient-to-r from-pink-500 to-rose-500 text-white"
+                                            : "border-pink-200 hover:border-pink-500"
+                                            }`}
+                                    >
+                                        했어요
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, vaccinated: "no" })}
+                                        className={`rounded-xl border-2 p-3 text-sm font-medium transition-all ${formData.vaccinated === "no"
                                             ? "border-pink-500 bg-gradient-to-r from-pink-500 to-rose-500 text-white"
                                             : "border-pink-200 hover:border-pink-500"
                                             }`}
