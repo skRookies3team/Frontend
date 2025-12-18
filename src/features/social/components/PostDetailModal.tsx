@@ -1,16 +1,16 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from "@/shared/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { ScrollArea } from "@/shared/ui/scroll-area";
-import { Heart, MessageCircle, Send, MoreHorizontal, X, Bookmark } from "lucide-react";
+import { Heart, MessageCircle, Send, MoreHorizontal, X, Bookmark, Trash2 } from "lucide-react";
 import { FeedDto } from "../types/feed";
 import { useAuth } from "@/features/auth/context/auth-context";
 import { useComments, useCreateComment, useDeleteComment } from "../hooks/use-comment-query";
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Link } from 'react-router-dom';
 
 interface PostDetailModalProps {
   post: FeedDto;
@@ -24,10 +24,12 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
   const [commentText, setCommentText] = useState("");
   const currentUserId = Number(user?.id);
 
+  // React Query Hooks 연결
   const { data: comments, isLoading: isCommentsLoading } = useComments(post.feedId);
   const createCommentMutation = useCreateComment(post.feedId);
   const deleteCommentMutation = useDeleteComment(post.feedId);
 
+  // 댓글 작성 핸들러
   const handlePostComment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentText.trim()) return;
@@ -38,6 +40,7 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
     );
   };
 
+  // 댓글 삭제 핸들러
   const handleDeleteComment = (commentId: number) => {
     if (confirm("댓글을 삭제하시겠습니까?")) {
       deleteCommentMutation.mutate({ commentId, userId: currentUserId });
@@ -50,28 +53,21 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      {/* DialogContent 수정:
-        - overlayClassName: "bg-transparent backdrop-blur-none"로 설정하여 블라인드 처리 제거
-        - showCloseButton={false}: 기본 닫기 버튼 숨김 (겹침 방지 및 커스텀 위치 사용)
-      */}
       <DialogContent 
         className="max-w-full md:max-w-[1200px] w-full p-0 gap-0 overflow-hidden h-full md:h-[90vh] flex flex-col md:flex-row bg-white border-none sm:rounded-xl z-50 shadow-2xl"
-        overlayClassName="bg-black/30 backdrop-blur-none" // 블라인드(배경 흐림) 제거, 약간의 어두움만 유지 (원하면 bg-transparent로 변경 가능)
+        overlayClassName="bg-black/30 backdrop-blur-none" 
         showCloseButton={false}
       >
         <DialogTitle className="sr-only">게시물 상세</DialogTitle>
         
-        {/* 커스텀 닫기 버튼 (X 버튼)
-          - 모달 내부가 아닌 화면 우측 상단(fixed)으로 빼서 배치
-          - 설정 버튼(점 3개)과의 겹침 문제 해결
-        */}
+        {/* 닫기 버튼 */}
         <DialogClose className="fixed right-6 top-6 z-[60] p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors cursor-pointer">
             <X className="h-6 w-6" />
             <span className="sr-only">Close</span>
         </DialogClose>
 
         {/* 1. 좌측 이미지 영역 */}
-        <div className="relative bg-black flex items-center justify-center w-full h-[45vh] md:h-full md:flex-[1.5_1_0%] overflow-hidden bg-gray-100/10">
+        <div className="relative bg-black flex items-center justify-center w-full h-[40vh] md:h-full md:flex-[1.5_1_0%] overflow-hidden bg-gray-100/10">
            {post.imageUrl ? (
              <img 
                src={post.imageUrl} 
@@ -88,9 +84,9 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
         </div>
 
         {/* 2. 우측 정보 및 댓글 영역 */}
-        <div className="flex flex-col w-full h-[55vh] md:h-full md:flex-1 bg-white border-l border-gray-100 relative">
+        <div className="flex flex-col w-full h-[60vh] md:h-full md:flex-1 bg-white border-l border-gray-100 relative">
           
-          {/* 헤더 - 설정 버튼(MoreHorizontal)은 여기에 그대로 유지 (X버튼이 밖으로 나가서 안 겹침) */}
+          {/* 헤더 */}
           <div className="flex items-center justify-between p-4 border-b border-gray-100 shrink-0">
              <div className="flex items-center gap-3">
                 <Link to={`/user/${post.writerNickname}`} className="flex items-center gap-3 group">
@@ -110,24 +106,29 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
 
           {/* 댓글 목록 (스크롤 영역) */}
           <ScrollArea className="flex-1 p-4">
-             {/* 본문 내용 */}
+             {/* 본문 내용 (작성자 코멘트) */}
              <div className="flex gap-3 mb-6">
                 <Link to={`/user/${post.writerNickname}`}>
                     <Avatar className="h-8 w-8 mt-1">
-                    <AvatarImage src={post.writerProfileImage || "/placeholder-user.jpg"} />
-                    <AvatarFallback>{post.writerNickname[0]}</AvatarFallback>
+                        <AvatarImage src={post.writerProfileImage || "/placeholder-user.jpg"} />
+                        <AvatarFallback>{post.writerNickname[0]}</AvatarFallback>
                     </Avatar>
                 </Link>
                 <div className="flex-1">
-                   <p className="text-sm leading-relaxed">
+                   <div className="text-sm leading-relaxed">
                       <Link to={`/user/${post.writerNickname}`} className="font-semibold mr-2 hover:opacity-70 transition-opacity">
                         {post.writerNickname}
                       </Link>
                       <span className="whitespace-pre-wrap">{post.content}</span>
-                   </p>
-                   <div className="flex gap-2 mt-2 text-sm text-blue-600">
-                        {post.hashtags.map((tag, idx) => <span key={idx}>#{tag}</span>)}
                    </div>
+                   {/* 해시태그 */}
+                   {post.hashtags && post.hashtags.length > 0 && (
+                       <div className="flex gap-1 mt-1 flex-wrap">
+                            {post.hashtags.map((tag, idx) => (
+                                <span key={idx} className="text-sm text-blue-600 hover:underline cursor-pointer">#{tag}</span>
+                            ))}
+                       </div>
+                   )}
                    <span className="text-xs text-gray-400 mt-2 block">
                       {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ko })}
                    </span>
@@ -139,37 +140,42 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
                  <div className="flex justify-center items-center h-20">
                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
                  </div>
-             ) : comments?.map((comment) => (
-                 <div key={comment.commentId} className="flex gap-3 mb-4 group">
-                    <Link to={`/user/${comment.writerNickname}`}>
-                        <Avatar className="h-8 w-8 mt-1">
-                            <AvatarImage src={comment.writerProfileImage || "/placeholder-user.jpg"} />
-                            <AvatarFallback>{comment.writerNickname[0]}</AvatarFallback>
-                        </Avatar>
-                    </Link>
-                    <div className="flex-1">
-                       <p className="text-sm leading-tight">
-                          <Link to={`/user/${comment.writerNickname}`} className="font-semibold mr-2 hover:opacity-70 transition-opacity">
-                            {comment.writerNickname}
-                          </Link>
-                          {comment.content}
-                       </p>
-                       <div className="flex items-center gap-3 mt-1.5 font-medium">
-                          <span className="text-xs text-gray-400">
-                             {formatDistanceToNow(new Date(comment.createdAt), { locale: ko })}
-                          </span>
-                          {(comment.userId === currentUserId) && (
-                             <button 
-                                onClick={() => handleDeleteComment(comment.commentId)}
-                                className="text-xs text-gray-400 hover:text-red-500"
-                             >
-                                삭제
-                             </button>
-                          )}
-                       </div>
-                    </div>
+             ) : (
+                 <div className="space-y-4">
+                    {comments?.map((comment) => (
+                        <div key={comment.commentId} className="flex gap-3 group relative">
+                            <Link to={`/user/${comment.writerNickname}`}>
+                                <Avatar className="h-8 w-8 mt-1">
+                                    <AvatarImage src={comment.writerProfileImage || "/placeholder-user.jpg"} />
+                                    <AvatarFallback>{comment.writerNickname[0]}</AvatarFallback>
+                                </Avatar>
+                            </Link>
+                            <div className="flex-1">
+                                <div className="text-sm leading-tight">
+                                    <Link to={`/user/${comment.writerNickname}`} className="font-semibold mr-2 hover:opacity-70 transition-opacity">
+                                        {comment.writerNickname}
+                                    </Link>
+                                    {comment.content}
+                                </div>
+                                <div className="flex items-center gap-3 mt-1.5">
+                                    <span className="text-xs text-gray-400">
+                                        {formatDistanceToNow(new Date(comment.createdAt), { locale: ko })}
+                                    </span>
+                                    {/* 댓글 작성자 또는 피드 작성자일 경우 삭제 가능 */}
+                                    {(comment.userId === currentUserId || post.writerId === currentUserId) && (
+                                        <button 
+                                            onClick={() => handleDeleteComment(comment.commentId)}
+                                            className="text-xs text-gray-400 hover:text-red-500 font-medium"
+                                        >
+                                            삭제
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                  </div>
-             ))}
+             )}
           </ScrollArea>
 
           {/* 하단 액션 버튼 & 좋아요 */}
@@ -198,7 +204,7 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder="댓글 달기..." 
-                className="border-none focus-visible:ring-0 shadow-none px-0 text-sm"
+                className="border-none focus-visible:ring-0 shadow-none px-0 text-sm flex-1"
              />
              <Button 
                 type="submit" 

@@ -56,8 +56,7 @@ import MissingPetRegisterPage from "@/features/petmate/pages/MissingPetRegisterP
 // Feature: Social
 import FeedPage from "@/features/social/pages/FeedPage"
 import FeedAiRecommendPage from "@/features/social/pages/FeedAiRecommendPage"
-import FeedCreatePage from "@/features/social/pages/FeedCreatePage"
-import ExplorePage from "@/features/social/pages/ExplorePage"
+// FeedCreatePage 제거됨
 import CreatePage from "@/features/social/pages/CreatePage"
 import MessagesPage from "@/features/social/pages/MessagesPage"
 import UserPage from "@/features/social/pages/UserPage"
@@ -98,8 +97,7 @@ function App() {
                     <Route path="dashboard" element={<DashboardPage />} />
                     <Route path="feed" element={<FeedPage />} />
                     <Route path="feed/ai-recommend" element={<FeedAiRecommendPage />} />
-                    <Route path="feed/create" element={<FeedCreatePage />} />
-                    <Route path="explore" element={<ExplorePage />} />
+                    {/* feed/create 라우트 삭제 */}
                     <Route path="create" element={<CreatePage />} />
                     <Route path="ai-diary" element={<AiDiaryPage />} />
                     <Route path="ai-studio" element={<AiStudioPage />} />
