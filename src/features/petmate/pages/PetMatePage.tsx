@@ -82,68 +82,33 @@ export default function PetMatePage() {
 
   const hasNoCandidates = candidates.length === 0
 
-  // 초기 위치 가져오기 (저장된 위치 우선, 없으면 GPS)
+  // 초기 위치 가져오기
   useEffect(() => {
-    const loadLocation = async () => {
-      // 1. 먼저 DB에서 저장된 위치 확인
-      if (user?.id) {
-        try {
-          const savedLocation = await petMateApi.getSavedLocation(Number(user.id))
-          if (savedLocation && savedLocation.latitude && savedLocation.longitude) {
-            setUserCoords({
-              latitude: savedLocation.latitude,
-              longitude: savedLocation.longitude
-            })
-            setCurrentLocation(savedLocation.location || '저장된 위치')
-            console.log('저장된 기본 위치를 불러왔습니다.')
-            return // 저장된 위치가 있으면 GPS 호출 안 함
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const coords = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
           }
-        } catch (error) {
-          console.log('저장된 위치 없음, GPS로 대체')
+          setUserCoords(coords)
+
+          try {
+            const addressInfo = await petMateApi.getAddressFromCoords(coords.longitude, coords.latitude)
+            if (addressInfo) {
+              setCurrentLocation(addressInfo.fullAddress)
+            }
+          } catch (error) {
+            console.error('Failed to get address:', error)
+          }
+        },
+        (error) => {
+          console.error('Geolocation error:', error)
+          setUserCoords({ latitude: 37.5007, longitude: 127.0365 })
         }
-      }
-
-      // 2. 저장된 위치가 없으면 GPS로 현재 위치 가져오기
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            const coords = {
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude
-            }
-            setUserCoords(coords)
-
-            try {
-              const addressInfo = await petMateApi.getAddressFromCoords(coords.longitude, coords.latitude)
-              if (addressInfo) {
-                // buildingName이 있으면 건물명 표시, 없으면 fullAddress 표시
-                const displayLocation = addressInfo.buildingName || addressInfo.fullAddress
-                setCurrentLocation(displayLocation)
-                // 위치 정보를 DB에 저장 (기본 위치로 설정)
-                if (user?.id) {
-                  await petMateApi.updateLocation(
-                    Number(user.id),
-                    coords.latitude,
-                    coords.longitude,
-                    displayLocation
-                  )
-                  console.log('GPS 위치가 기본 위치로 저장되었습니다.')
-                }
-              }
-            } catch (error) {
-              console.error('Failed to get address:', error)
-            }
-          },
-          (error) => {
-            console.error('Geolocation error:', error)
-            setUserCoords({ latitude: 37.5007, longitude: 127.0365 })
-          }
-        )
-      }
+      )
     }
-
-    loadLocation()
-  }, [user?.id])
+  }, [])
 
   // 좋아요 핸들러
   const handleLikeForCandidate = async (candidate: PetMateCandidate) => {
@@ -184,18 +149,7 @@ export default function PetMatePage() {
         try {
           const addressInfo = await petMateApi.getAddressFromCoords(coords.longitude, coords.latitude)
           if (addressInfo) {
-            // buildingName이 있으면 건물명 표시, 없으면 fullAddress 표시
-            const displayLocation = addressInfo.buildingName || addressInfo.fullAddress
-            setCurrentLocation(displayLocation)
-            // 위치 정보를 DB에 저장
-            if (user?.id) {
-              await petMateApi.updateLocation(
-                Number(user.id),
-                coords.latitude,
-                coords.longitude,
-                displayLocation
-              )
-            }
+            setCurrentLocation(addressInfo.fullAddress)
             toast.success('현재 위치로 설정되었습니다')
             setLocationModalOpen(false)
           }
@@ -251,31 +205,12 @@ export default function PetMatePage() {
   }
 
   // 검색 결과 선택
-  // 검색 결과 선택
-  const handleSelectSearchResult = async (result: SearchAddressResult) => {
-    // buildingName이 있으면 건물명 표시, 없으면 addressName 표시
-    const displayLocation = result.buildingName || result.addressName
-    setCurrentLocation(displayLocation)
+  const handleSelectSearchResult = (result: SearchAddressResult) => {
+    setCurrentLocation(result.addressName)
     setUserCoords({ latitude: result.latitude, longitude: result.longitude })
     setSearchResults([])
     setLocationSearch("")
     setLocationModalOpen(false)
-
-    // 위치 정보를 DB에 저장
-    if (user?.id) {
-      try {
-        await petMateApi.updateLocation(
-          Number(user.id),
-          result.latitude,
-          result.longitude,
-          displayLocation
-        )
-        console.log('검색 위치가 DB에 저장되었습니다.')
-      } catch (error) {
-        console.error('Failed to save location:', error)
-      }
-    }
-
     toast.success('위치가 설정되었습니다')
   }
 
@@ -822,14 +757,7 @@ export default function PetMatePage() {
                     onClick={() => handleSelectSearchResult(result)}
                     className="w-full text-left p-3 rounded-lg hover:bg-pink-50 transition-colors"
                   >
-                    {/* 키워드 검색: buildingName(장소명) 우선, 주소 검색: addressName 표시 */}
-                    <p className="font-medium text-gray-900">
-                      {result.buildingName || result.addressName}
-                    </p>
-                    {/* buildingName이 있으면 주소를 부가정보로 표시 */}
-                    {result.buildingName && (
-                      <p className="text-sm text-gray-500 mt-1">{result.addressName}</p>
-                    )}
+                    <p className="font-medium text-gray-900">{result.addressName}</p>
                   </button>
                 ))}
               </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Link, Outlet, useLocation } from "react-router-dom"
 import { TabNavigation } from "@/shared/components/tab-navigation"
 import { ProductCard } from "@/features/shop/components/product-card"
@@ -9,7 +9,6 @@ import { Badge } from "@/shared/ui/badge"
 import { Search, ShoppingCart, ChevronLeft, ChevronRight, Heart } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from "@/features/shop/context/cart-context"
-import { shopApi, Product } from "@/features/shop/api/shop-api"
 
 const CATEGORIES = [
   { id: "all", label: "전체" },
@@ -62,10 +61,9 @@ const SHOP_BANNERS = [
   }
 ]
 
-// 백엔드에 데이터가 없을 때 사용할 MOCK 데이터
-const MOCK_PRODUCTS = [
+const PRODUCTS = [
   {
-    id: 1,
+    id: "1",
     name: "프리미엄 강아지 사료 - 닭고기와 쌀",
     price: 45000,
     mileagePrice: 450,
@@ -76,7 +74,7 @@ const MOCK_PRODUCTS = [
     isFavorite: false,
   },
   {
-    id: 2,
+    id: "2",
     name: "인터랙티브 퍼즐 장난감",
     price: 28000,
     mileagePrice: 280,
@@ -87,7 +85,7 @@ const MOCK_PRODUCTS = [
     isFavorite: true,
   },
   {
-    id: 3,
+    id: "3",
     name: "편안한 펫 침대 - 라지",
     price: 65000,
     mileagePrice: 650,
@@ -98,7 +96,7 @@ const MOCK_PRODUCTS = [
     isFavorite: false,
   },
   {
-    id: 4,
+    id: "4",
     name: "덴탈 케어 츄 (30개입)",
     price: 32000,
     mileagePrice: 320,
@@ -109,7 +107,7 @@ const MOCK_PRODUCTS = [
     isFavorite: false,
   },
   {
-    id: 5,
+    id: "5",
     name: "페치 볼 세트 (3개)",
     price: 18000,
     mileagePrice: 180,
@@ -120,7 +118,7 @@ const MOCK_PRODUCTS = [
     isFavorite: false,
   },
   {
-    id: 6,
+    id: "6",
     name: "스타일리시 목줄 & 리드줄 세트",
     price: 35000,
     mileagePrice: 350,
@@ -137,30 +135,9 @@ export default function ShopPage() {
   const [activeCategory, setActiveCategory] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [currentBanner, setCurrentBanner] = useState(0)
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
   const { cartCount } = useCart()
 
-  // 백엔드에서 상품 조회
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true)
-        const data = await shopApi.getAllProducts()
-        // 백엔드에 데이터가 있으면 사용, 없으면 MOCK 데이터 사용
-        setProducts(data.length > 0 ? data : MOCK_PRODUCTS)
-      } catch (error) {
-        console.error('Failed to fetch products:', error)
-        // API 오류 시 MOCK 데이터 사용
-        setProducts(MOCK_PRODUCTS)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchProducts()
-  }, [])
-
-  const filteredProducts = products.filter((product) => {
+  const filteredProducts = PRODUCTS.filter((product) => {
     const matchesCategory = activeCategory === "all" || product.category === activeCategory
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase())
     return matchesCategory && matchesSearch
@@ -173,7 +150,6 @@ export default function ShopPage() {
   const prevBanner = () => {
     setCurrentBanner((prev) => (prev - 1 + SHOP_BANNERS.length) % SHOP_BANNERS.length)
   }
-
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white pb-20 md:pb-0">
