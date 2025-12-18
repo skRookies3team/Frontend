@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { ScrollArea } from "@/shared/ui/scroll-area";
-import { Heart, MessageCircle, Send, MoreHorizontal, X, Bookmark, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Send, MoreHorizontal, X, Bookmark } from "lucide-react";
 import { FeedDto } from "../types/feed";
 import { useAuth } from "@/features/auth/context/auth-context";
 import { useComments, useCreateComment, useDeleteComment } from "../hooks/use-comment-query";
@@ -24,12 +24,11 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
   const [commentText, setCommentText] = useState("");
   const currentUserId = Number(user?.id);
 
-  // React Query Hooks 연결
+  // 댓글 관련 훅 사용
   const { data: comments, isLoading: isCommentsLoading } = useComments(post.feedId);
   const createCommentMutation = useCreateComment(post.feedId);
   const deleteCommentMutation = useDeleteComment(post.feedId);
 
-  // 댓글 작성 핸들러
   const handlePostComment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentText.trim()) return;
@@ -40,7 +39,6 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
     );
   };
 
-  // 댓글 삭제 핸들러
   const handleDeleteComment = (commentId: number) => {
     if (confirm("댓글을 삭제하시겠습니까?")) {
       deleteCommentMutation.mutate({ commentId, userId: currentUserId });
@@ -53,6 +51,7 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      {/* 배경 오버레이 스타일 수정 및 닫기 버튼 커스텀 위치 사용 */}
       <DialogContent 
         className="max-w-full md:max-w-[1200px] w-full p-0 gap-0 overflow-hidden h-full md:h-[90vh] flex flex-col md:flex-row bg-white border-none sm:rounded-xl z-50 shadow-2xl"
         overlayClassName="bg-black/30 backdrop-blur-none" 
@@ -60,13 +59,13 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
       >
         <DialogTitle className="sr-only">게시물 상세</DialogTitle>
         
-        {/* 닫기 버튼 */}
+        {/* 커스텀 닫기 버튼 (우측 상단 고정) */}
         <DialogClose className="fixed right-6 top-6 z-[60] p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors cursor-pointer">
             <X className="h-6 w-6" />
             <span className="sr-only">Close</span>
         </DialogClose>
 
-        {/* 1. 좌측 이미지 영역 */}
+        {/* 1. 이미지 영역 */}
         <div className="relative bg-black flex items-center justify-center w-full h-[40vh] md:h-full md:flex-[1.5_1_0%] overflow-hidden bg-gray-100/10">
            {post.imageUrl ? (
              <img 
@@ -83,7 +82,7 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
            )}
         </div>
 
-        {/* 2. 우측 정보 및 댓글 영역 */}
+        {/* 2. 정보 및 댓글 영역 */}
         <div className="flex flex-col w-full h-[60vh] md:h-full md:flex-1 bg-white border-l border-gray-100 relative">
           
           {/* 헤더 */}
@@ -104,9 +103,9 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
              </Button>
           </div>
 
-          {/* 댓글 목록 (스크롤 영역) */}
+          {/* 댓글 목록 스크롤 영역 */}
           <ScrollArea className="flex-1 p-4">
-             {/* 본문 내용 (작성자 코멘트) */}
+             {/* 본문 내용 */}
              <div className="flex gap-3 mb-6">
                 <Link to={`/user/${post.writerNickname}`}>
                     <Avatar className="h-8 w-8 mt-1">
@@ -121,14 +120,6 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
                       </Link>
                       <span className="whitespace-pre-wrap">{post.content}</span>
                    </div>
-                   {/* 해시태그 */}
-                   {post.hashtags && post.hashtags.length > 0 && (
-                       <div className="flex gap-1 mt-1 flex-wrap">
-                            {post.hashtags.map((tag, idx) => (
-                                <span key={idx} className="text-sm text-blue-600 hover:underline cursor-pointer">#{tag}</span>
-                            ))}
-                       </div>
-                   )}
                    <span className="text-xs text-gray-400 mt-2 block">
                       {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ko })}
                    </span>
@@ -161,8 +152,7 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
                                     <span className="text-xs text-gray-400">
                                         {formatDistanceToNow(new Date(comment.createdAt), { locale: ko })}
                                     </span>
-                                    {/* 댓글 작성자 또는 피드 작성자일 경우 삭제 가능 */}
-                                    {(comment.userId === currentUserId || post.writerId === currentUserId) && (
+                                    {(comment.userId === currentUserId || post.userId === currentUserId) && (
                                         <button 
                                             onClick={() => handleDeleteComment(comment.commentId)}
                                             className="text-xs text-gray-400 hover:text-red-500 font-medium"

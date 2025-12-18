@@ -12,13 +12,13 @@ import {
   TrendingUp, 
   MessageCircle, 
   PlusSquare, 
-  Menu,
   User,
   Heart,
   X
 } from 'lucide-react'
 import { useAuth } from "@/features/auth/context/auth-context"
 import { useFeedLike } from "../hooks/use-feed-query"
+import { useUserSearch } from "../hooks/use-search-query" // 실제 검색 훅 사용
 import { FeedDto } from "../types/feed"
 
 interface SidebarItem {
@@ -31,20 +31,11 @@ interface SidebarItem {
   isProfile?: boolean;
 }
 
-// 임시 검색 데이터
-const MOCK_SEARCH_USERS = [
-  { id: "1", name: "김민수", username: "minsu_kim", avatar: "/man-avatar.png", petName: "초코" },
-  { id: "2", name: "이수진", username: "sujin_lee", avatar: "/woman-avatar-2.png", petName: "몽이" },
-  { id: "3", name: "박지훈", username: "jihun_park", avatar: "/man-avatar-2.png", petName: "바둑이" },
-  { id: "4", name: "최유나", username: "yuna_choi", avatar: "/woman-avatar-3.png", petName: "루비" },
-  { id: "5", name: "정태현", username: "taehyun_j", avatar: "/man-profile.png", petName: "뽀삐" },
-]
-
 export default function FeedPage() {
   const [activeFilter, setActiveFilter] = useState("all")
   const [selectedPost, setSelectedPost] = useState<FeedDto | null>(null)
   
-  // UI States for Search & Create
+  // UI States
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -55,12 +46,8 @@ export default function FeedPage() {
   const myUserId = user ? Number(user.id) : 0;
   const { mutate: toggleLike } = useFeedLike(myUserId);
 
-  const filteredUsers = MOCK_SEARCH_USERS.filter(
-    (u) =>
-      u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.petName.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // 실제 검색 훅 연결
+  const { data: searchResults, isLoading: isSearchLoading } = useUserSearch(searchQuery);
 
   // 사이드바 메뉴 정의
   const sidebarMenu: SidebarItem[] = [
@@ -113,12 +100,9 @@ export default function FeedPage() {
   return (
     <div className="min-h-screen bg-white text-black relative">
       
-      {/* 1. 검색 패널 (슬라이드 애니메이션)
-          - z-40: 사이드바(z-50) 뒤에 숨었다가, 사이드바가 좁아지면 옆으로 보이게 처리
-          - left-[73px]: 아이콘형 사이드바 너비만큼 띄움
-      */}
+      {/* 1. 검색 패널 (슬라이드 애니메이션) */}
       <div 
-        className={`fixed top-0 left-[73px] h-full bg-white z-40 border-r border-gray-100 shadow-2xl transition-all duration-300 ease-in-out overflow-hidden ${
+        className={`fixed top-16 left-[73px] h-[calc(100vh-4rem)] bg-white z-40 border-r border-gray-100 shadow-2xl transition-all duration-300 ease-in-out overflow-hidden ${
           isSearchOpen ? "w-[397px] translate-x-0 opacity-100" : "w-0 -translate-x-full opacity-0"
         }`}
       >
@@ -140,34 +124,36 @@ export default function FeedPage() {
            
            <div className="flex-1 overflow-y-auto">
                <div className="flex justify-between items-center mb-4">
-                   <span className="font-semibold text-base">최근 검색 항목</span>
-                   <button className="text-sm text-blue-500 hover:text-blue-700 font-semibold">모두 지우기</button>
+                   <span className="font-semibold text-base">검색 결과</span>
                </div>
                
-               {/* 검색 결과 목록 */}
                <div className="space-y-2">
-                  {searchQuery && filteredUsers.length === 0 ? (
+                  {/* 검색 로딩 및 결과 처리 */}
+                  {isSearchLoading ? (
+                      <div className="flex justify-center py-10 text-gray-400">검색 중...</div>
+                  ) : searchResults && searchResults.length > 0 ? (
+                      searchResults.map((u) => (
+                        <Link 
+                            key={u.userId} 
+                            to={`/user/${u.userId}`} 
+                            className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+                            onClick={() => setIsSearchOpen(false)}
+                        >
+                            <Avatar className="h-11 w-11">
+                                <AvatarImage src={u.profileImageUrl || "/placeholder-user.jpg"} />
+                                <AvatarFallback>{u.nickname[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                                <span className="font-semibold text-sm">{u.nickname}</span>
+                                <span className="text-gray-500 text-sm">{u.username} {u.petName ? `• ${u.petName}` : ''}</span>
+                            </div>
+                        </Link>
+                      ))
+                  ) : searchQuery ? (
                       <p className="text-center text-gray-400 py-10">검색 결과가 없습니다.</p>
-                  ) : filteredUsers.map((u) => (
-                      <Link 
-                        key={u.id} 
-                        to={`/user/${u.id}`} 
-                        className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
-                        onClick={() => setIsSearchOpen(false)}
-                      >
-                         <Avatar className="h-11 w-11">
-                             <AvatarImage src={u.avatar} />
-                             <AvatarFallback>{u.name[0]}</AvatarFallback>
-                         </Avatar>
-                         <div className="flex flex-col">
-                             <span className="font-semibold text-sm">{u.username}</span>
-                             <span className="text-gray-500 text-sm">{u.name} • {u.petName}</span>
-                         </div>
-                      </Link>
-                  ))}
-                  {!searchQuery && (
+                  ) : (
                       <div className="text-center text-gray-400 py-10 text-sm">
-                          최근 검색 내역이 없습니다.
+                          검색어를 입력하세요.
                       </div>
                   )}
                </div>
@@ -177,16 +163,22 @@ export default function FeedPage() {
 
 
       {/* 레이아웃 컨테이너 
-          - lg:grid-cols-... : 검색창이 열려있으면(isSearchOpen) 사이드바 영역을 72px로 고정(좁힘), 아니면 200px(넓힘)
+          - 수정: w-full (화면 꽉 차게) 적용하여 왼쪽 사이드바가 화면 끝에 붙도록 함
+          - grid-cols: 검색창 열림 여부에 따라 사이드바 너비 조정
       */}
-      <div className={`mx-auto max-w-[1500px] grid grid-cols-1 md:grid-cols-[72px_1fr] transition-all duration-300 ${
+      <div className={`w-full grid grid-cols-1 md:grid-cols-[72px_1fr] transition-all duration-300 ${
           isSearchOpen 
             ? "lg:grid-cols-[72px_1fr_320px]" 
             : "lg:grid-cols-[200px_1fr_320px]"
       }`}>
         
         {/* (1) 왼쪽 사이드바 (데스크톱) */}
-        <aside className="hidden md:flex flex-col h-screen sticky top-0 border-r border-gray-100 px-3 py-8 z-50 bg-white">
+        {/* 수정: sticky top-16 (헤더 높이만큼 띄움), h-[calc(100vh-4rem)] (헤더 제외 높이) 적용 */}
+        <aside className="hidden md:flex flex-col h-[calc(100vh-4rem)] sticky top-16 border-r border-gray-100 px-3 py-8 z-50 bg-white">
+          
+          {/* 로고 영역 삭제됨 */}
+
+          {/* 네비게이션 */}
           <nav className="space-y-2 flex-1 pt-4"> 
             {sidebarMenu.map((item) => (
                 <div key={item.id}>
@@ -220,12 +212,7 @@ export default function FeedPage() {
             ))}
           </nav>
 
-          <div className="mt-auto">
-            <button className="flex items-center justify-start gap-4 p-3 rounded-lg hover:bg-gray-50 transition-all w-full">
-                <Menu className="h-6 w-6" />
-                <span className={`hidden lg:block text-base ${isSearchOpen ? 'lg:hidden' : ''}`}>더 보기</span>
-            </button>
-          </div>
+          {/* 더 보기 버튼 삭제됨 */}
         </aside>
 
         {/* (2) 중앙 메인 피드 */}
@@ -247,7 +234,8 @@ export default function FeedPage() {
         </main>
 
         {/* (3) 오른쪽 사이드바 (추천 등) */}
-        <aside className="hidden lg:block h-screen sticky top-0 py-10 px-6 w-[320px]" onClick={() => { if(isSearchOpen) setIsSearchOpen(false); }}>
+        {/* 수정: sticky top-16 및 높이 조정하여 헤더 침범 방지 */}
+        <aside className="hidden lg:block h-[calc(100vh-4rem)] sticky top-16 py-10 px-6 w-[320px]" onClick={() => { if(isSearchOpen) setIsSearchOpen(false); }}>
             {user ? (
                 <div className="flex items-center justify-between mb-6">
                     <Link to={`/user/${myUserId}`} className="flex items-center gap-3 group">

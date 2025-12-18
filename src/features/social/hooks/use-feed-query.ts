@@ -11,6 +11,8 @@ export const FEED_KEYS = {
 
 /**
  * 피드 목록 무한 스크롤 훅
+ * @param userId 로그인한 유저 ID
+ * @param filter 필터 옵션
  */
 export const useFeedList = (userId: number, filter: string = 'all') => {
     return useInfiniteQuery<FeedSliceResponse, Error>({
@@ -22,13 +24,12 @@ export const useFeedList = (userId: number, filter: string = 'all') => {
         getNextPageParam: (lastPage) => {
             return lastPage.last ? undefined : lastPage.number + 1;
         },
-        enabled: !!userId,
+        enabled: !!userId, // userId가 있을 때만 실행
     });
 };
 
 /**
- * 좋아요 토글 훅 (수정됨)
- * - onSettled(재조회)를 제거하여 서버 지연으로 인한 UI 깜빡임 방지
+ * 좋아요 토글 훅 (낙관적 업데이트 적용, 깜빡임 방지)
  */
 export const useFeedLike = (userId: number) => {
     const queryClient = useQueryClient();
@@ -37,13 +38,13 @@ export const useFeedLike = (userId: number) => {
         mutationFn: (feedId: number) => feedApi.toggleLike(feedId, userId),
         
         onMutate: async (feedId) => {
-            // 1. 진행 중인 쿼리 취소
+            // 1. 진행 중인 쿼리 취소 (충돌 방지)
             await queryClient.cancelQueries({ queryKey: FEED_KEYS.all });
 
-            // 2. 이전 데이터 스냅샷 저장
+            // 2. 이전 데이터 스냅샷 저장 (에러 시 롤백용)
             const previousFeeds = queryClient.getQueriesData<InfiniteData<FeedSliceResponse>>({ queryKey: FEED_KEYS.all });
 
-            // 3. 캐시된 데이터 즉시 업데이트 (낙관적 업데이트)
+            // 3. 캐시된 데이터 즉시 업데이트 (UI 반영)
             queryClient.setQueriesData<InfiniteData<FeedSliceResponse>>(
                 { queryKey: FEED_KEYS.all }, 
                 (oldData) => {
@@ -71,7 +72,7 @@ export const useFeedLike = (userId: number) => {
             return { previousFeeds };
         },
         
-        // 에러 발생 시 롤백
+        // 에러 발생 시 이전 상태로 롤백
         onError: (_err, _feedId, context) => {
             if (context?.previousFeeds) {
                 context.previousFeeds.forEach(([queryKey, data]) => {
@@ -80,8 +81,7 @@ export const useFeedLike = (userId: number) => {
             }
         },
         
-        // 수정: onSettled(invalidateQueries) 제거
-        // 서버 응답 속도 차이로 인해 UI가 깜빡이는 것을 방지하기 위해
-        // 성공 시에는 별도의 재조회를 하지 않고 낙관적 업데이트 상태를 유지합니다.
+        // 중요: onSettled(invalidateQueries) 제거
+        // 서버 응답 직후 재조회를 하지 않음으로써 UI 깜빡임 방지
     });
 };
