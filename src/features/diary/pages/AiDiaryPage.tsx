@@ -589,7 +589,7 @@ const CompleteStep = ({ onHome, earnedAmount, onShare }: { onHome: () => void, e
         <p className="text-gray-500 mb-8">우리 아이의 일기가 소셜 피드에 올라갔어요.</p>
 
         <div className="flex flex-col gap-3 w-full max-w-xs">
-          <button onClick={() => sharedFeedId ? navigate(`/feed/${sharedFeedId}`) : navigate('/feed')} className="w-full px-6 py-3 bg-pink-500 text-white rounded-xl font-bold shadow-lg hover:bg-pink-600 transition-colors">
+          <button onClick={() => sharedFeedId ? navigate(`/feed`) : navigate('/feed')} className="w-full px-6 py-3 bg-pink-500 text-white rounded-xl font-bold shadow-lg hover:bg-pink-600 transition-colors">
             작성한 피드 보기
           </button>
           <button onClick={onHome} className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors">
