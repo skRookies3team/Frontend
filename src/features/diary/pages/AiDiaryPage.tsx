@@ -6,6 +6,7 @@ import {
   Save, BookOpen, PawPrint, Sun, Smile, MapPin
 } from 'lucide-react';
 import { createRoot } from 'react-dom/client';
+import { getUserApi } from "@/features/auth/api/auth-api";
 // [중요] LocationTracker import (파일 경로에 맞게 수정해주세요)
 import LocationTracker from '../components/LocationTracker';
 // 만약 같은 파일에 넣으셨다면 import 필요 없음
@@ -22,8 +23,8 @@ const getEnv = (key: string) => {
   }
 };
 
-// [수정] 프록시 없이 백엔드 포트(8087)로 직접 요청하도록 변경
-const BASE_URL = 'http://localhost:8087/api';
+// [수정] 프록시(게이트웨이)를 통해 요청하도록 변경
+const BASE_URL = '/api';
 
 // [중요] 토큰 가져오기 (petlog_token 우선, 없으면 accessToken 확인)
 const getAccessToken = () => localStorage.getItem('petlog_token') || localStorage.getItem('accessToken');
@@ -54,18 +55,25 @@ const useAuth = () => {
         const userId = Number(payload.userId || payload.sub || payload.id);
 
         if (!isNaN(userId)) {
-          const petsFromToken = payload.pets || [
-            { id: 1, name: '초코', species: '강아지', breed: '푸들', gender: '남아', neutered: true, age: 3 },
-            { id: 2, name: '나비', species: '고양이', breed: '코숏', gender: '여아', neutered: false, age: 2 }
-          ];
-
-          setUser({
-            id: userId,
-            username: payload.username || payload.name || 'User',
-            pets: petsFromToken
-          });
-
-          console.log("[Auth] 사용자 인증 성공 (Local Parsing):", userId);
+          // [수정] API를 통해 최신 사용자 정보(펫 포함) 가져오기
+          getUserApi(userId)
+            .then((userData) => {
+              console.log("[Auth] 사용자 정보 조회 성공:", userData);
+              setUser({
+                id: userId,
+                username: userData.username || userData.social || 'User',
+                pets: userData.pets || [] // API에서 가져온 펫 목록 사용
+              });
+            })
+            .catch((err) => {
+              console.error("[Auth] 사용자 정보 조회 실패:", err);
+              // 실패 시 토큰 정보라도 사용 (Fallback)
+              setUser({
+                id: userId,
+                username: payload.username || payload.name || 'User',
+                pets: payload.pets || []
+              });
+            });
         }
       } catch (e) {
         console.error("[Auth] 토큰 파싱 실패:", e);
@@ -208,7 +216,7 @@ const KakaoMap = ({ lat, lng }: { lat: number; lng: number }) => {
 
   useEffect(() => {
     const envKey = getEnv('VITE_KAKAO_API_KEY');
-    const KAKAO_API_KEY = envKey || "9852c4d5baa8c8c30254fe67de447bc3";
+    const KAKAO_API_KEY = envKey;
 
     if (document.getElementById('kakao-map-script')) {
       if (window.kakao && window.kakao.maps) {
@@ -639,8 +647,8 @@ const AiDiaryPage = () => {
         content: "",
         visibility: "PRIVATE",
         isAiGen: true,
-        weather: "맑음",
-        mood: "행복",
+        weather: "",
+        mood: "",
         date: selectedDate,
         latitude: location ? location.lat : null,
         longitude: location ? location.lng : null,
@@ -720,7 +728,6 @@ const AiDiaryPage = () => {
           <button onClick={() => navigate(-1)} className="text-pink-600 hover:text-pink-700 transition-colors p-1"><ChevronLeft className="w-6 h-6" /></button>
           <h1 className="text-lg font-bold text-pink-600 md:text-xl">Pet Log AI</h1>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-pink-500 hidden sm:block">{user?.username}</span>
           </div>
         </div>
       </header>
