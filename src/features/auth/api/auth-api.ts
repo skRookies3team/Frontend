@@ -21,8 +21,8 @@ interface SignupResponse {
 
 // 로그인 (토큰 불필요 - 공개 API)
 export const loginApi = async (email: string, password: string): Promise<LoginResponse> => {
-    // URL 하드코딩 (8000 포트)
-    const response = await httpClient.post<LoginResponse>('http://localhost:8000/api/users/login', {
+
+    const response = await httpClient.post<LoginResponse>('/users/login', {
         email,
         password
     }, { skipAuth: true });
@@ -30,29 +30,51 @@ export const loginApi = async (email: string, password: string): Promise<LoginRe
 };
 
 // 회원가입 (토큰 불필요 - 공개 API)
-export const signupApi = async (email: string, password: string, name?: string): Promise<SignupResponse> => {
-    const response = await httpClient.post<SignupResponse>('/auth/signup', {
-        email,
-        password,
-        name
-    }, { skipAuth: true });
+export const signupApi = async (
+    userProfile: File | null,
+    petProfile: File | null,
+    request: { user: any; pet: any }
+): Promise<SignupResponse> => {
+    const formData = new FormData();
+
+    // Add user profile if provided
+    if (userProfile) {
+        formData.append('userProfile', userProfile);
+    }
+
+    // Add pet profile if provided
+    if (petProfile) {
+        formData.append('petProfile', petProfile);
+    }
+
+    // Add request DTO as JSON blob
+    formData.append('request', new Blob([JSON.stringify(request)], {
+        type: 'application/json'
+    }));
+
+    const response = await httpClient.post<SignupResponse>('/users/signup', formData, {
+        skipAuth: true,
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    });
     return response;
 };
 
 // 로그아웃
 export const logoutApi = async (): Promise<void> => {
-    await httpClient.post('/auth/logout');
+    await httpClient.post('/users/logout');
 };
 
 // 현재 사용자 정보 조회 (토큰 필요)
 export const getCurrentUserApi = async () => {
-    const response = await httpClient.get('/auth/me');
+    const response = await httpClient.get('/users/me');
     return response;
 };
 
 // Google 로그인
 export const googleLoginApi = async (idToken: string): Promise<LoginResponse> => {
-    const response = await httpClient.post<LoginResponse>('/auth/google', {
+    const response = await httpClient.post<LoginResponse>('/users/google', {
         idToken
     }, { skipAuth: true });
     return response;
