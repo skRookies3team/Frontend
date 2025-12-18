@@ -30,7 +30,7 @@ export function PostCard({ post, onLikeToggle, onClickPost }: PostCardProps) {
         {/* 1. Header: 작성자 프로필 */}
         <div className="flex items-center justify-between p-3">
           <Link to={`/user/${post.writerNickname}`} className="flex items-center gap-3">
-            {/* 인스타그램 스타일: 프로필 링(테두리) 추가 */}
+            {/* 인스타그램 스타일: 프로필 링 */}
             <div className="rounded-full bg-gradient-to-tr from-yellow-400 to-purple-600 p-[2px]">
                 <div className="rounded-full bg-white p-[2px]">
                     <Avatar className="h-8 w-8">
@@ -51,7 +51,7 @@ export function PostCard({ post, onLikeToggle, onClickPost }: PostCardProps) {
           </Button>
         </div>
 
-        {/* 2. Image: 게시물 사진 (1:1 비율 유지 및 클릭 이벤트) */}
+        {/* 2. Image: 게시물 사진 */}
         {images.length > 0 ? (
           <div 
             className="relative w-full aspect-square bg-gray-100 overflow-hidden cursor-pointer"
@@ -64,7 +64,6 @@ export function PostCard({ post, onLikeToggle, onClickPost }: PostCardProps) {
             />
           </div>
         ) : (
-            // 텍스트만 있는 경우
             <div 
                 className="p-10 bg-gradient-to-br from-pink-50 to-blue-50 aspect-square flex items-center justify-center text-center cursor-pointer"
                 onClick={() => onClickPost?.(post)}
@@ -86,7 +85,8 @@ export function PostCard({ post, onLikeToggle, onClickPost }: PostCardProps) {
                         <MessageCircle className="h-6 w-6 text-black -rotate-90" />
                     </button>
                     <button className="transition-transform active:scale-125 hover:opacity-60">
-                        <Send className="h-6 w-6 text-black -rotate-12 mb-1" />
+                        {/* 수정: mb-1 제거하여 아이콘 수직 정렬 맞춤 */}
+                        <Send className="h-6 w-6 text-black -rotate-12" />
                     </button>
                 </div>
                 <button className="hover:opacity-60">

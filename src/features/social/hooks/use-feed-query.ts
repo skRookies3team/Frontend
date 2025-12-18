@@ -5,17 +5,15 @@ import { FeedSliceResponse } from '../types/feed';
 // 쿼리 키 관리
 export const FEED_KEYS = {
     all: ['feeds'] as const,
-    list: (userId: number, filter: string) => [...FEED_KEYS.all, userId, filter] as const,
+    list: (userId: number, filter: string) => [...FEED_KEYS.all, 'list', userId, filter] as const,
+    detail: (feedId: number) => [...FEED_KEYS.all, 'detail', feedId] as const,
 };
 
 /**
  * 피드 목록 무한 스크롤 훅
- * @param userId 로그인한 유저 ID
- * @param filter 필터 옵션
  */
 export const useFeedList = (userId: number, filter: string = 'all') => {
     return useInfiniteQuery<FeedSliceResponse, Error>({
-        // 테스트 유저 변환 로직 제거하고 바로 userId 사용
         queryKey: FEED_KEYS.list(userId, filter),
         queryFn: ({ pageParam = 0 }) => {
             return feedApi.getFeeds(userId, pageParam as number, 10);
@@ -24,27 +22,30 @@ export const useFeedList = (userId: number, filter: string = 'all') => {
         getNextPageParam: (lastPage) => {
             return lastPage.last ? undefined : lastPage.number + 1;
         },
-        // userId가 유효할 때만 쿼리 실행 (0이거나 없으면 실행 안 함)
-        enabled: !!userId, 
+        enabled: !!userId,
     });
 };
 
 /**
- * 좋아요 토글 훅 (낙관적 업데이트 적용)
+ * 좋아요 토글 훅 (수정됨)
+ * - onSettled(재조회)를 제거하여 서버 지연으로 인한 UI 깜빡임 방지
  */
 export const useFeedLike = (userId: number) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        // 테스트 유저 변환 로직 제거
         mutationFn: (feedId: number) => feedApi.toggleLike(feedId, userId),
         
         onMutate: async (feedId) => {
+            // 1. 진행 중인 쿼리 취소
             await queryClient.cancelQueries({ queryKey: FEED_KEYS.all });
+
+            // 2. 이전 데이터 스냅샷 저장
             const previousFeeds = queryClient.getQueriesData<InfiniteData<FeedSliceResponse>>({ queryKey: FEED_KEYS.all });
 
+            // 3. 캐시된 데이터 즉시 업데이트 (낙관적 업데이트)
             queryClient.setQueriesData<InfiniteData<FeedSliceResponse>>(
-                { queryKey: FEED_KEYS.all },
+                { queryKey: FEED_KEYS.all }, 
                 (oldData) => {
                     if (!oldData) return oldData;
                     return {
@@ -69,6 +70,8 @@ export const useFeedLike = (userId: number) => {
 
             return { previousFeeds };
         },
+        
+        // 에러 발생 시 롤백
         onError: (_err, _feedId, context) => {
             if (context?.previousFeeds) {
                 context.previousFeeds.forEach(([queryKey, data]) => {
@@ -76,8 +79,9 @@ export const useFeedLike = (userId: number) => {
                 });
             }
         },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: FEED_KEYS.all });
-        },
+        
+        // 수정: onSettled(invalidateQueries) 제거
+        // 서버 응답 속도 차이로 인해 UI가 깜빡이는 것을 방지하기 위해
+        // 성공 시에는 별도의 재조회를 하지 않고 낙관적 업데이트 상태를 유지합니다.
     });
 };
