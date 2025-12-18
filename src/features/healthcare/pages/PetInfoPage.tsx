@@ -117,6 +117,7 @@ export default function PetInfoPage() {
     gender: "",
     neutered: "",
     birthday: "",
+    vaccinated: "",
   })
 
 
@@ -169,7 +170,8 @@ export default function PetInfoPage() {
         genderType: formData.gender === "female" ? "FEMALE" : formData.gender === "male" ? "MALE" : "NONE",
         birth: formData.birthday,
         species: formData.species === "강아지" ? "DOG" : "CAT",
-        neutered: formData.neutered === "yes"
+        neutered: formData.neutered === "yes",
+        vaccinated: formData.vaccinated === "yes"
       }
       const fileInput = document.getElementById("photo") as HTMLInputElement;
       const petFile = fileInput?.files?.[0] || null;
@@ -210,7 +212,8 @@ export default function PetInfoPage() {
       genderType: formData.gender === "female" ? "FEMALE" : formData.gender === "male" ? "MALE" : "NONE",
       birth: formData.birthday, // LocalDate string format "YYYY-MM-DD" expected
       species: formData.species === "강아지" ? "DOG" : "CAT", // Simple mapping
-      neutered: formData.neutered === "yes"
+      neutered: formData.neutered === "yes",
+      vaccinated: formData.vaccinated === "yes"
     }
 
     // Pet Photo File
@@ -508,6 +511,32 @@ export default function PetInfoPage() {
                     type="button"
                     onClick={() => setFormData({ ...formData, neutered: "no" })}
                     className={`rounded-xl border-2 p-3 text-sm font-medium transition-all ${formData.neutered === "no"
+                      ? "border-pink-500 bg-gradient-to-r from-pink-500 to-rose-500 text-white"
+                      : "border-pink-200 hover:border-pink-500"
+                      }`}
+                  >
+                    안 했어요
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label>예방접종 여부</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, vaccinated: "yes" })}
+                    className={`rounded-xl border-2 p-3 text-sm font-medium transition-all ${formData.vaccinated === "yes"
+                      ? "border-pink-500 bg-gradient-to-r from-pink-500 to-rose-500 text-white"
+                      : "border-pink-200 hover:border-pink-500"
+                      }`}
+                  >
+                    했어요
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, vaccinated: "no" })}
+                    className={`rounded-xl border-2 p-3 text-sm font-medium transition-all ${formData.vaccinated === "no"
                       ? "border-pink-500 bg-gradient-to-r from-pink-500 to-rose-500 text-white"
                       : "border-pink-200 hover:border-pink-500"
                       }`}
