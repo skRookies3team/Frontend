@@ -1,54 +1,84 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-// [수정]: 파일 확장자 (.ts)를 다시 명시하여 경로 문제 해결 시도
-import { SelectedImage, ImageType } from '../../diary/types/diary.ts';
+import { PetResponseDto } from '../../healthcare/api/pet-api';
+import { Check, Heart, Camera, Upload, Image as ImageIcon, X, Edit } from 'lucide-react';
+import { SelectedImage, ImageType } from '../types/diary';
 
 interface UploadStepProps {
     selectedImages: SelectedImage[];
     isSubmitting: boolean;
-    // [수정]: React.ChangeEvent<HTMLInputElement> 타입 명시
     handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
     handleGenerate: () => void;
     setSelectedImages: React.Dispatch<React.SetStateAction<SelectedImage[]>>;
-    setShowGallery: React.Dispatch<React.SetStateAction<boolean>>;
+    setShowGallery: (show: boolean) => void;
+    pets: PetResponseDto[];
+    selectedPetId: number | null;
+    setSelectedPetId: (id: number) => void;
 }
 
-// [수정]: children prop의 타입을 명시적으로 React.ReactNode로 추가합니다.
-const Icon: React.FC<{ className?: string, children: React.ReactNode }> = ({ children, className }) => <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>;
+const Icon: React.FC<{ className?: string, children: React.ReactNode }> = ({ children, className }) => (
+    <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>
+);
 
-export default function UploadStep({
-    selectedImages,
-    isSubmitting,
-    handleImageUpload,
-    handleGenerate,
-    setSelectedImages,
-    setShowGallery,
-}: UploadStepProps) {
-
+const UploadStep: React.FC<UploadStepProps> = ({
+    selectedImages, isSubmitting, handleImageUpload, handleGenerate, setSelectedImages, setShowGallery,
+    pets, selectedPetId, setSelectedPetId
+}) => {
     return (
         <div className="space-y-6">
             <div className="text-center">
-                <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shadow-xl md:h-24 md:w-24"
-                >
-                    <Icon className="h-10 w-10 text-white md:h-12 md:w-12">{'✨'}</Icon>
-                </motion.div>
-                <h2 className="text-balance text-2xl font-bold text-pink-600 md:text-3xl">AI 다이어리 작성하기</h2>
-                <p className="mt-2 text-pretty text-slate-500 md:text-lg">
+                <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shadow-xl md:h-24 md:w-24">
+                    <Icon className="h-10 w-10 text-white md:h-12 md:w-12"><Camera className="w-full h-full" /></Icon>
+                </div>
+                <h2 className="text-2xl font-bold text-pink-600 md:text-3xl">AI 다이어리 작성하기</h2>
+                <p className="mt-2 text-slate-500 md:text-lg">
                     반려동물의 하루를 담은 사진 1-10장을 업로드하면 AI가 아름다운 일기를 작성해드려요
                 </p>
             </div>
 
-            <div className="border border-pink-100 shadow-xl rounded-xl">
+            {/* Pet Selection */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-pink-100">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <Heart className="w-5 h-5 text-pink-500" /> 주인공 선택
+                </h3>
+                {pets.length === 0 ? (
+                    <p className="text-gray-500 text-sm">등록된 반려동물이 없습니다.</p>
+                ) : (
+                    <div className="flex gap-4 overflow-x-auto pb-2">
+                        {pets.map((pet) => (
+                            <button
+                                key={pet.petId}
+                                onClick={() => setSelectedPetId(pet.petId)}
+                                className={`flex flex-col items-center gap-2 min-w-[80px] p-2 rounded-xl transition-all ${selectedPetId === pet.petId
+                                    ? 'bg-pink-50 ring-2 ring-pink-500 scale-105'
+                                    : 'hover:bg-gray-50 opacity-70 hover:opacity-100'
+                                    }`}
+                            >
+                                <div className="relative">
+                                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md">
+                                        <img src={pet.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${pet.petName}`} alt={pet.petName} className="w-full h-full object-cover" />
+                                    </div>
+                                    {selectedPetId === pet.petId && (
+                                        <div className="absolute -bottom-1 -right-1 bg-pink-500 text-white rounded-full p-1 shadow-sm">
+                                            <Check className="w-3 h-3" />
+                                        </div>
+                                    )}
+                                </div>
+                                <span className={`text-sm font-medium ${selectedPetId === pet.petId ? 'text-pink-600' : 'text-gray-600'}`}>
+                                    {pet.petName}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            <div className="border border-pink-100 shadow-xl rounded-xl bg-white">
                 <div className="p-6 md:p-8">
                     {selectedImages.length === 0 ? (
                         <div className="space-y-4">
                             <label className="flex w-full cursor-pointer flex-col items-center gap-6 rounded-3xl border-2 border-dashed border-pink-300 bg-gradient-to-br from-pink-50 to-rose-50 p-16 transition-all hover:border-pink-500 hover:from-white hover:to-pink-50 md:p-24">
                                 <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="hidden" disabled={isSubmitting} />
                                 <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shadow-lg">
-                                    <Icon className="h-10 w-10 text-white">{'⬆️'}</Icon>
+                                    <Icon className="h-10 w-10 text-white"><Upload /></Icon>
                                 </div>
                                 <div className="text-center">
                                     <p className="text-xl font-bold text-pink-600">{isSubmitting ? '업로드 중...' : '로컬 사진 선택 (Source: GALLERY)'}</p>
@@ -58,10 +88,10 @@ export default function UploadStep({
 
                             <button
                                 onClick={() => setShowGallery(true)}
-                                className="w-full border-2 border-pink-300 text-pink-600 hover:bg-pink-50 bg-transparent py-3 px-4 rounded-full font-bold transition"
+                                className="w-full border-2 border-pink-300 text-pink-600 hover:bg-pink-50 bg-transparent py-3 px-4 rounded-full font-bold transition flex items-center justify-center gap-2"
                                 disabled={isSubmitting}
                             >
-                                <Icon className="mr-2 h-5 w-5">{'🖼️'}</Icon>
+                                <Icon className="w-5 h-5"><ImageIcon /></Icon>
                                 보관함에서 선택하기 (Source: ARCHIVE)
                             </button>
                         </div>
@@ -73,9 +103,9 @@ export default function UploadStep({
                                     <div className="flex gap-2">
                                         <button
                                             onClick={() => setShowGallery(true)}
-                                            className="border border-pink-200 text-pink-600 hover:bg-pink-50 bg-transparent py-2 px-3 text-sm rounded-lg font-medium"
+                                            className="border border-pink-200 text-pink-600 hover:bg-pink-50 bg-transparent py-2 px-3 text-sm rounded-lg font-medium flex items-center gap-1"
                                         >
-                                            <Icon className="mr-2 h-4 w-4">{'🖼️'}</Icon>
+                                            <Icon className="w-4 h-4"><ImageIcon /></Icon>
                                             보관함
                                         </button>
                                         <label className="cursor-pointer">
@@ -87,27 +117,21 @@ export default function UploadStep({
                                                 className="hidden"
                                                 disabled={isSubmitting || selectedImages.length >= 10}
                                             />
-                                            <button
-                                                type="button"
-                                                className="border border-pink-200 text-pink-600 hover:bg-pink-50 bg-transparent py-2 px-3 text-sm rounded-lg font-medium"
-                                                disabled={isSubmitting || selectedImages.length >= 10}
-                                            >
-                                                <Icon className="mr-2 h-4 w-4">{'➕'}</Icon>
-                                            </button>
+                                            <span className="border border-pink-200 text-pink-600 hover:bg-pink-50 bg-transparent py-2 px-3 text-sm rounded-lg font-medium flex items-center cursor-pointer h-full gap-1">
+                                                <Icon className="w-4 h-4"><Upload /></Icon>
+                                                추가
+                                            </span>
                                         </label>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-3 gap-3 md:grid-cols-5">
                                     {selectedImages.map((image, index) => (
-                                        <motion.div
-                                            key={image.imageUrl}
-                                            initial={{ scale: 0, opacity: 0 }}
-                                            animate={{ scale: 1, opacity: 1 }}
-                                            transition={{ delay: index * 0.05 }}
-                                            className="group relative aspect-square overflow-hidden rounded-xl shadow-md"
+                                        <div
+                                            key={index}
+                                            className="group relative aspect-square overflow-hidden rounded-xl shadow-md transition-transform"
                                         >
                                             <img
-                                                src={image.imageUrl || "https://placehold.co/100x100/CCCCCC/000000?text=IMG"}
+                                                src={image.imageUrl}
                                                 alt={`Upload ${index + 1}`}
                                                 className="h-full w-full object-cover transition-transform group-hover:scale-110"
                                             />
@@ -115,23 +139,23 @@ export default function UploadStep({
                                                 {image.source}
                                             </div>
                                             <button
-                                                onClick={() => setSelectedImages(selectedImages.filter((img) => img.imageUrl !== image.imageUrl))}
+                                                onClick={() => setSelectedImages(selectedImages.filter((_, i) => i !== index))}
                                                 className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white opacity-0 transition-opacity hover:bg-black group-hover:opacity-100"
                                             >
-                                                <Icon className="h-4 w-4">{'✕'}</Icon>
+                                                <Icon className="h-4 w-4"><X /></Icon>
                                             </button>
-                                        </motion.div>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
 
                             <button
                                 onClick={handleGenerate}
-                                disabled={isSubmitting || selectedImages.length === 0}
-                                className="w-full rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-lg font-bold shadow-xl py-3 transition-all hover:scale-[1.01] hover:from-pink-600 hover:to-rose-600 md:text-xl text-white disabled:opacity-50"
+                                disabled={isSubmitting || selectedImages.length === 0 || !selectedPetId}
+                                className="w-full rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-lg font-bold shadow-xl py-3 transition-all hover:scale-[1.01] hover:from-pink-600 hover:to-rose-600 md:text-xl text-white disabled:opacity-50 flex items-center justify-center gap-2"
                             >
-                                <Icon className="mr-2 h-6 w-6">{'✨'}</Icon>
-                                AI 다이어리 생성하기
+                                <Icon className="h-6 w-6"><Edit /></Icon>
+                                {selectedPetId ? 'AI 다이어리 생성하기' : '주인공을 선택해주세요'}
                             </button>
                         </div>
                     )}
@@ -139,4 +163,6 @@ export default function UploadStep({
             </div>
         </div>
     );
-}
+};
+
+export default UploadStep;
