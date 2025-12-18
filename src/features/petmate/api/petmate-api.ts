@@ -158,6 +158,31 @@ export const petMateApi = {
         if (!response.ok) throw new Error('Failed to search address');
         return response.json();
     },
+
+    // 사용자 위치 업데이트 (DB 저장)
+    updateLocation: async (userId: number, latitude: number, longitude: number, location?: string): Promise<boolean> => {
+        const params = new URLSearchParams({
+            latitude: latitude.toString(),
+            longitude: longitude.toString(),
+        });
+        if (location) {
+            params.append('location', location);
+        }
+        const response = await fetch(
+            `${API_BASE_URL}/api/petmate/location/${userId}?${params.toString()}`,
+            { method: 'PUT' }
+        );
+        if (!response.ok) throw new Error('Failed to update location');
+        return response.json();
+    },
+
+    // 사용자 저장된 위치 조회
+    getSavedLocation: async (userId: number): Promise<{ latitude: number; longitude: number; location: string } | null> => {
+        const response = await fetch(`${API_BASE_URL}/api/petmate/location/${userId}`);
+        if (response.status === 404) return null;
+        if (!response.ok) throw new Error('Failed to get saved location');
+        return response.json();
+    },
 };
 
 // 주소 정보 인터페이스
@@ -181,6 +206,7 @@ export interface SearchAddressResult {
     region2?: string;         // 구/군
     region3?: string;         // 동/읍/면
     zoneNo?: string;          // 우편번호
+    buildingName?: string;    // 건물명
 }
 
 // GPS 좌표 가져오기 유틸리티
