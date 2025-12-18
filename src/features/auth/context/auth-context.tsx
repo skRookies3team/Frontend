@@ -1,9 +1,8 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { setTokenGetter, setTokenRemover } from "@/shared/api/http-client";
-import { loginApi } from "@/features/auth/api/auth-api";
+import { loginApi, signupApi } from "@/features/auth/api/auth-api";
 import { createPetApi } from "@/features/healthcare/api/pet-api";
-import axios from "axios";
 
 interface User {
   id: string;
@@ -202,52 +201,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signup = async (userDto: any, petDto: any, petFile: File | null) => {
     try {
-      const formData = new FormData();
-
-      // 순서 중요: 1. 유저 프로필 사진? 2. 펫 사진?
-      // 요청 스펙: @RequestPart(value = "multipartFile") List<MultipartFile> multipartFile
-      // 리스트 첫번째는 유저, 두번째는 펫으로 가정하거나, 혹은 순서 상관없이 서버가 처리하는지 확인 필요하지만 
-      // 보통 리스트 순서대로 매핑되거나 이름이 중요함.
-      // List<MultipartFile> 이므로 append 순서대로 리스트에 들어감.
-
-      // 유저 프로필이 있으면 추가, 없으면 빈 파일이라도 보내야 하는지? 
-      // 보통 List index 0, 1 로 구분한다면 순서를 맞춰야 함.
-      // 여기서는 유저 파일이 있으면 추가하고, 펫 파일이 있으면 추가함.
-
-      if (signupUserFile) {
-        formData.append("multipartFile", signupUserFile);
-      } else {
-        // 파일이 필수가 아니라면 생략 가능하겠지만, List 매핑이므로 순서가 중요할 수 있음.
-        // 일단 userFile이 없으면 빈 Blob을 넣거나 해야할 수도 있는데, 
-        // 여기서는 단순히 있는 것만 보냄. (서버 로직에 따라 다름)
-        // 만약 에러나면 빈 파일을 넣어서 순서를 맞춰야 함.
-        // 일단 구현은 보냄.
-      }
-
-      if (petFile) {
-        formData.append("multipartFile", petFile);
-      }
-
       const requestDto = {
         user: userDto,
         pet: petDto
       };
 
-      formData.append("request", new Blob([JSON.stringify(requestDto)], {
-        type: "application/json"
-      }));
+      // Call the updated signupApi with separate file parameters
+      await signupApi(signupUserFile, petFile, requestDto);
 
-      // 하드코딩된 URL 사용
-      await axios.post("http://localhost:8000/api/users/signup", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data"
-        }
-      });
-
-      // 회원가입 성공 후 로그인 처리 또는 로그인 페이지로 이동
-      // 바로 로그인 처리 하려면 토큰을 받아야 하는데 현재 명세에는 응답값이 UserResponse.CreateUserDto 임.
-      // 토큰이 없다면 로그인 페이지로 이동시키는게 맞음.
-
+      // 회원가입 성공 후 로그인 페이지로 이동
       navigate("/login");
 
     } catch (error) {

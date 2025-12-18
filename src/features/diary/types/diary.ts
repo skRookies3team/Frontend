@@ -21,6 +21,27 @@ export interface DiaryImageDTO {
     source: 'GALLERY' | 'ARCHIVE';
 }
 
+// [추가] 일기 생성 응답 DTO
+export interface CreateDiaryResponse {
+    diaryId: number;
+    message: string;
+}
+
+// [추가] 일기 생성 요청 DTO (프론트엔드에서 백엔드로 보낼 때 사용)
+export interface DiaryRequest {
+    userId: number;
+    petId: number;
+    content: string;
+    visibility: string;
+    isAiGen: boolean;
+    weather: string | null;
+    mood: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    // images는 별도 FormData로 처리되거나, 백엔드 로직에 따라 다름
+    images?: DiaryImageDTO[]; 
+}
+
 // Mock 데이터 상수
 export const GALLERY_IMAGES: string[] = [
     'https://placehold.co/200x150/5B3B8D/ffffff?text=ARCHIVE+1',
