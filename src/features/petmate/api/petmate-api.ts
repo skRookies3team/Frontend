@@ -206,6 +206,7 @@ export interface SearchAddressResult {
     region2?: string;         // 구/군
     region3?: string;         // 동/읍/면
     zoneNo?: string;          // 우편번호
+    buildingName?: string;    // 건물명
 }
 
 // GPS 좌표 가져오기 유틸리티

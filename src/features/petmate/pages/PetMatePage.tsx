@@ -116,14 +116,16 @@ export default function PetMatePage() {
             try {
               const addressInfo = await petMateApi.getAddressFromCoords(coords.longitude, coords.latitude)
               if (addressInfo) {
-                setCurrentLocation(addressInfo.fullAddress)
+                // buildingName이 있으면 건물명 표시, 없으면 fullAddress 표시
+                const displayLocation = addressInfo.buildingName || addressInfo.fullAddress
+                setCurrentLocation(displayLocation)
                 // 위치 정보를 DB에 저장 (기본 위치로 설정)
                 if (user?.id) {
                   await petMateApi.updateLocation(
                     Number(user.id),
                     coords.latitude,
                     coords.longitude,
-                    addressInfo.fullAddress
+                    displayLocation
                   )
                   console.log('GPS 위치가 기본 위치로 저장되었습니다.')
                 }
@@ -182,14 +184,16 @@ export default function PetMatePage() {
         try {
           const addressInfo = await petMateApi.getAddressFromCoords(coords.longitude, coords.latitude)
           if (addressInfo) {
-            setCurrentLocation(addressInfo.fullAddress)
+            // buildingName이 있으면 건물명 표시, 없으면 fullAddress 표시
+            const displayLocation = addressInfo.buildingName || addressInfo.fullAddress
+            setCurrentLocation(displayLocation)
             // 위치 정보를 DB에 저장
             if (user?.id) {
               await petMateApi.updateLocation(
                 Number(user.id),
                 coords.latitude,
                 coords.longitude,
-                addressInfo.fullAddress
+                displayLocation
               )
             }
             toast.success('현재 위치로 설정되었습니다')
@@ -247,8 +251,11 @@ export default function PetMatePage() {
   }
 
   // 검색 결과 선택
+  // 검색 결과 선택
   const handleSelectSearchResult = async (result: SearchAddressResult) => {
-    setCurrentLocation(result.addressName)
+    // buildingName이 있으면 건물명 표시, 없으면 addressName 표시
+    const displayLocation = result.buildingName || result.addressName
+    setCurrentLocation(displayLocation)
     setUserCoords({ latitude: result.latitude, longitude: result.longitude })
     setSearchResults([])
     setLocationSearch("")
@@ -261,7 +268,7 @@ export default function PetMatePage() {
           Number(user.id),
           result.latitude,
           result.longitude,
-          result.addressName
+          displayLocation
         )
         console.log('검색 위치가 DB에 저장되었습니다.')
       } catch (error) {
