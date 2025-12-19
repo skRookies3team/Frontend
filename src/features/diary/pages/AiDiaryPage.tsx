@@ -520,17 +520,6 @@ const EditStep = ({
   );
 };
 
-// const CompleteStep = ({ onHome }: { onHome: () => void }) => (
-//   <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
-//     <div className="bg-green-100 p-6 rounded-full mb-6"><Check className="w-12 h-12 text-green-600" /></div>
-//     <h2 className="text-3xl font-bold text-gray-800 mb-4">일기 작성이 완료되었어요!</h2>
-//     <div className="flex gap-4">
-//       <button onClick={onHome} className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium">내 다이어리 보기</button>
-//       <button onClick={onHome} className="px-6 py-3 bg-pink-500 text-white rounded-xl font-medium flex items-center gap-2"><Share2 className="w-4 h-4" /> 피드 공유하기</button>
-//     </div>
-//   </div>
-// );
-
 // ==========================================
 // 3. UI Components (CompleteStep 수정)
 // ==========================================
@@ -982,10 +971,6 @@ const AiDiaryPage = () => {
           <button onClick={() => navigate(-1)} className="text-pink-600 hover:text-pink-700 transition-colors p-1"><ChevronLeft className="w-6 h-6" /></button>
           <h1 className="text-lg font-bold text-pink-600 md:text-xl">Pet Log AI</h1>
           <div className="flex items-center gap-2">
-<<<<<<< HEAD
-            <span className="text-sm font-medium text-pink-500 hidden sm:block">{user?.username}</span>
-=======
->>>>>>> origin/dev
           </div>
         </div>
       </header>
@@ -1015,14 +1000,3 @@ const AiDiaryPage = () => {
 };
 
 export default AiDiaryPage;
-
-
-<<<<<<< HEAD
-    <AiDiaryPage />
-  </Router>
-);
-
-const root = createRoot(document.getElementById('root')!);
-root.render(<App />);
-=======
->>>>>>> origin/dev
