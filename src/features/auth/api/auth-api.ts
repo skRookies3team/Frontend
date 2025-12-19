@@ -130,7 +130,7 @@ export interface UpdateProfileResponseDto {
 }
 
 // 프로필 수정 API
-export const updateProfileApi = async (userId: number, request: UpdateProfileRequestDto, userProfile: File | null): Promise<UpdateProfileResponseDto> => {
+export const updateProfileApi = async (request: UpdateProfileRequestDto, userProfile: File | null): Promise<UpdateProfileResponseDto> => {
     const formData = new FormData();
 
     if (userProfile) {
@@ -146,6 +146,39 @@ export const updateProfileApi = async (userId: number, request: UpdateProfileReq
             "Content-Type": "multipart/form-data"
         }
     });
+    return response;
+};
+
+
+// 사진 보관함 DTO
+export interface CreateArchiveDto {
+    archiveId: number;
+    url: string;
+    uploadTime: string; // LocalDateTime string
+}
+
+export interface CreateArchiveDtoList {
+    archives: CreateArchiveDto[];
+}
+
+// 사진 보관함 저장 API
+export const createArchiveApi = async (images: File[]): Promise<CreateArchiveDtoList> => {
+    const formData = new FormData();
+    images.forEach((image) => {
+        formData.append("images", image);
+    });
+
+    const response = await httpClient.post<CreateArchiveDtoList>('/archives', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return response;
+};
+
+// 내 모든 사진 조회 API
+export const getAllArchivesApi = async (): Promise<CreateArchiveDtoList> => {
+    const response = await httpClient.get<CreateArchiveDtoList>('/archives/me');
     return response;
 };
 
