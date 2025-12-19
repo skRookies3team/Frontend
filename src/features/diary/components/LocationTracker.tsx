@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 
 // 백엔드 API 주소
+
+
 const getBaseUrl = () => {
   let url = import.meta.env.VITE_API_URL || 'http://localhost:8000';
   if (!url.endsWith('/api')) {
