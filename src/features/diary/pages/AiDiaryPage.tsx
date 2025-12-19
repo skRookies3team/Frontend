@@ -7,9 +7,8 @@ import {
 } from 'lucide-react';
 
 import { getUserApi } from "@/features/auth/api/auth-api";
-// [중요] LocationTracker import (파일 경로에 맞게 수정해주세요)
+// [중요] LocationTracker import 
 
-// 만약 같은 파일에 넣으셨다면 import 필요 없음
 
 declare global {
   interface Window {
