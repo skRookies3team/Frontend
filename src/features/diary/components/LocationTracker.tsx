@@ -1,7 +1,15 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 
 // 백엔드 API 주소
-const BASE_URL = 'http://localhost:8087/api';
+const getBaseUrl = () => {
+  let url = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  if (!url.endsWith('/api')) {
+    url += '/api';
+  }
+  return url;
+};
+
+const BASE_URL = getBaseUrl();
 
 // [중요] 토큰 가져오기 (petlog_token 우선, 없으면 accessToken 확인)
 const getAccessToken = () => localStorage.getItem('petlog_token') || localStorage.getItem('accessToken');
@@ -74,7 +82,7 @@ const useAuth = () => {
 
 const LocationTracker = () => {
     const { user } = useAuth(); // 실시간 업데이트되는 user 정보 사용
-    const watchIdRef = useRef<number | null>(null);
+
 
     useEffect(() => {
         // 1. 로그아웃 상태면 추적 중지

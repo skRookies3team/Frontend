@@ -1,8 +1,8 @@
 /node_modules/
-/frontsample/
-.env
-/other
 
-.env.env
+/frontsample/
+
+/other
 .env
-#env
+.env.local
+.env.*.local

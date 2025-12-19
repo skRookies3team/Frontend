@@ -6,9 +6,9 @@ const DEFAULT_PET_ID = 10;
 const API_ENDPOINTS = {
     // 프록시 설정에 의해 'http://localhost:8080' (게이트웨이)로 전달됨
     DIARY_CREATE: '/api/diaries', 
-    USER_S3_UPLOAD: 'http://localhost:8081/api/users/upload', 
+    USER_S3_UPLOAD: import.meta.env.VITE_API_URL + '/users/upload', 
 };
-
+    
 // Mock S3 업로드 시뮬레이션
 const mockS3Upload = (file: File): Promise<string> => {
     return new Promise((resolve) => {

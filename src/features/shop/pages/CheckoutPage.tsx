@@ -7,6 +7,7 @@ import { Input } from "@/shared/ui/input"
 import { Badge } from "@/shared/ui/badge"
 import { useCart } from "@/features/shop/context/cart-context"
 import "@/shared/assets/styles/CheckoutPage.css"
+import "./CheckoutPage.css"
 
 type PaymentMethod = "card" | "transfer" | "mileage" | "mixed"
 
