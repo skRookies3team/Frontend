@@ -707,6 +707,9 @@ const AiDiaryPage = () => {
   // [추가] 이번 활동으로 적립된 코인 양 저장
   const [earnedReward, setEarnedReward] = useState<number | null>(null);
 
+  // [추가] 보관함 ID를 관리하기 위한 상태 정의 (빨간 줄 해결 포인트)
+  const [selectedArchiveId, setSelectedArchiveId] = useState(1);
+
   // [NEW] Auth 정보가 로드되면 펫 목록 설정
   useEffect(() => {
     if (user) {
@@ -832,6 +835,7 @@ const AiDiaryPage = () => {
       const requestData = {
         userId: Number(user.id), // [IMPORTANT] Decoded ID from Token
         petId: selectedPetId,
+        photoArchiveId: selectedArchiveId, // 여기에 추가! (보관함 선택 상태값)
         content: "",
         visibility: "PRIVATE",
         isAiGen: true,
