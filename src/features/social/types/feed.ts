@@ -1,63 +1,79 @@
-// 댓글 타입
-export interface CommentDto {
-  commentId: number;
-  userId: number;           // [추가] 작성자 ID (본인 댓글 확인용)
-  writerNickname: string;
-  writerProfileImage?: string | null; // [추가] 작성자 프로필 이미지
-  content: string;
-  createdAt: string;
-  isMyComment: boolean;     // [추가] 삭제 버튼 노출 여부
-  children?: CommentDto[];  // 대댓글 리스트 (선택)
-}
-
-// 피드 타입
+// 1. 피드 관련 타입
 export interface FeedDto {
   feedId: number;
-  writerId: number;         // [추가] 작성자 ID
+  // [변경] 작성자 정보 필드 추가
+  writerId: number;
   writerNickname: string;
-  writerProfileImage?: string | null; // [추가] ⭐️ 이게 있어야 빨간줄이 사라집니다!
-  petName: string;
+  writerSocialId: string;
+  writerProfileImage: string | null;
+  
   content: string;
-  imageUrl: string | null;
+  // [변경] 다중 이미지 지원 (String 배열)
+  imageUrls: string[]; 
+  
   likeCount: number;
   isLiked: boolean;
-  createdAt: string;
-  location: string | null;
   commentCount: number;
   recentComments: CommentDto[];
-  hashtags: string[];
+  location?: string;
+  petId?: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
-// 무한 스크롤 응답 타입 (Slice)
 export interface FeedSliceResponse {
   content: FeedDto[];
   last: boolean;
-  size: number;
-  number: number;
-  first: boolean;
-  empty: boolean;
+  number: number; // 현재 페이지 번호
 }
 
-// 피드 작성 요청 타입
+// 2. 요청 DTO
 export interface CreateFeedRequest {
   userId: number;
-  petId?: number;
   content: string;
-  imageUrl?: string; // 이미지 URL 전송용
   location?: string;
+  petId: number;
+  // [변경] 다중 이미지 URL 리스트
+  imageUrls: string[]; 
 }
 
-// 피드 수정 요청 타입
 export interface UpdateFeedRequest {
   userId: number;
   content: string;
-  imageUrl?: string;
   location?: string;
+  // [변경] 이미지 목록 통째로 교체
+  imageUrls: string[]; 
 }
 
-// 댓글 작성 요청 타입
+// 3. 댓글 관련 타입
+export interface CommentDto {
+  commentId: number;
+  content: string;
+  // userId 대신 writerId를 추가하거나, 둘 다 넣어줍니다.
+  writerId: number; 
+  userId?: number; // 호환성을 위해 남겨둠
+  writerNickname: string;
+  writerProfileImage: string | null;
+  createdAt: string;
+  updatedAt: string;
+  isMyComment: boolean;
+}
+
 export interface CreateCommentRequest {
   userId: number;
   content: string;
-  parentId?: number | null;
+  parentId: number | null; // 대댓글일 경우 ID, 원댓글이면 null
+}
+
+// 4. 검색 결과 타입
+export interface SearchUserDto {
+  userId: number;
+  username: string; // 닉네임? 소셜ID? API 명세에 따라 맞춤
+  nickname: string;
+  profileImageUrl: string | null;
+}
+
+export interface SearchResponse {
+  users?: SearchUserDto[]; // 유저 검색 결과
+  feeds: FeedSliceResponse; // 피드(해시태그) 검색 결과
 }

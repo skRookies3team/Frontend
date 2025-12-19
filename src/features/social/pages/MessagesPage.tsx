@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useAuth } from "@/features/auth/context/auth-context"
-import { Link, useLocation } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { Button } from "@/shared/ui/button"
 import { Input } from "@/shared/ui/input"
 import { Avatar, AvatarImage, AvatarFallback } from "@/shared/ui/avatar"
@@ -47,7 +47,6 @@ const MOCK_SEARCH_USERS = [
 
 function MessagesContent() {
   const { user } = useAuth()
-  const location = useLocation()
   const userId = user?.id ? Number(user.id) : 1
 
   // 채팅 관련 상태

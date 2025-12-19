@@ -30,16 +30,7 @@ const getEnv = (key: string) => {
 };
 
 // [수정] 프록시(게이트웨이)를 통해 요청하도록 변경
-
-const getBaseUrl = () => {
-  let url = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-  if (!url.endsWith('/api')) {
-    url += '/api';
-  }
-  return url;
-};
-
-const BASE_URL = getBaseUrl();
+const BASE_URL = '/api';
 
 // [중요] 토큰 가져오기 (petlog_token 우선, 없으면 accessToken 확인)
 const getAccessToken = () => localStorage.getItem('petlog_token') || localStorage.getItem('accessToken');

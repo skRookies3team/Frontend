@@ -34,11 +34,11 @@ export function PopularFeedGrid() {
             onClick={() => setSelectedPost(post)}
             className="group relative aspect-square cursor-pointer overflow-hidden rounded-[24px] bg-gray-100 shadow-sm border border-gray-50"
           >
-            {post.imageUrl ? (
+            {post.imageUrls && post.imageUrls.length > 0 ? (
               <img 
-                src={post.imageUrl} 
-                alt="Feed" 
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                src={post.imageUrls[0]} 
+                alt="popular-feed" 
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
               />
             ) : (
               // 이미지가 없는 글일 경우 텍스트 표시

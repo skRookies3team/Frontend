@@ -46,7 +46,8 @@ export default function FeedCreatePage() {
             await feedApi.createFeed({
                 userId: Number(user.id),
                 content: content,
-                imageUrl: uploadedImageUrl || undefined, // URL이 있으면 담아서 보냄
+                imageUrls: uploadedImageUrl ? [uploadedImageUrl] : [], // URL이 있으면 담아서 보냄
+                petId: 1,
             });
 
             navigate("/feed");
