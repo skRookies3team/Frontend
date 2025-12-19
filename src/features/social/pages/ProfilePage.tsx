@@ -33,7 +33,7 @@ import { RECAPS, Recap } from "@/features/diary/data/recap-data"
 import { RecapModal } from "@/features/diary/components/recap-modal"
 import { Link, useNavigate, Outlet, useLocation } from "react-router-dom"
 import { useState, useRef, type ChangeEvent, useEffect } from "react"
-import { getUserApi, updateProfileApi, getAllArchivesApi, type GetUserDto, type CreateArchiveDto } from "@/features/auth/api/auth-api"
+import { getUserApi, updateProfileApi, getAllArchivesApi, type GetUserDto } from "@/features/auth/api/auth-api"
 
 
 
@@ -47,13 +47,13 @@ export default function ProfilePage() {
 
   // API state
   const [apiUserData, setApiUserData] = useState<GetUserDto | null>(null)
-  const [isLoadingApi, setIsLoadingApi] = useState(false)
+  // const [isLoadingApi, setIsLoadingApi] = useState(false)
 
   // Fetch user data from API
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        setIsLoadingApi(true)
+        // setIsLoadingApi(true)
         const storedUser = localStorage.getItem('petlog_user')
         if (storedUser) {
           const userData = JSON.parse(storedUser)
@@ -66,7 +66,7 @@ export default function ProfilePage() {
       } catch (err) {
         console.error('Failed to fetch user data:', err)
       } finally {
-        setIsLoadingApi(false)
+        // setIsLoadingApi(false)
       }
     }
     fetchUserData()
@@ -160,7 +160,6 @@ export default function ProfilePage() {
 
       const userId = parseInt(user.id)
       await updateProfileApi(
-        userId,
         {
           username: editName,
           social: editUsername
@@ -233,7 +232,7 @@ export default function ProfilePage() {
           photos: 0
         }
       }
-      addPet(newPet)
+      addPet(newPet, null)
     }
 
     setShowAddPetDialog(false)

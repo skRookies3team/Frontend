@@ -130,7 +130,7 @@ export interface UpdateProfileResponseDto {
 }
 
 // 프로필 수정 API
-export const updateProfileApi = async (userId: number, request: UpdateProfileRequestDto, userProfile: File | null): Promise<UpdateProfileResponseDto> => {
+export const updateProfileApi = async (request: UpdateProfileRequestDto, userProfile: File | null): Promise<UpdateProfileResponseDto> => {
     const formData = new FormData();
 
     if (userProfile) {

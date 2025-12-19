@@ -228,6 +228,11 @@ export default function PetEditPage() {
                 gender: formData.gender === "male" ? "남아" : "여아",
                 neutered: formData.neutered === "yes",
                 birthday: formData.birthday,
+                healthStatus: {
+                    lastCheckup: user?.pets.find(p => p.id === petId)?.healthStatus?.lastCheckup || "-",
+                    weight: user?.pets.find(p => p.id === petId)?.healthStatus?.weight || "정상",
+                    vaccination: formData.vaccinated === "yes" ? "접종 완료" : "미접종"
+                }
             })
 
             navigate(`/profile/pet/${petId}?returnTo=${encodeURIComponent(returnTo)}`)
