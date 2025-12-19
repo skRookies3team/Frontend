@@ -520,17 +520,6 @@ const EditStep = ({
   );
 };
 
-// const CompleteStep = ({ onHome }: { onHome: () => void }) => (
-//   <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
-//     <div className="bg-green-100 p-6 rounded-full mb-6"><Check className="w-12 h-12 text-green-600" /></div>
-//     <h2 className="text-3xl font-bold text-gray-800 mb-4">일기 작성이 완료되었어요!</h2>
-//     <div className="flex gap-4">
-//       <button onClick={onHome} className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium">내 다이어리 보기</button>
-//       <button onClick={onHome} className="px-6 py-3 bg-pink-500 text-white rounded-xl font-medium flex items-center gap-2"><Share2 className="w-4 h-4" /> 피드 공유하기</button>
-//     </div>
-//   </div>
-// );
-
 // ==========================================
 // 3. UI Components (CompleteStep 수정)
 // ==========================================
@@ -1011,5 +1000,3 @@ const AiDiaryPage = () => {
 };
 
 export default AiDiaryPage;
-
-

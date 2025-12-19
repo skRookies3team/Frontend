@@ -1,8 +1,8 @@
 import {
-    BrowserRouter as Router,
-    Routes,
-    Route,
-    Outlet,
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Outlet,
 } from "react-router-dom";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -59,7 +59,6 @@ import MissingPetRegisterPage from "@/features/petmate/pages/MissingPetRegisterP
 // Feature: Social
 import FeedPage from "@/features/social/pages/FeedPage"
 import FeedAiRecommendPage from "@/features/social/pages/FeedAiRecommendPage"
-// FeedCreatePage 제거됨
 import CreatePage from "@/features/social/pages/CreatePage"
 import MessagesPage from "@/features/social/pages/MessagesPage"
 import UserPage from "@/features/social/pages/UserPage"
@@ -76,15 +75,15 @@ import LocationTracker from "@/features/diary/components/LocationTracker"
 const queryClient = new QueryClient();
 
 const AppLayout = () => {
-    return (
-        <>
-            <Header />
-            <main className="bg-background text-foreground">
-                <Outlet />
-            </main>
-            <FloatingChatbotWidget />
-        </>
-    );
+  return (
+    <>
+      <Header />
+      <main className="bg-background text-foreground">
+        <Outlet />
+      </main>
+      <FloatingChatbotWidget />
+    </>
+  );
 };
 
 function App() {
