@@ -1,15 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, MemoryRouter as Router } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Camera, Upload, Edit3, Check, Share2, Calendar,
   Image as ImageIcon, X, ChevronLeft, Loader2,
   Save, BookOpen, PawPrint, Sun, Smile, MapPin, Coins
 } from 'lucide-react';
-import { createRoot } from 'react-dom/client';
+
 import { getUserApi } from "@/features/auth/api/auth-api";
 // [중요] LocationTracker import (파일 경로에 맞게 수정해주세요)
-import LocationTracker from '../components/LocationTracker';
+
 // 만약 같은 파일에 넣으셨다면 import 필요 없음
+
+declare global {
+  interface Window {
+    kakao: any;
+  }
+}
+
 
 // ==========================================
 // [환경 변수 및 유틸 설정]
@@ -172,26 +179,26 @@ const getDiary = async (diaryId: number) => {
   }
 };
 
-const updateDiary = async (diaryId: number, data: any) => {
-  try {
-    const token = getAccessToken();
-    const response = await fetch(`${BASE_URL}/diaries/${diaryId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
-      body: JSON.stringify(data),
-    });
+// const updateDiary = async (diaryId: number, data: any) => {
+//   try {
+//     const token = getAccessToken();
+//     const response = await fetch(`${BASE_URL}/diaries/${diaryId}`, {
+//       method: 'PATCH',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         ...(token && { 'Authorization': `Bearer ${token}` }),
+//       },
+//       body: JSON.stringify(data),
+//     });
+//
+//     if (!response.ok) throw new Error('일기 저장 실패');
+//   } catch (error) {
+//     console.error("[Service] updateDiary 실패:", error);
+//     throw error;
+//   }
+// };
 
-    if (!response.ok) throw new Error('일기 저장 실패');
-  } catch (error) {
-    console.error("[Service] updateDiary 실패:", error);
-    throw error;
-  }
-};
-
-const uploadImagesToS3 = async (files: File[]) => {
+const uploadImagesToS3 = async (files: File[]): Promise<any[]> => {
   return new Promise((resolve) => {
     const newImages = files.map(file => ({
       imageUrl: URL.createObjectURL(file),
@@ -429,7 +436,7 @@ const GeneratingStep = ({ progress }: { progress: number }) => (
 
 const EditStep = ({
   selectedImages, editedDiary, setEditedDiary, weather, setWeather, mood, setMood, locationName, setLocationName, locationCoords,
-  selectedDate, layoutStyle, setLayoutStyle, textAlign, setTextAlign, fontSize, setFontSize, backgroundColor, setBackgroundColor,
+  selectedDate, layoutStyle, setLayoutStyle, textAlign, fontSize, backgroundColor, setBackgroundColor,
   handleShareToFeed, isSubmitting
 }: any) => {
   const backgroundColors = ["#ffffff", "#fff5f5", "#fef2f2", "#fdf4ff", "#f0f9ff"];
@@ -778,7 +785,7 @@ const AiDiaryPage = () => {
         if (!navigator.geolocation) { resolve(null); return; }
         navigator.geolocation.getCurrentPosition(
           (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-          (err) => resolve(null),
+          (_err) => resolve(null),
           { enableHighAccuracy: true, timeout: 5000 }
         );
       });
@@ -998,17 +1005,4 @@ const AiDiaryPage = () => {
 
 export default AiDiaryPage;
 
-const App = () => (
-  <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-    {/* 여기서 LocationTracker를 렌더링하면, 
-      로그인 상태일 때 자동으로 백그라운드에서 위치를 저장합니다.
-      어떤 페이지(일기 쓰기, 홈 등)로 이동해도 Router 안에 있으므로 계속 동작합니다.
-    */}
-    <LocationTracker />
 
-    <AiDiaryPage />
-  </Router>
-);
-
-const root = createRoot(document.getElementById('root')!);
-root.render(<App />);
