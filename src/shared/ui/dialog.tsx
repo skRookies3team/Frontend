@@ -50,13 +50,15 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  overlayClassName, // 추가: 오버레이 스타일 커스터마이징을 위한 prop
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
+  overlayClassName?: string // 타입 정의 추가
 }) {
   return (
     <DialogPortal data-slot="dialog-portal">
-      <DialogOverlay />
+      <DialogOverlay className={overlayClassName} /> 
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(

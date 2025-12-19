@@ -1,9 +1,11 @@
 import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Outlet,
+    BrowserRouter as Router,
+    Routes,
+    Route,
+    Outlet,
 } from "react-router-dom";
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // Shared Components
 import { ThemeProvider } from "@/shared/components/theme-provider"
@@ -49,14 +51,12 @@ import PortfolioPage from "@/features/diary/pages/PortfolioPage"
 
 // Feature: PetMate
 import PetMatePage from "@/features/petmate/pages/PetMatePage"
-import WalkMatePage from "@/features/petmate/pages/WalkMatePage"
 import MissingPetRegisterPage from "@/features/petmate/pages/MissingPetRegisterPage"
 
 // Feature: Social
 import FeedPage from "@/features/social/pages/FeedPage"
 import FeedAiRecommendPage from "@/features/social/pages/FeedAiRecommendPage"
-import FeedCreatePage from "@/features/social/pages/FeedCreatePage"
-import ExplorePage from "@/features/social/pages/ExplorePage"
+// FeedCreatePage 제거됨
 import CreatePage from "@/features/social/pages/CreatePage"
 import MessagesPage from "@/features/social/pages/MessagesPage"
 import UserPage from "@/features/social/pages/UserPage"
@@ -68,91 +68,94 @@ import ChatbotPage from "@/features/chatbot/pages/ChatbotPage"
 
 // Feature: Home
 import HomePage from "@/features/home/components/HomePage"
+import LocationTracker from "@/features/diary/components/LocationTracker"
+
+const queryClient = new QueryClient();
 
 const AppLayout = () => {
-  return (
-    <>
-      <Header />
-      <main className="bg-background text-foreground">
-        <Outlet />
-      </main>
-      <FloatingChatbotWidget />
-    </>
-  );
+    return (
+        <>
+            <Header />
+            <main className="bg-background text-foreground">
+                <Outlet />
+            </main>
+            <FloatingChatbotWidget />
+        </>
+    );
 };
 
 function App() {
-  return (
-    <Router>
-      <ThemeProvider>
-        <AuthProvider>
-          <CartProvider>
-            <WishlistProvider>
-              <Routes>
-                <Route path="/" element={<AppLayout />}>
-                  <Route index element={<HomePage />} />
-                  <Route path="dashboard" element={<DashboardPage />} />
-                  <Route path="feed" element={<FeedPage />} />
-                  <Route path="feed/ai-recommend" element={<FeedAiRecommendPage />} />
-                  <Route path="feed/create" element={<FeedCreatePage />} />
-                  <Route path="explore" element={<ExplorePage />} />
-                  <Route path="create" element={<CreatePage />} />
-                  <Route path="ai-diary" element={<AiDiaryPage />} />
-                  <Route path="ai-studio" element={<AiStudioPage />} />
-                  <Route path="ai-studio/diary" element={<AiDiaryPage />} />
-                  <Route path="ai-studio/recap" element={<AiRecapPage />} />
-                  <Route
-                    path="ai-studio/biography"
-                    element={<AiBiographyPage />}
-                  />
-                  <Route path="chatbot" element={<ChatbotPage />} />
-                  <Route path="gallery" element={<GalleryPage />} />
-                  <Route path="healthcare" element={<HealthcarePage />} />
-                  <Route path="messages" element={<MessagesPage />} />
-                  <Route
-                    path="missing-pet/register"
-                    element={<MissingPetRegisterPage />}
-                  />
-                  <Route path="pet-mate" element={<PetMatePage />} />
-                  <Route path="portfolio" element={<PortfolioPage />} />
-                  <Route path="profile" element={<ProfilePage />}>
-                    <Route path="mileage" element={<MileagePage />} />
-                  </Route>
-                  <Route path="profile/pet/:id" element={<PetProfilePage />} />
-                  <Route path="profile/pet/:id/edit" element={<PetEditPage />} />
-                  <Route path="shop" element={<ShopPage />}>
-                    <Route path="cart" element={<CartPage />} />
-                    <Route path="wishlist" element={<WishlistPage />} />
-                    <Route path="product/:id" element={<ProductDetailPage />} />
-                    <Route path="checkout" element={<CheckoutPage />}>
-                      <Route
-                        path="complete"
-                        element={<CheckoutCompletePage />}
-                      />
-                    </Route>
-                  </Route>
-                  <Route path="user/:id" element={<UserPage />} />
-                  {/* Add other routes here */}
-                </Route>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/onboarding" element={<OnboardingPage />} />
-                <Route path="/pet-info" element={<PetInfoPage />} />
-                <Route path="/register-pet" element={<RegisterPetPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/signup" element={<SignupPage />}>
-                  <Route index element={<SignupIndexPage />} />
-                  <Route path="info" element={<SignupInfoPage />} />
-                </Route>
-                <Route path="/user-info" element={<UserInfoPage />} />
-                <Route path="/walk-mate" element={<WalkMatePage />} />
-                <Route path="/welcome" element={<WelcomePage />} />
-              </Routes>
-            </WishlistProvider>
-          </CartProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </Router>
-  );
+    return (
+        <QueryClientProvider client={queryClient}>
+            <Router>
+                <ThemeProvider>
+                    <AuthProvider>
+                        <LocationTracker />
+                        <CartProvider>
+                            <WishlistProvider>
+                                <Routes>
+                                    <Route path="/" element={<AppLayout />}>
+                                        <Route index element={<HomePage />} />
+                                        <Route path="dashboard" element={<DashboardPage />} />
+                                        <Route path="feed" element={<FeedPage />} />
+                                        <Route path="feed/ai-recommend" element={<FeedAiRecommendPage />} />
+                                        {/* feed/create 라우트 삭제 */}
+                                        <Route path="create" element={<CreatePage />} />
+                                        <Route path="ai-diary" element={<AiDiaryPage />} />
+                                        <Route path="ai-studio" element={<AiStudioPage />} />
+                                        <Route path="ai-studio/diary" element={<AiDiaryPage />} />
+                                        <Route path="ai-studio/recap" element={<AiRecapPage />} />
+                                        <Route
+                                            path="ai-studio/biography"
+                                            element={<AiBiographyPage />}
+                                        />
+                                        <Route path="chatbot" element={<ChatbotPage />} />
+                                        <Route path="gallery" element={<GalleryPage />} />
+                                        <Route path="healthcare" element={<HealthcarePage />} />
+                                        <Route path="messages" element={<MessagesPage />} />
+                                        <Route
+                                            path="missing-pet/register"
+                                            element={<MissingPetRegisterPage />}
+                                        />
+                                        <Route path="pet-mate" element={<PetMatePage />} />
+                                        <Route path="portfolio" element={<PortfolioPage />} />
+                                        <Route path="profile" element={<ProfilePage />}>
+                                            <Route path="mileage" element={<MileagePage />} />
+                                        </Route>
+                                        <Route path="profile/pet/:id" element={<PetProfilePage />} />
+                                        <Route path="profile/pet/:id/edit" element={<PetEditPage />} />
+                                        <Route path="shop" element={<ShopPage />}>
+                                            <Route path="cart" element={<CartPage />} />
+                                            <Route path="wishlist" element={<WishlistPage />} />
+                                            <Route path="product/:id" element={<ProductDetailPage />} />
+                                            <Route path="checkout" element={<CheckoutPage />}>
+                                                <Route
+                                                    path="complete"
+                                                    element={<CheckoutCompletePage />}
+                                                />
+                                            </Route>
+                                        </Route>
+                                        <Route path="user/:id" element={<UserPage />} />
+                                    </Route>
+                                    <Route path="/login" element={<LoginPage />} />
+                                    <Route path="/onboarding" element={<OnboardingPage />} />
+                                    <Route path="/pet-info" element={<PetInfoPage />} />
+                                    <Route path="/register-pet" element={<RegisterPetPage />} />
+                                    <Route path="/settings" element={<SettingsPage />} />
+                                    <Route path="/signup" element={<SignupPage />}>
+                                        <Route index element={<SignupIndexPage />} />
+                                        <Route path="info" element={<SignupInfoPage />} />
+                                    </Route>
+                                    <Route path="/user-info" element={<UserInfoPage />} />
+                                    <Route path="/welcome" element={<WelcomePage />} />
+                                </Routes>
+                            </WishlistProvider>
+                        </CartProvider>
+                    </AuthProvider>
+                </ThemeProvider>
+            </Router>
+        </QueryClientProvider>
+    );
 }
 
 export default App;

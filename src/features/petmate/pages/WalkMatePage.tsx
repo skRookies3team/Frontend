@@ -45,7 +45,7 @@ export default function WalkMatePage() {
       petGender: "남아",
       petPhoto: "/pomeranian-dog.png",
       distance: 0.68,
-      bio: "매일 저녁 7시에 한강공원에서 산책해요! 같은 포메 친구 찾아요 🐾",
+      bio: "매일 저녁 7시에 한강공원에서 산책해요! 같은 포메 친구 찾아요",
       activityLevel: 85,
       commonInterests: ["한강 산책", "소형견 모임", "미용 정보"],
       matchScore: 95,
@@ -60,7 +60,7 @@ export default function WalkMatePage() {
       petGender: "여아",
       petPhoto: "/golden-retriever.png",
       distance: 1.2,
-      bio: "활발한 골댕이와 함께 공원 러닝 즐겨요! 대형견 친구 환영합니다 🏃‍♀️",
+      bio: "활발한 골댕이와 함께 공원 러닝 즐겨요! 대형견 친구 환영합니다",
       activityLevel: 95,
       commonInterests: ["러닝", "프리스비", "수영"],
       matchScore: 78,
@@ -319,7 +319,10 @@ export default function WalkMatePage() {
 
         {/* Tips */}
         <div className="text-center space-y-2">
-          <p className="text-sm font-medium text-gray-700">💡 스마트 매칭 알고리즘 작동 중</p>
+          <p className="text-sm font-medium text-gray-700 flex items-center justify-center gap-2">
+            <img src="/icons/lightbulb.svg" alt="" className="w-5 h-5" />
+            스마트 매칭 알고리즘 작동 중
+          </p>
           <p className="text-xs text-muted-foreground">같은 품종 우선 (50%) • 거리순 (30%) • 활동성 (20%)</p>
         </div>
       </div>
@@ -327,7 +330,10 @@ export default function WalkMatePage() {
       <Dialog open={matchModalOpen} onOpenChange={setMatchModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-center text-3xl">🎉 매칭 성공!</DialogTitle>
+            <DialogTitle className="text-center text-3xl flex items-center justify-center gap-2">
+              <img src="/icons/celebration.svg" alt="" className="w-10 h-10" />
+              매칭 성공!
+            </DialogTitle>
             <DialogDescription className="text-center text-base">
               {matchedUser?.userName}님과 매칭되었어요!
             </DialogDescription>

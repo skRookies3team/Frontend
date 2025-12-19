@@ -117,7 +117,10 @@ export default function PetInfoPage() {
     gender: "",
     neutered: "",
     birthday: "",
+    vaccinated: "",
   })
+
+
 
   const analyzePhoto = async (_file: File) => {
     setIsAnalyzing(true)
@@ -156,24 +159,29 @@ export default function PetInfoPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    // Prepare pet data
-    const petData = {
-      id: `pet-${Date.now()}`,
-      name: formData.name,
-      species: formData.species,
-      breed: formData.breed,
-      age: formData.age,
-      photo: photoPreview || "/placeholder.svg",
-      gender: formData.gender,
-      neutered: formData.neutered === "yes",
-      birthday: formData.birthday,
-    }
+    console.log("PetInfoPage: handleSubmit called", { user, returnTo, formData });
 
     // 이미 로그인된 사용자인 경우 (returnTo가 있으면 기존 사용자)
     if (user && returnTo) {
-      addPet(petData)
-      navigate(returnTo)
+      console.log("PetInfoPage: processing as existing user");
+      const createPetDto = {
+        petName: formData.name,
+        breed: formData.breed,
+        genderType: formData.gender === "female" ? "FEMALE" : formData.gender === "male" ? "MALE" : "NONE",
+        birth: formData.birthday,
+        species: formData.species === "강아지" ? "DOG" : "CAT",
+        neutered: formData.neutered === "yes",
+        vaccinated: formData.vaccinated === "yes"
+      }
+      const fileInput = document.getElementById("photo") as HTMLInputElement;
+      const petFile = fileInput?.files?.[0] || null;
+
+      try {
+        await addPet(createPetDto, petFile);
+        navigate(returnTo)
+      } catch (error) {
+        console.error("Failed to add pet:", error);
+      }
       return
     }
 
@@ -187,18 +195,41 @@ export default function PetInfoPage() {
 
     const userInfo = JSON.parse(userInfoStr)
 
-    // Complete signup with user info and pet data
-    await signup({
-      ...userInfo,
-      pets: [petData],
-    })
+    // CreateUserDto
+    const createUserDto = {
+      email: userInfo.email,
+      password: userInfo.password,
+      username: userInfo.name,
+      social: userInfo.username, // Mapped from frontend username field
+      birth: userInfo.birthday,
+      genderType: userInfo.gender === "female" ? "FEMALE" : userInfo.gender === "male" ? "MALE" : "NONE"
+    }
 
-    // Clean up sessionStorage
-    sessionStorage.removeItem("signup_user_info")
-    sessionStorage.removeItem("signup_credentials")
+    // CreatePetDto
+    const createPetDto = {
+      petName: formData.name,
+      breed: formData.breed,
+      genderType: formData.gender === "female" ? "FEMALE" : formData.gender === "male" ? "MALE" : "NONE",
+      birth: formData.birthday, // LocalDate string format "YYYY-MM-DD" expected
+      species: formData.species === "강아지" ? "DOG" : "CAT", // Simple mapping
+      neutered: formData.neutered === "yes",
+      vaccinated: formData.vaccinated === "yes"
+    }
 
-    // Navigate to dashboard
-    navigate("/dashboard")
+    // Pet Photo File
+    const fileInput = document.getElementById("photo") as HTMLInputElement;
+    const petFile = fileInput?.files?.[0] || null;
+
+    // Call signup
+    try {
+      await signup(createUserDto, createPetDto, petFile);
+      // Clean up sessionStorage
+      sessionStorage.removeItem("signup_user_info")
+      sessionStorage.removeItem("signup_credentials")
+    } catch (e) {
+      console.error(e)
+      // Handle error (alert/toast)
+    }
   }
 
   const handleSkip = async () => {
@@ -218,15 +249,29 @@ export default function PetInfoPage() {
 
     const userInfo = JSON.parse(userInfoStr)
 
-    // Complete signup without pet
-    await signup(userInfo)
+    // CreateUserDto for skip case
+    const createUserDto = {
+      email: userInfo.email,
+      password: userInfo.password,
+      username: userInfo.name,
+      social: userInfo.username,
+      birth: userInfo.birthday,
+      genderType: userInfo.gender === "female" ? "FEMALE" : userInfo.gender === "male" ? "MALE" : "NONE"
+    }
 
-    // Clean up sessionStorage
-    sessionStorage.removeItem("signup_user_info")
-    sessionStorage.removeItem("signup_credentials")
+    // Complete signup without pet (pass null for petDto and petFile)
+    try {
+      await signup(createUserDto, null, null)
 
-    // Navigate to dashboard
-    navigate("/dashboard")
+      // Clean up sessionStorage
+      sessionStorage.removeItem("signup_user_info")
+      sessionStorage.removeItem("signup_credentials")
+
+      // Navigate to dashboard
+      navigate("/dashboard")
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   const getBreedOptions = () => {
@@ -466,6 +511,32 @@ export default function PetInfoPage() {
                     type="button"
                     onClick={() => setFormData({ ...formData, neutered: "no" })}
                     className={`rounded-xl border-2 p-3 text-sm font-medium transition-all ${formData.neutered === "no"
+                      ? "border-pink-500 bg-gradient-to-r from-pink-500 to-rose-500 text-white"
+                      : "border-pink-200 hover:border-pink-500"
+                      }`}
+                  >
+                    안 했어요
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label>예방접종 여부</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, vaccinated: "yes" })}
+                    className={`rounded-xl border-2 p-3 text-sm font-medium transition-all ${formData.vaccinated === "yes"
+                      ? "border-pink-500 bg-gradient-to-r from-pink-500 to-rose-500 text-white"
+                      : "border-pink-200 hover:border-pink-500"
+                      }`}
+                  >
+                    했어요
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, vaccinated: "no" })}
+                    className={`rounded-xl border-2 p-3 text-sm font-medium transition-all ${formData.vaccinated === "no"
                       ? "border-pink-500 bg-gradient-to-r from-pink-500 to-rose-500 text-white"
                       : "border-pink-200 hover:border-pink-500"
                       }`}
