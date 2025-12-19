@@ -2,7 +2,14 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosRequestConfig, A
 
 
 // 환경변수에서 API URL 가져오기 (없으면 로컬 기본값)
-const baseURL = import.meta.env.VITE_API_URL || '/api';
+const getBaseUrl = () => {
+  let url = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  if (!url.endsWith('/api')) {
+    url += '/api';
+  }
+  return url;
+};
+const BASE_URL = getBaseUrl();
 
 let getTokenFunction: (() => string | null) | null = null;
 let removeTokenFunction: (() => void) | null = null;
