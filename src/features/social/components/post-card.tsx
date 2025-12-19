@@ -37,9 +37,9 @@ export function PostCard({ post, onLikeToggle, onClickPost }: PostCardProps) {
   }
 
   return (
-    <div className="flex flex-col bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden mb-6 transition-all hover:shadow-md">
+    <div className="flex flex-col bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6 transition-all hover:shadow-md">
       {/* 1. 헤더: 작성자 정보 */}
-      <div className="flex items-center justify-between p-4 pb-3">
+      <div className="flex items-center justify-between p-3">
         <div className="flex items-center gap-3">
           <Avatar className="w-10 h-10 border border-gray-100 shadow-sm cursor-pointer">
             <AvatarImage src={post.writerProfileImage || undefined} />
@@ -62,14 +62,14 @@ export function PostCard({ post, onLikeToggle, onClickPost }: PostCardProps) {
 
       {/* 2. 이미지 영역 (슬라이더 적용) */}
       <div 
-        className="relative aspect-square w-full bg-gray-100 cursor-pointer group"
+        className="relative aspect-square w-full bg-gray-100 cursor-pointer group overflow-hidden"
         onClick={() => onClickPost?.(post)}
       >
         {/* 현재 인덱스의 이미지 보여주기 */}
         <img
           src={images[currentImageIndex]}
           alt={`feed-${post.feedId}-${currentImageIndex}`}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
 
         {/* 좌우 화살표 및 인디케이터 (이미지가 여러 장일 때만 표시) */}

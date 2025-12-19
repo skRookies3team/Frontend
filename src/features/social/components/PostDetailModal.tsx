@@ -85,14 +85,14 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
         </DialogClose>
 
         {/* 1. 이미지 영역 (왼쪽) - 슬라이더 적용됨 */}
-        <div className="relative bg-black flex items-center justify-center w-full h-[45vh] md:h-full md:flex-[1.5_1_0%] overflow-hidden border-r border-[#FFF0F5] group">
+        <div className="relative bg-gray-100 flex items-center justify-center w-full h-[45vh] md:h-full md:flex-[1.5_1_0%] overflow-hidden border-r border-[#FFF0F5] group">
            {images.length > 0 ? (
              <>
                {/* 이미지 표시 */}
                <img 
                  src={images[currentImageIndex]} 
                  alt={`Post-${currentImageIndex}`} 
-                 className="w-full h-full object-contain" // 이미지가 잘리지 않게 contain 사용 (필요시 cover로 변경)
+                 className="w-full h-full object-cover"
                />
 
                {/* 화살표 및 인디케이터 (이미지가 여러 장일 때만 표시) */}
