@@ -6,8 +6,12 @@ import { Card, CardContent } from "@/shared/ui/card"
 import { Heart, MessageCircle, Share2, MoreHorizontal, Flag } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover"
+<<<<<<< HEAD
 import { Facebook, Instagram, Link as LinkIcon } from "lucide-react"
 import { KakaoIcon } from "@/shared/components/icons/KakaoIcon"
+=======
+import { Facebook, Twitter, Instagram, Link as LinkIcon } from "lucide-react"
+>>>>>>> 3cebdbc6f965ab7269251c551dfe0d5dc8e3e733
 
 interface PostCardProps {
   post: {
