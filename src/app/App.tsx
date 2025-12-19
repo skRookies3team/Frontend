@@ -67,6 +67,7 @@ import ChatbotPage from "@/features/chatbot/pages/ChatbotPage"
 
 // Feature: Home
 import HomePage from "@/features/home/components/HomePage"
+import LocationTracker from "@/features/diary/components/LocationTracker"
 
 const queryClient = new QueryClient();
 
@@ -88,6 +89,7 @@ function App() {
       <Router>
         <ThemeProvider>
           <AuthProvider>
+            <LocationTracker />
             <CartProvider>
               <WishlistProvider>
                 <Routes>

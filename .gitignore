@@ -2,7 +2,5 @@
 /frontsample/
 .env
 /other
-
-.env.env
-.env
-#env
+.env.local
+.env.*.local
