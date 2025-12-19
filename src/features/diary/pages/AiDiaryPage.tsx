@@ -263,9 +263,11 @@ const createSocialFeed = async (data: any) => {
       throw new Error(errorData.message || `피드 생성 실패: ${response.status}`);
     }
 
-    const responseData = await response.json(); // returns feedId (Long)
-    console.log("[Service] 소셜 피드 생성 성공, ID:", responseData);
-    return responseData;
+    const responseData = await response.json();
+    // [수정] 응답이 객체(GetFeedDto)일 경우 feedId 추출, 아니면 그대로 사용
+    const feedId = responseData.feedId || responseData.id || responseData;
+    console.log("[Service] 소셜 피드 생성 성공, ID:", feedId);
+    return feedId;
   } catch (error) {
     console.error("[Service] 소셜 피드 생성 중 에러:", error);
     throw error;
@@ -945,7 +947,7 @@ const AiDiaryPage = () => {
         content: editedDiary,
         location: locationName,
         visibility: visibility,
-        images: selectedImages.map(img => img.imageUrl) // 이미지 URL 리스트 전달
+        imageUrls: selectedImages.map(img => img.imageUrl) // [수정] DTO 필드명 변경 (images -> imageUrls)
       };
 
       // 2. API 호출
