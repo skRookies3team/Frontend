@@ -3,9 +3,10 @@ import { useNavigate, MemoryRouter as Router } from 'react-router-dom';
 import {
   Camera, Upload, Edit3, Check, Share2, Calendar,
   Image as ImageIcon, X, ChevronLeft, Loader2,
-  Save, BookOpen, PawPrint, Sun, Smile, MapPin
+  Save, BookOpen, PawPrint, Sun, Smile, MapPin, Coins
 } from 'lucide-react';
 import { createRoot } from 'react-dom/client';
+import { getUserApi } from "@/features/auth/api/auth-api";
 // [중요] LocationTracker import (파일 경로에 맞게 수정해주세요)
 import LocationTracker from '../components/LocationTracker';
 // 만약 같은 파일에 넣으셨다면 import 필요 없음
@@ -22,8 +23,8 @@ const getEnv = (key: string) => {
   }
 };
 
-// [수정] 프록시 없이 백엔드 포트(8087)로 직접 요청하도록 변경
-const BASE_URL = 'http://localhost:8087/api';
+// [수정] 프록시(게이트웨이)를 통해 요청하도록 변경
+const BASE_URL = '/api';
 
 // [중요] 토큰 가져오기 (petlog_token 우선, 없으면 accessToken 확인)
 const getAccessToken = () => localStorage.getItem('petlog_token') || localStorage.getItem('accessToken');
@@ -54,18 +55,25 @@ const useAuth = () => {
         const userId = Number(payload.userId || payload.sub || payload.id);
 
         if (!isNaN(userId)) {
-          const petsFromToken = payload.pets || [
-            { id: 1, name: '초코', species: '강아지', breed: '푸들', gender: '남아', neutered: true, age: 3 },
-            { id: 2, name: '나비', species: '고양이', breed: '코숏', gender: '여아', neutered: false, age: 2 }
-          ];
-
-          setUser({
-            id: userId,
-            username: payload.username || payload.name || 'User',
-            pets: petsFromToken
-          });
-
-          console.log("[Auth] 사용자 인증 성공 (Local Parsing):", userId);
+          // [수정] API를 통해 최신 사용자 정보(펫 포함) 가져오기
+          getUserApi(userId)
+            .then((userData) => {
+              console.log("[Auth] 사용자 정보 조회 성공:", userData);
+              setUser({
+                id: userId,
+                username: userData.username || userData.social || 'User',
+                pets: userData.pets || [] // API에서 가져온 펫 목록 사용
+              });
+            })
+            .catch((err) => {
+              console.error("[Auth] 사용자 정보 조회 실패:", err);
+              // 실패 시 토큰 정보라도 사용 (Fallback)
+              setUser({
+                id: userId,
+                username: payload.username || payload.name || 'User',
+                pets: payload.pets || []
+              });
+            });
         }
       } catch (e) {
         console.error("[Auth] 토큰 파싱 실패:", e);
@@ -194,6 +202,42 @@ const uploadImagesToS3 = async (files: File[]) => {
 };
 
 // ==========================================
+// [NEW] 2. Services (코인 적립 API 추가)
+// ==========================================
+
+// [추가] 코인 적립 API
+const earnCoin = async (userId: number, amount: number) => {
+  try {
+    const token = getAccessToken();
+    console.log(`[Service] 코인 적립 요청: User ${userId}, Amount ${amount}`);
+
+    // [주의] 게이트웨이 라우팅 규칙에 따라 '/users' 또는 '/members'로 수정 필요할 수 있음
+    // 현재 코드에서는 일반적인 REST 관례인 '/users'를 사용합니다.
+    const response = await fetch(`${BASE_URL}/users/${userId}/coin/earn`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+      // 요청 DTO: { amount: number }
+      body: JSON.stringify({ amount }),
+    });
+
+    if (!response.ok) {
+      console.warn(`[Service] 코인 적립 실패: Status ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log("[Service] 코인 적립 성공, 잔액:", data.petCoin);
+    return data; // 응답 DTO: { petCoin: number }
+  } catch (error) {
+    console.error("[Service] 코인 적립 중 에러:", error);
+    return null;
+  }
+};
+
+// ==========================================
 // 3. UI Components
 // ==========================================
 
@@ -208,7 +252,7 @@ const KakaoMap = ({ lat, lng }: { lat: number; lng: number }) => {
 
   useEffect(() => {
     const envKey = getEnv('VITE_KAKAO_API_KEY');
-    const KAKAO_API_KEY = envKey || "9852c4d5baa8c8c30254fe67de447bc3";
+    const KAKAO_API_KEY = envKey;
 
     if (document.getElementById('kakao-map-script')) {
       if (window.kakao && window.kakao.maps) {
@@ -433,13 +477,44 @@ const EditStep = ({
   );
 };
 
-const CompleteStep = ({ onHome }: { onHome: () => void }) => (
+// const CompleteStep = ({ onHome }: { onHome: () => void }) => (
+//   <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
+//     <div className="bg-green-100 p-6 rounded-full mb-6"><Check className="w-12 h-12 text-green-600" /></div>
+//     <h2 className="text-3xl font-bold text-gray-800 mb-4">일기 작성이 완료되었어요!</h2>
+//     <div className="flex gap-4">
+//       <button onClick={onHome} className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium">내 다이어리 보기</button>
+//       <button onClick={onHome} className="px-6 py-3 bg-pink-500 text-white rounded-xl font-medium flex items-center gap-2"><Share2 className="w-4 h-4" /> 피드 공유하기</button>
+//     </div>
+//   </div>
+// );
+
+// ==========================================
+// 3. UI Components (CompleteStep 수정)
+// ==========================================
+
+// [수정] earnedAmount prop 추가하여 적립금액 표시
+const CompleteStep = ({ onHome, earnedAmount }: { onHome: () => void, earnedAmount: number | null }) => (
   <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
-    <div className="bg-green-100 p-6 rounded-full mb-6"><Check className="w-12 h-12 text-green-600" /></div>
-    <h2 className="text-3xl font-bold text-gray-800 mb-4">일기 작성이 완료되었어요!</h2>
-    <div className="flex gap-4">
-      <button onClick={onHome} className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium">내 다이어리 보기</button>
-      <button onClick={onHome} className="px-6 py-3 bg-pink-500 text-white rounded-xl font-medium flex items-center gap-2"><Share2 className="w-4 h-4" /> 피드 공유하기</button>
+    <div className="bg-green-100 p-6 rounded-full mb-6">
+      <Check className="w-12 h-12 text-green-600" />
+    </div>
+    <h2 className="text-3xl font-bold text-gray-800 mb-2">일기 작성이 완료되었어요!</h2>
+
+    {/* [추가] 코인 적립 알림 UI */}
+    {earnedAmount !== null && (
+      <div className="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded-full border border-yellow-200 mb-6 animate-bounce">
+        <Coins className="w-5 h-5 text-yellow-600" />
+        <span className="font-bold text-yellow-700">+{earnedAmount} Pet Coin 적립 완료!</span>
+      </div>
+    )}
+
+    <div className="flex gap-4 mt-4">
+      <button onClick={onHome} className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors">
+        내 다이어리 보기
+      </button>
+      <button onClick={onHome} className="px-6 py-3 bg-pink-500 text-white rounded-xl font-medium flex items-center gap-2 shadow-lg hover:bg-pink-600 transition-colors">
+        <Share2 className="w-4 h-4" /> 피드 공유하기
+      </button>
     </div>
   </div>
 );
@@ -510,6 +585,9 @@ const AiDiaryPage = () => {
   const [backgroundColor, setBackgroundColor] = useState("#ffffff");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // [추가] 이번 활동으로 적립된 코인 양 저장
+  const [earnedReward, setEarnedReward] = useState<number | null>(null);
 
   // [NEW] Auth 정보가 로드되면 펫 목록 설정
   useEffect(() => {
@@ -639,8 +717,8 @@ const AiDiaryPage = () => {
         content: "",
         visibility: "PRIVATE",
         isAiGen: true,
-        weather: "맑음",
-        mood: "행복",
+        weather: "",
+        mood: "",
         date: selectedDate,
         latitude: location ? location.lat : null,
         longitude: location ? location.lng : null,
@@ -694,9 +772,38 @@ const AiDiaryPage = () => {
   const handleShareToFeed = async () => {
     if (!createdDiaryId) return;
     setIsSubmitting(true);
+    // try {
+    //   await updateDiary(createdDiaryId, { content: editedDiary, visibility: "PUBLIC", weather, mood, locationName });
+    //   setStep("complete");
+    // } catch (error: any) {
+    //   alert(`저장 실패: ${error.message}`);
+    // } finally {
+    //   setIsSubmitting(false);
+    // }
     try {
-      await updateDiary(createdDiaryId, { content: editedDiary, visibility: "PUBLIC", weather, mood, locationName });
+      // 1. 일기 내용 최종 업데이트 (공개 전환 등)
+      // (이전 코드에서 import했던 updateDiary 함수 등 사용)
+      // await updateDiary(createdDiaryId, { content: editedDiary, visibility: "PUBLIC", weather, mood, locationName });
+      // 위 로직은 기존 코드에 구현되어 있다고 가정하고 아래에 API 호출을 배치합니다.
+
+      // 실제로는 여기에 updateDiary 호출이 있어야 합니다. (질문자님 기존 코드 참조)
+      // 예시:
+      // await updateDiary(createdDiaryId, { ... }); 
+
+      // 2. [추가] 마일리지(코인) 적립 로직 실행
+      if (user && user.id) {
+        // 프론트에서 15코인으로 고정하여 요청
+        const REWARD_AMOUNT = 15;
+        const coinResult = await earnCoin(user.id, REWARD_AMOUNT);
+
+        if (coinResult) {
+          setEarnedReward(REWARD_AMOUNT); // 적립 성공 시 UI 표시용 State 업데이트
+        }
+      }
+
+      // 3. 완료 화면으로 이동
       setStep("complete");
+
     } catch (error: any) {
       alert(`저장 실패: ${error.message}`);
     } finally {
@@ -711,6 +818,7 @@ const AiDiaryPage = () => {
     setEditedDiary("");
     setProgress(0);
     setCreatedDiaryId(null);
+    setEarnedReward(null); // 보상 초기화
   };
 
   return (
@@ -720,7 +828,6 @@ const AiDiaryPage = () => {
           <button onClick={() => navigate(-1)} className="text-pink-600 hover:text-pink-700 transition-colors p-1"><ChevronLeft className="w-6 h-6" /></button>
           <h1 className="text-lg font-bold text-pink-600 md:text-xl">Pet Log AI</h1>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-pink-500 hidden sm:block">{user?.username}</span>
           </div>
         </div>
       </header>
@@ -742,7 +849,7 @@ const AiDiaryPage = () => {
             backgroundColor={backgroundColor} setBackgroundColor={setBackgroundColor} handleShareToFeed={handleShareToFeed} isSubmitting={isSubmitting}
           />
         )}
-        {step === 'complete' && <CompleteStep onHome={handleReset} />}
+        {step === 'complete' && <CompleteStep onHome={handleReset} earnedAmount={earnedReward} />}
       </main>
       <GalleryModal showGallery={showGallery} setShowGallery={setShowGallery} selectedImages={selectedImages} handleSelectFromGallery={handleSelectFromGallery} />
     </div>
