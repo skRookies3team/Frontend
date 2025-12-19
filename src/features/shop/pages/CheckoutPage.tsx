@@ -6,11 +6,8 @@ import { Button } from "@/shared/ui/button"
 import { Input } from "@/shared/ui/input"
 import { Badge } from "@/shared/ui/badge"
 import { useCart } from "@/features/shop/context/cart-context"
-<<<<<<< HEAD
 import "@/shared/assets/styles/CheckoutPage.css"
-=======
 import "./CheckoutPage.css"
->>>>>>> 3cebdbc6f965ab7269251c551dfe0d5dc8e3e733
 
 type PaymentMethod = "card" | "transfer" | "mileage" | "mixed"
 

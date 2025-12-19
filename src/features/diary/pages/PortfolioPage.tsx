@@ -2,11 +2,9 @@ import { useEffect, useRef, useState } from "react"
 import * as THREE from "three"
 import { X, Calendar, MapPin, Heart } from 'lucide-react'
 import { Button } from "@/shared/ui/button"
-<<<<<<< HEAD
+
 import "@/shared/assets/styles/PortfolioPage.css"
-=======
 import "./PortfolioPage.css"
->>>>>>> 3cebdbc6f965ab7269251c551dfe0d5dc8e3e733
 
 const diaryPhotos = [
   {

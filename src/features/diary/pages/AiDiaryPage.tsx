@@ -27,10 +27,7 @@ import {
   Link as LinkIcon,
 } from "lucide-react"
 import { motion } from "framer-motion"
-<<<<<<< HEAD
 import { KakaoIcon } from "@/shared/components/icons/KakaoIcon"
-=======
->>>>>>> 3cebdbc6f965ab7269251c551dfe0d5dc8e3e733
 import { Input } from "@/shared/ui/input"
 
 type DiaryStep = "upload" | "generating" | "edit" | "complete"
