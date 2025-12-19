@@ -735,26 +735,54 @@ const AiDiaryPage = () => {
 
   // --- Handlers ---
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const files = Array.from(e.target.files || []);
+  //   if (files.length === 0) return;
+  //   if (selectedImages.length + files.length > 10) {
+  //     alert("최대 10장까지 업로드 가능합니다.");
+  //     return;
+  //   }
+
+  //   setIsSubmitting(true);
+  //   setImageFiles(prev => [...prev, ...files]);
+
+  //   try {
+  //     const newImages = await uploadImagesToS3(files);
+  //     setSelectedImages(prev => [...prev, ...newImages]);
+  //   } catch (error) {
+  //     alert("Error uploading images.");
+  //   } finally {
+  //     setIsSubmitting(false);
+  //     e.target.value = '';
+  //   }
+  // };
+
+
+  /**
+   * [수정] 여러 장의 사진을 누적하여 저장하도록 보완된 함수
+   */
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-    if (selectedImages.length + files.length > 10) {
+
+    // 최대 10장 제한 로직 (선택 사항)
+    if (imageFiles.length + files.length > 10) {
       alert("최대 10장까지 업로드 가능합니다.");
       return;
     }
 
-    setIsSubmitting(true);
+    // 1. 실제 파일 객체 누적 저장
     setImageFiles(prev => [...prev, ...files]);
 
-    try {
-      const newImages = await uploadImagesToS3(files);
-      setSelectedImages(prev => [...prev, ...newImages]);
-    } catch (error) {
-      alert("Error uploading images.");
-    } finally {
-      setIsSubmitting(false);
-      e.target.value = '';
-    }
+    // 2. 미리보기 URL 생성 및 누적 저장
+    const newPreviews = files.map(file => ({
+      imageUrl: URL.createObjectURL(file),
+      source: 'GALLERY'
+    }));
+    setSelectedImages(prev => [...prev, ...newPreviews]);
+
+    // 3. 동일한 파일 재선택 가능하도록 input 초기화
+    e.target.value = '';
   };
 
   const handleSelectFromGallery = (imageUrl: string) => {
@@ -832,7 +860,7 @@ const AiDiaryPage = () => {
       }
 
       const formData = new FormData();
-      if (imageFiles.length > 0) formData.append("image", imageFiles[0]);
+      if (imageFiles.length > 0) imageFiles.forEach((file) => { formData.append("image", file); });
 
       const requestData = {
         userId: Number(user.id), // [IMPORTANT] Decoded ID from Token
