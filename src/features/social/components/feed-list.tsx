@@ -72,7 +72,7 @@ export function FeedList({ filter, onPostClick }: FeedListProps) {
   return (
     <div className="flex flex-col items-center w-full">
       {/* 최대 너비를 470px로 제한하여 인스타그램 피드 비율 구현 */}
-      <div className="w-full max-w-[470px]">
+      <div className="w-full max-w-[680px]">
         {data.pages.map((page, pageIndex) => (
             <div key={pageIndex}>
             {page.content.map((post) => (

@@ -107,10 +107,10 @@ export function FeedCreateModal({ isOpen, onClose }: FeedCreateModalProps) {
         content: content,
         location: location,
         petId: Number(selectedPetId),
-        
-        // [중요] 백엔드가 단일 String만 받는다면 -> uploadedImageUrls[0] || ""
-        // 백엔드가 List를 받는다면 DTO 수정 후 -> imageUrls: uploadedImageUrls 
-        imageUrl: uploadedImageUrls[0] || "", 
+
+        // ✅ [수정 후] 백엔드 DTO(FeedRequest)의 변수명과 일치 (복수형)
+        // uploadedImageUrls 배열 전체를 그대로 넘겨야 합니다.
+        imageUrls: uploadedImageUrls
       };
 
       // @ts-ignore (타입 에러 임시 무시: 백엔드 스펙에 맞춰 수정 필요)

@@ -19,13 +19,18 @@ export const useComments = (feedId: number) => {
 export const useCreateComment = (feedId: number) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { userId: number; content: string }) => {
-      const request: CreateCommentRequest = { userId: data.userId, content: data.content };
+    // [수정] parentId: null 추가 (일반 댓글일 경우 null)
+    mutationFn: (data: { userId: number; content: string; parentId?: number | null }) => {
+      const request: CreateCommentRequest = { 
+          userId: data.userId, 
+          content: data.content,
+          parentId: data.parentId || null // 여기가 빠져서 에러남
+      };
       return feedApi.createComment(feedId, request);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: COMMENT_KEYS.list(feedId) });
-      queryClient.invalidateQueries({ queryKey: FEED_KEYS.all }); // 댓글 수 갱신
+      queryClient.invalidateQueries({ queryKey: FEED_KEYS.all });
     },
   });
 };

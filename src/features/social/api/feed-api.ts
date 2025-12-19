@@ -5,7 +5,8 @@ import {
   UpdateFeedRequest, 
   FeedDto, 
   CommentDto, 
-  CreateCommentRequest 
+  CreateCommentRequest,
+  SearchResponse
 } from '../types/feed';
 
 const FEED_BASE_URL = '/feeds';
@@ -20,29 +21,31 @@ export const feedApi = {
   uploadImages: async (files: File[]) => {
     const formData = new FormData();
     
-    // 🚨 중요: 여러 파일을 같은 키("multipartFile")로 append 해야 백엔드에서 List로 받음
+    // 백엔드 파라미터명 "multipartFile" 확인 (Controller와 일치해야 함)
     files.forEach((file) => {
       formData.append("multipartFile", file);
     });
 
-    const response = await httpClient.post<string[]>('/api/images/upload', formData, {
+    // [수정] '/api/images/upload' -> '/images/upload'
+    // httpClient에 이미 '/api'가 기본 경로로 잡혀 있어서 중복 제거
+    const response = await httpClient.post<string[]>('/images/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
 
-    // 배열 전체를 반환 (이제 [0]으로 접근해서 나는 오류가 사라짐)
-    return response.data; 
+    return response;
   },
 
   /**
-   * [Step 2] 피드 작성
-   * 주의: 백엔드 DTO가 imageUrls(List)를 받을 수 있어야 합니다.
-   * 만약 단일 String만 받는다면 imageUrls.join(',') 등으로 변환해서 보내야 합니다.
+   * [Step 2] 피드 작성 (Social Service)
+   * Body: { imageUrls: string[], ... }
    */
   createFeed: async (data: CreateFeedRequest) => {
     return await httpClient.post<number>(FEED_BASE_URL, data);
   },
 
-  // ... 나머지 API는 기존과 동일
+  /**
+   * 전체 피드 조회
+   */
   getFeeds: async (userId: number, page: number = 0, size: number = 10) => {
     const params = new URLSearchParams({
       page: page.toString(),
@@ -52,7 +55,26 @@ export const feedApi = {
       `${FEED_BASE_URL}/viewer/${userId}?${params.toString()}`
     );
   },
-  
+
+  /**
+   * 통합 검색 (유저 + 해시태그)
+   */
+  search: async (query: string, viewerId: number) => {
+    const params = new URLSearchParams({ 
+      query, 
+      viewerId: viewerId.toString() 
+    });
+    return await httpClient.get<SearchResponse>(`/api/search?${params.toString()}`);
+  },
+
+  /**
+   * 인기 급상승 피드 (Trending)
+   */
+  getTrendingFeeds: async (viewerId: number) => {
+    return await httpClient.get<FeedSliceResponse>(`/api/search/trending?viewerId=${viewerId}`);
+  },
+
+  // ... 나머지 API (상세 조회, 댓글, 좋아요 등) 기존과 동일
   getFeedDetail: async (feedId: number, userId: number) => {
     return await httpClient.get<FeedDto>(`${FEED_BASE_URL}/${feedId}/viewer/${userId}`);
   },
@@ -79,5 +101,11 @@ export const feedApi = {
 
   toggleLike: async (feedId: number, userId: number) => {
     return await httpClient.post<void>(`${FEED_BASE_URL}/${feedId}/likes?userId=${userId}`, {});
+  },
+
+  searchUsers: async (query: string) => {
+    // 뷰어 ID는 검색 결과에 팔로우 여부 표시용인데, 필요 없으면 0이나 null 처리
+    const response = await feedApi.search(query, 0); 
+    return response.users; // 통합 검색 결과에서 users만 반환
   }
 };
