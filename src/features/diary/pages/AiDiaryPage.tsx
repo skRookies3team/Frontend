@@ -238,17 +238,18 @@ const earnCoin = async (userId: number, amount: number) => {
 };
 
 // [추가] 소셜 피드 생성 API
-const createSocialFeed = async (formData: FormData) => {
+const createSocialFeed = async (data: any) => {
   try {
     const token = getAccessToken();
-    console.log("[Service] 소셜 피드 생성 요청 전송...");
+    console.log("[Service] 소셜 피드 생성 요청 전송...", data);
 
     const response = await fetch(`${BASE_URL}/feeds`, {
       method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         ...(token && { 'Authorization': `Bearer ${token}` }),
       },
-      body: formData,
+      body: JSON.stringify(data),
     });
 
     if (!response.ok) {
@@ -256,9 +257,9 @@ const createSocialFeed = async (formData: FormData) => {
       throw new Error(errorData.message || `피드 생성 실패: ${response.status}`);
     }
 
-    const data = await response.json(); // returns feedId (Long)
-    console.log("[Service] 소셜 피드 생성 성공, ID:", data);
-    return data;
+    const responseData = await response.json(); // returns feedId (Long)
+    console.log("[Service] 소셜 피드 생성 성공, ID:", responseData);
+    return responseData;
   } catch (error) {
     console.error("[Service] 소셜 피드 생성 중 에러:", error);
     throw error;
@@ -926,28 +927,19 @@ const AiDiaryPage = () => {
     if (!createdDiaryId || !user) return;
 
     try {
-      // 1. FormData 생성
-      const formData = new FormData();
+      // 1. Request DTO 생성 (JSON 전송)
 
-      // 이미지 파일 추가 (업로드된 파일이 있으면 사용, 없으면 기존 이미지 URL 사용 - 여기서는 파일이 있다고 가정)
-      // 주의: 이미지가 없는 경우(텍스트 일기 등)에 대한 처리가 필요할 수 있음
-      if (imageFiles.length > 0) {
-        formData.append("file", imageFiles[0]);
-      }
-
-      // 2. Request DTO 생성
       const requestDto = {
         userId: Number(user.id),
         petId: selectedPetId,
-        content: editedDiary, // 수정된 일기 내용 사용
+        content: editedDiary,
         location: locationName,
-        visibility: visibility // [IMPORTANT] 선택한 공개 범위 전달
+        visibility: visibility,
+        images: selectedImages.map(img => img.imageUrl) // 이미지 URL 리스트 전달
       };
 
-      formData.append("request", new Blob([JSON.stringify(requestDto)], { type: "application/json" }));
-
-      // 3. API 호출
-      const feedId = await createSocialFeed(formData);
+      // 2. API 호출
+      const feedId = await createSocialFeed(requestDto);
       console.log(`[Frontend] Feed created with ID: ${feedId}`);
 
       // 성공 시 피드 ID 반환 (CompleteStep에서 사용 가능)
