@@ -904,6 +904,16 @@ const AiDiaryPage = () => {
         setLocationName("위치 정보 없음");
       }
 
+      // [FIX] Blob URL 대신 서버에서 반환된 영구 URL로 교체
+      if (diaryDetail.images && Array.isArray(diaryDetail.images)) {
+        console.log("=== [Frontend] Updating images with permanent URLs ===", diaryDetail.images);
+        const permanentImages = diaryDetail.images.map((img: any) => ({
+          imageUrl: img.imageUrl,
+          source: 'GALLERY' // or maintain original source if needed
+        }));
+        setSelectedImages(permanentImages);
+      }
+
       setTimeout(() => setStep("edit"), 500);
 
     } catch (error: any) {
