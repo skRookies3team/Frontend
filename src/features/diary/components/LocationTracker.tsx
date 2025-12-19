@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react';
 
 // 백엔드 API 주소
-const BASE_URL = import.meta.env.VITE_API_URL;
+const getBaseUrl = () => {
+  let url = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  if (!url.endsWith('/api')) {
+    url += '/api';
+  }
+  return url;
+};
+
+const BASE_URL = getBaseUrl();
 
 // [중요] 토큰 가져오기 (petlog_token 우선, 없으면 accessToken 확인)
 const getAccessToken = () => localStorage.getItem('petlog_token') || localStorage.getItem('accessToken');
