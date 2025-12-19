@@ -51,20 +51,20 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent 
-        className="max-w-full md:max-w-[1100px] w-full p-0 gap-0 overflow-hidden h-full md:h-[85vh] flex flex-col md:flex-row bg-white border-none sm:rounded-[2.5rem] z-50 shadow-2xl transition-all"
-        overlayClassName="bg-black/40 backdrop-blur-sm" 
+        className="max-w-full md:max-w-[1200px] w-full p-0 gap-0 overflow-hidden h-full md:h-[90vh] flex flex-col md:flex-row bg-white border-none sm:rounded-[2.5rem] z-50 shadow-2xl transition-all"
+        overlayClassName="bg-black/20 backdrop-blur-sm" 
         showCloseButton={false}
       >
         <DialogTitle className="sr-only">게시물 상세</DialogTitle>
         
-        {/* 닫기 버튼 - 핑크빛 호버 효과 */}
-        <DialogClose className="fixed right-6 top-6 z-[60] p-2.5 rounded-full bg-black/10 hover:bg-rose-500 hover:text-white text-white/90 transition-all cursor-pointer backdrop-blur-md">
-            <X className="h-6 w-6" />
+        {/* 닫기 버튼: 몽글몽글한 솔리드 핑크 버튼 */}
+        <DialogClose className="fixed right-8 top-8 z-[60] p-3 rounded-full bg-white shadow-lg text-gray-400 hover:bg-[#FF69B4] hover:text-white hover:scale-110 transition-all cursor-pointer border border-gray-100">
+            <X className="h-6 w-6 stroke-[3px]" />
             <span className="sr-only">Close</span>
         </DialogClose>
 
         {/* 1. 이미지 영역 (왼쪽) */}
-        <div className="relative bg-rose-50/20 flex items-center justify-center w-full h-[45vh] md:h-full md:flex-[1.4_1_0%] overflow-hidden">
+        <div className="relative bg-[#FFF9FB] flex items-center justify-center w-full h-[45vh] md:h-full md:flex-[1.5_1_0%] overflow-hidden border-r border-[#FFF0F5]">
            {post.imageUrl ? (
              <img 
                src={post.imageUrl} 
@@ -72,8 +72,8 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
                className="w-full h-full object-cover" 
              />
            ) : (
-             <div className="flex items-center justify-center h-full w-full bg-gradient-to-br from-rose-50 via-white to-rose-50 p-10">
-                 <p className="text-xl text-gray-700 font-medium text-center leading-relaxed whitespace-pre-wrap">
+             <div className="flex items-center justify-center h-full w-full p-10">
+                 <p className="text-2xl text-gray-800 font-bold text-center leading-relaxed whitespace-pre-wrap font-sans">
                      {post.content}
                  </p>
              </div>
@@ -84,41 +84,41 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
         <div className="flex flex-col w-full h-[55vh] md:h-full md:flex-1 bg-white relative">
           
           {/* 헤더 */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-rose-50 shrink-0">
-             <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50 shrink-0">
+             <div className="flex items-center gap-4">
                 <Link to={`/user/${post.writerNickname}`} className="flex items-center gap-3 group">
-                    <Avatar className="h-9 w-9 ring-2 ring-transparent group-hover:ring-rose-200 transition-all">
+                    <Avatar className="h-10 w-10 ring-2 ring-transparent group-hover:ring-[#FF69B4] transition-all">
                         <AvatarImage src={post.writerProfileImage || "/placeholder-user.jpg"} />
-                        <AvatarFallback className="bg-rose-100 text-rose-500">{post.writerNickname[0]}</AvatarFallback>
+                        <AvatarFallback className="bg-[#FFF0F5] text-[#FF69B4] font-bold">{post.writerNickname[0]}</AvatarFallback>
                     </Avatar>
-                    <span className="text-sm font-bold text-gray-900 group-hover:text-rose-500 transition-colors">
+                    <span className="text-[15px] font-bold text-gray-900 group-hover:text-[#FF69B4] transition-colors">
                         {post.writerNickname}
                     </span>
                 </Link>
              </div>
-             <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-rose-50 rounded-full text-gray-400 hover:text-rose-500 transition-colors">
-                <MoreHorizontal className="h-5 w-5" />
+             <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#FFF0F5] rounded-full text-gray-400 hover:text-[#FF69B4] transition-colors">
+                <MoreHorizontal className="h-6 w-6" />
              </Button>
           </div>
 
           {/* 댓글 목록 */}
-          <ScrollArea className="flex-1 p-5">
+          <ScrollArea className="flex-1 p-6">
              {/* 본문 내용 */}
-             <div className="flex gap-4 mb-6">
+             <div className="flex gap-4 mb-8">
                 <Link to={`/user/${post.writerNickname}`} className="shrink-0">
-                    <Avatar className="h-9 w-9">
+                    <Avatar className="h-10 w-10">
                         <AvatarImage src={post.writerProfileImage || "/placeholder-user.jpg"} />
-                        <AvatarFallback>{post.writerNickname[0]}</AvatarFallback>
+                        <AvatarFallback className="bg-[#FFF0F5] text-[#FF69B4] font-bold">{post.writerNickname[0]}</AvatarFallback>
                     </Avatar>
                 </Link>
-                <div className="flex-1 space-y-1">
-                   <div className="text-sm leading-relaxed">
-                      <Link to={`/user/${post.writerNickname}`} className="font-bold mr-2 hover:underline decoration-rose-300 decoration-2 underline-offset-2">
+                <div className="flex-1 space-y-1.5">
+                   <div className="text-[15px] leading-relaxed">
+                      <Link to={`/user/${post.writerNickname}`} className="font-bold mr-2 hover:underline decoration-[#FF69B4] decoration-2 underline-offset-2 text-gray-900">
                         {post.writerNickname}
                       </Link>
                       <span className="text-gray-800 whitespace-pre-wrap">{post.content}</span>
                    </div>
-                   <span className="text-xs text-gray-400 font-medium">
+                   <span className="text-xs text-gray-400 font-medium block mt-1">
                       {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ko })}
                    </span>
                 </div>
@@ -128,37 +128,36 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
              {isCommentsLoading ? (
                  <div className="flex justify-center items-center h-20">
                      <div className="animate-pulse flex gap-2">
-                        <div className="h-2 w-2 bg-rose-200 rounded-full animate-bounce"></div>
-                        <div className="h-2 w-2 bg-rose-200 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                        <div className="h-2 w-2 bg-rose-200 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                        <div className="h-2.5 w-2.5 bg-[#FF69B4]/30 rounded-full animate-bounce"></div>
+                        <div className="h-2.5 w-2.5 bg-[#FF69B4]/30 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                        <div className="h-2.5 w-2.5 bg-[#FF69B4]/30 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
                      </div>
                  </div>
              ) : (
-                 <div className="space-y-5">
+                 <div className="space-y-6">
                     {comments?.map((comment) => (
                         <div key={comment.commentId} className="flex gap-3 group">
                             <Link to={`/user/${comment.writerNickname}`} className="shrink-0">
                                 <Avatar className="h-8 w-8">
                                     <AvatarImage src={comment.writerProfileImage || "/placeholder-user.jpg"} />
-                                    <AvatarFallback>{comment.writerNickname[0]}</AvatarFallback>
+                                    <AvatarFallback className="bg-gray-50 text-gray-500 text-xs">{comment.writerNickname[0]}</AvatarFallback>
                                 </Avatar>
                             </Link>
                             <div className="flex-1">
-                                <div className="text-sm leading-tight">
-                                    <Link to={`/user/${comment.writerNickname}`} className="font-bold mr-2 text-gray-900 hover:text-rose-500 transition-colors">
+                                <div className="text-[14px] leading-relaxed">
+                                    <Link to={`/user/${comment.writerNickname}`} className="font-bold mr-2 text-gray-900 hover:text-[#FF69B4] transition-colors">
                                         {comment.writerNickname}
                                     </Link>
                                     <span className="text-gray-700">{comment.content}</span>
                                 </div>
                                 <div className="flex items-center gap-3 mt-1.5">
-                                    <span className="text-xs text-gray-400">
+                                    <span className="text-[11px] text-gray-400 font-medium">
                                         {formatDistanceToNow(new Date(comment.createdAt), { locale: ko })}
                                     </span>
-                                    {/* 수정: post.writerId 사용 */}
                                     {(comment.userId === currentUserId || post.writerId === currentUserId) && (
                                         <button 
                                             onClick={() => handleDeleteComment(comment.commentId)}
-                                            className="text-xs text-gray-400 hover:text-rose-500 font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="text-[11px] text-gray-400 hover:text-[#FF69B4] font-bold opacity-0 group-hover:opacity-100 transition-all"
                                         >
                                             삭제
                                         </button>
@@ -171,41 +170,41 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
              )}
           </ScrollArea>
 
-          {/* 하단 액션 버튼 & 좋아요 */}
-          <div className="p-4 border-t border-rose-50 bg-white">
-             <div className="flex items-center justify-between mb-3">
-                <div className="flex gap-4">
+          {/* 하단 액션 버튼 */}
+          <div className="p-5 border-t border-gray-50 bg-white">
+             <div className="flex items-center justify-between mb-4">
+                <div className="flex gap-5">
                    <button onClick={handleLike} className="group transition-transform active:scale-90 focus:outline-none">
-                      <Heart className={`h-7 w-7 transition-colors duration-300 ${post.isLiked ? "fill-rose-500 text-rose-500" : "text-gray-800 group-hover:text-rose-400"}`} />
+                      <Heart className={`h-[28px] w-[28px] transition-colors duration-200 ${post.isLiked ? "fill-[#FF69B4] text-[#FF69B4]" : "text-gray-800 group-hover:text-[#FF69B4]"}`} />
                    </button>
-                   <button className="hover:opacity-60 transition-opacity"><MessageCircle className="h-7 w-7 text-gray-800 -rotate-90 group-hover:text-rose-400" /></button>
-                   <button className="hover:opacity-60 transition-opacity"><Send className="h-7 w-7 text-gray-800 -rotate-12 mb-1 group-hover:text-rose-400" /></button>
+                   <button className="hover:opacity-60 transition-opacity"><MessageCircle className="h-[28px] w-[28px] text-gray-800 -rotate-90 group-hover:text-[#FF69B4]" /></button>
+                   <button className="hover:opacity-60 transition-opacity"><Send className="h-[28px] w-[28px] text-gray-800 -rotate-12 mb-1 group-hover:text-[#FF69B4]" /></button>
                 </div>
                 <button className="hover:opacity-60 transition-opacity">
-                    <Bookmark className="h-7 w-7 text-gray-800 group-hover:text-rose-400" />
+                    <Bookmark className="h-[28px] w-[28px] text-gray-800 group-hover:text-[#FF69B4]" />
                 </button>
              </div>
-             <div className="font-bold text-sm mb-1 text-gray-900">좋아요 {post.likeCount.toLocaleString()}개</div>
-             <div className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">
+             <div className="font-extrabold text-sm mb-1 text-gray-900">좋아요 {post.likeCount.toLocaleString()}개</div>
+             <div className="text-[11px] text-gray-400 uppercase tracking-widest font-bold">
                 {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ko })}
              </div>
           </div>
 
-          {/* 댓글 입력창 (둥글게 수정) */}
-          <form onSubmit={handlePostComment} className="shrink-0 p-4 border-t border-rose-50 bg-white flex items-center gap-3">
+          {/* 댓글 입력창 (솔리드 스타일) */}
+          <form onSubmit={handlePostComment} className="shrink-0 p-5 border-t border-gray-50 bg-white flex items-center gap-3">
              <div className="flex-1 relative">
                 <Input 
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
                     placeholder="댓글 달기..." 
-                    className="border-none bg-rose-50/50 focus-visible:ring-0 rounded-full px-4 h-10 text-sm w-full placeholder:text-rose-300/70 text-gray-800"
+                    className="border-none bg-[#FAFAFA] focus-visible:ring-2 focus-visible:ring-[#FF69B4] rounded-full px-5 h-12 text-[14px] w-full placeholder:text-gray-400 text-gray-800 shadow-inner"
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2">
                     <Button 
                         type="submit" 
                         variant="ghost" 
                         size="sm"
-                        className={`text-rose-500 font-bold hover:bg-transparent hover:text-rose-600 transition-all ${!commentText.trim() ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                        className={`text-[#FF69B4] font-extrabold hover:bg-[#FFF0F5] hover:text-[#FF1493] rounded-full px-4 transition-all ${!commentText.trim() ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
                         disabled={createCommentMutation.isPending}
                     >
                         게시
@@ -217,4 +216,4 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
       </DialogContent>
     </Dialog>
   );
-}x
+}
