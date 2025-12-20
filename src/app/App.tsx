@@ -1,8 +1,8 @@
 import {
-    BrowserRouter as Router,
-    Routes,
-    Route,
-    Outlet,
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Outlet,
 } from "react-router-dom";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -21,6 +21,9 @@ import OnboardingPage from "@/features/auth/pages/OnboardingPage"
 import WelcomePage from "@/features/auth/pages/WelcomePage"
 import UserInfoPage from "@/features/auth/pages/UserInfoPage"
 import SettingsPage from "@/features/auth/pages/SettingsPage"
+import PhotoPage from "@/features/auth/pages/PhotoPage"
+
+
 
 // Feature: Shop
 import { CartProvider } from "@/features/shop/context/cart-context"
@@ -56,7 +59,6 @@ import MissingPetRegisterPage from "@/features/petmate/pages/MissingPetRegisterP
 // Feature: Social
 import FeedPage from "@/features/social/pages/FeedPage"
 import FeedAiRecommendPage from "@/features/social/pages/FeedAiRecommendPage"
-// FeedCreatePage 제거됨
 import CreatePage from "@/features/social/pages/CreatePage"
 import MessagesPage from "@/features/social/pages/MessagesPage"
 import UserPage from "@/features/social/pages/UserPage"
@@ -73,15 +75,15 @@ import LocationTracker from "@/features/diary/components/LocationTracker"
 const queryClient = new QueryClient();
 
 const AppLayout = () => {
-    return (
-        <>
-            <Header />
-            <main className="bg-background text-foreground">
-                <Outlet />
-            </main>
-            <FloatingChatbotWidget />
-        </>
-    );
+  return (
+    <>
+      <Header />
+      <main className="bg-background text-foreground">
+        <Outlet />
+      </main>
+      <FloatingChatbotWidget />
+    </>
+  );
 };
 
 function App() {
@@ -139,6 +141,7 @@ function App() {
                                     </Route>
                                     <Route path="/login" element={<LoginPage />} />
                                     <Route path="/onboarding" element={<OnboardingPage />} />
+                                    <Route path="/photo/upload" element={<PhotoPage />} />
                                     <Route path="/pet-info" element={<PetInfoPage />} />
                                     <Route path="/register-pet" element={<RegisterPetPage />} />
                                     <Route path="/settings" element={<SettingsPage />} />
