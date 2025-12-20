@@ -5,14 +5,14 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosRequestConfig, A
 const baseURL = import.meta.env.VITE_API_URL || '/api';
 
 let getTokenFunction: (() => string | null) | null = null;
-let removeTokenFunction: (() => void) | null = null;
+// let removeTokenFunction: (() => void) | null = null;
 
 export const setTokenGetter = (fn: () => string | null) => {
     getTokenFunction = fn;
 };
 
-export const setTokenRemover = (fn: () => void) => {
-    removeTokenFunction = fn;
+export const setTokenRemover = (_fn: () => void) => {
+    // removeTokenFunction = fn;
 };
 
 const axiosInstance: AxiosInstance = axios.create({

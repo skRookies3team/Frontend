@@ -30,15 +30,7 @@ const getEnv = (key: string) => {
 };
 
 // [수정] 프록시(게이트웨이)를 통해 요청하도록 변경
-const getBaseUrl = () => {
-  let url = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-  if (!url.endsWith('/api')) {
-    url += '/api';
-  }
-  return url;
-};
-
-const BASE_URL = getBaseUrl();
+const BASE_URL = '/api';
 
 // [중요] 토큰 가져오기 (petlog_token 우선, 없으면 accessToken 확인)
 const getAccessToken = () => localStorage.getItem('petlog_token') || localStorage.getItem('accessToken');
@@ -271,9 +263,11 @@ const createSocialFeed = async (data: any) => {
       throw new Error(errorData.message || `피드 생성 실패: ${response.status}`);
     }
 
-    const responseData = await response.json(); // returns feedId (Long)
-    console.log("[Service] 소셜 피드 생성 성공, ID:", responseData);
-    return responseData;
+    const responseData = await response.json();
+    // [수정] 응답이 객체(GetFeedDto)일 경우 feedId 추출, 아니면 그대로 사용
+    const feedId = responseData.feedId || responseData.id || responseData;
+    console.log("[Service] 소셜 피드 생성 성공, ID:", feedId);
+    return feedId;
   } catch (error) {
     console.error("[Service] 소셜 피드 생성 중 에러:", error);
     throw error;
@@ -520,17 +514,6 @@ const EditStep = ({
   );
 };
 
-// const CompleteStep = ({ onHome }: { onHome: () => void }) => (
-//   <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
-//     <div className="bg-green-100 p-6 rounded-full mb-6"><Check className="w-12 h-12 text-green-600" /></div>
-//     <h2 className="text-3xl font-bold text-gray-800 mb-4">일기 작성이 완료되었어요!</h2>
-//     <div className="flex gap-4">
-//       <button onClick={onHome} className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium">내 다이어리 보기</button>
-//       <button onClick={onHome} className="px-6 py-3 bg-pink-500 text-white rounded-xl font-medium flex items-center gap-2"><Share2 className="w-4 h-4" /> 피드 공유하기</button>
-//     </div>
-//   </div>
-// );
-
 // ==========================================
 // 3. UI Components (CompleteStep 수정)
 // ==========================================
@@ -715,6 +698,9 @@ const AiDiaryPage = () => {
   // [추가] 이번 활동으로 적립된 코인 양 저장
   const [earnedReward, setEarnedReward] = useState<number | null>(null);
 
+  // [추가] 보관함 ID를 관리하기 위한 상태 정의 (빨간 줄 해결 포인트)
+  const [selectedArchiveId, setSelectedArchiveId] = useState(1);
+
   // [NEW] Auth 정보가 로드되면 펫 목록 설정
   useEffect(() => {
     if (user) {
@@ -738,26 +724,54 @@ const AiDiaryPage = () => {
 
   // --- Handlers ---
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const files = Array.from(e.target.files || []);
+  //   if (files.length === 0) return;
+  //   if (selectedImages.length + files.length > 10) {
+  //     alert("최대 10장까지 업로드 가능합니다.");
+  //     return;
+  //   }
+
+  //   setIsSubmitting(true);
+  //   setImageFiles(prev => [...prev, ...files]);
+
+  //   try {
+  //     const newImages = await uploadImagesToS3(files);
+  //     setSelectedImages(prev => [...prev, ...newImages]);
+  //   } catch (error) {
+  //     alert("Error uploading images.");
+  //   } finally {
+  //     setIsSubmitting(false);
+  //     e.target.value = '';
+  //   }
+  // };
+
+
+  /**
+   * [수정] 여러 장의 사진을 누적하여 저장하도록 보완된 함수
+   */
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-    if (selectedImages.length + files.length > 10) {
+
+    // 최대 10장 제한 로직 (선택 사항)
+    if (imageFiles.length + files.length > 10) {
       alert("최대 10장까지 업로드 가능합니다.");
       return;
     }
 
-    setIsSubmitting(true);
+    // 1. 실제 파일 객체 누적 저장
     setImageFiles(prev => [...prev, ...files]);
 
-    try {
-      const newImages = await uploadImagesToS3(files);
-      setSelectedImages(prev => [...prev, ...newImages]);
-    } catch (error) {
-      alert("Error uploading images.");
-    } finally {
-      setIsSubmitting(false);
-      e.target.value = '';
-    }
+    // 2. 미리보기 URL 생성 및 누적 저장
+    const newPreviews = files.map(file => ({
+      imageUrl: URL.createObjectURL(file),
+      source: 'GALLERY'
+    }));
+    setSelectedImages(prev => [...prev, ...newPreviews]);
+
+    // 3. 동일한 파일 재선택 가능하도록 input 초기화
+    e.target.value = '';
   };
 
   const handleSelectFromGallery = (imageUrl: string) => {
@@ -835,11 +849,12 @@ const AiDiaryPage = () => {
       }
 
       const formData = new FormData();
-      if (imageFiles.length > 0) formData.append("image", imageFiles[0]);
+      if (imageFiles.length > 0) imageFiles.forEach((file) => { formData.append("image", file); });
 
       const requestData = {
         userId: Number(user.id), // [IMPORTANT] Decoded ID from Token
         petId: selectedPetId,
+        photoArchiveId: selectedArchiveId, // 여기에 추가! (보관함 선택 상태값)
         content: "",
         visibility: "PRIVATE",
         isAiGen: true,
@@ -876,6 +891,16 @@ const AiDiaryPage = () => {
         setLocationName(diaryDetail.locationName);
       } else {
         setLocationName("위치 정보 없음");
+      }
+
+      // [FIX] Blob URL 대신 서버에서 반환된 영구 URL로 교체
+      if (diaryDetail.images && Array.isArray(diaryDetail.images)) {
+        console.log("=== [Frontend] Updating images with permanent URLs ===", diaryDetail.images);
+        const permanentImages = diaryDetail.images.map((img: any) => ({
+          imageUrl: img.imageUrl,
+          source: 'GALLERY' // or maintain original source if needed
+        }));
+        setSelectedImages(permanentImages);
       }
 
       setTimeout(() => setStep("edit"), 500);
@@ -949,7 +974,7 @@ const AiDiaryPage = () => {
         content: editedDiary,
         location: locationName,
         visibility: visibility,
-        images: selectedImages.map(img => img.imageUrl) // 이미지 URL 리스트 전달
+        imageUrls: selectedImages.map(img => img.imageUrl) // [수정] DTO 필드명 변경 (images -> imageUrls)
       };
 
       // 2. API 호출
@@ -982,10 +1007,6 @@ const AiDiaryPage = () => {
           <button onClick={() => navigate(-1)} className="text-pink-600 hover:text-pink-700 transition-colors p-1"><ChevronLeft className="w-6 h-6" /></button>
           <h1 className="text-lg font-bold text-pink-600 md:text-xl">Pet Log AI</h1>
           <div className="flex items-center gap-2">
-<<<<<<< HEAD
-            <span className="text-sm font-medium text-pink-500 hidden sm:block">{user?.username}</span>
-=======
->>>>>>> origin/dev
           </div>
         </div>
       </header>
@@ -1015,14 +1036,3 @@ const AiDiaryPage = () => {
 };
 
 export default AiDiaryPage;
-
-
-<<<<<<< HEAD
-    <AiDiaryPage />
-  </Router>
-);
-
-const root = createRoot(document.getElementById('root')!);
-root.render(<App />);
-=======
->>>>>>> origin/dev
