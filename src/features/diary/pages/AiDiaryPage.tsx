@@ -197,25 +197,25 @@ const getDiary = async (diaryId: number) => {
 //   }
 // };
 
-const uploadImagesToS3 = async (files: File[]): Promise<any[]> => {
-  return new Promise((resolve) => {
-    const newImages = files.map(file => ({
-      imageUrl: URL.createObjectURL(file),
-      source: 'GALLERY'
-    }));
-    setTimeout(() => resolve(newImages), 500);
-  });
-};
+// const uploadImagesToS3 = async (files: File[]): Promise<any[]> => {
+//   return new Promise((resolve) => {
+//     const newImages = files.map(file => ({
+//       imageUrl: URL.createObjectURL(file),
+//       source: 'GALLERY'
+//     }));
+//     setTimeout(() => resolve(newImages), 500);
+//   });
+// };
 
 // ==========================================
 // [NEW] 2. Services (코인 적립 API 추가)
 // ==========================================
 
 // [추가] 코인 적립 API
-const earnCoin = async (userId: number, amount: number) => {
+const earnCoin = async (userId: number, amount: number, type: 'WRITEDIARY' | 'WIRTEFEED') => {
   try {
     const token = getAccessToken();
-    console.log(`[Service] 코인 적립 요청: User ${userId}, Amount ${amount}`);
+    console.log(`[Service] 코인 적립 요청: User ${userId}, Amount ${amount}, , Type ${type}`);
 
     // [주의] 게이트웨이 라우팅 규칙에 따라 '/users' 또는 '/members'로 수정 필요할 수 있음
     // 현재 코드에서는 일반적인 REST 관례인 '/users'를 사용합니다.
@@ -226,7 +226,11 @@ const earnCoin = async (userId: number, amount: number) => {
         ...(token && { 'Authorization': `Bearer ${token}` }),
       },
       // 요청 DTO: { amount: number }
-      body: JSON.stringify({ amount }),
+      // [수정] 요청 DTO에 type 필드 추가
+      body: JSON.stringify({
+        amount,
+        type
+      }),
     });
 
     if (!response.ok) {
@@ -525,6 +529,9 @@ const CompleteStep = ({ onHome, earnedAmount, onShare }: { onHome: () => void, e
   const [isSharing, setIsSharing] = useState(false);
   const navigate = useNavigate();
 
+  // 피드 공유 보상액 설정 (상수로 관리)
+  const FEED_REWARD_AMOUNT = 10;
+
   const handleShareClick = async (visibility: string) => {
     setIsSharing(true);
     try {
@@ -584,6 +591,23 @@ const CompleteStep = ({ onHome, earnedAmount, onShare }: { onHome: () => void, e
       <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
         <div className="bg-blue-100 p-6 rounded-full mb-6"><Check className="w-12 h-12 text-blue-600" /></div>
         <h2 className="text-3xl font-bold text-gray-800 mb-4">피드 공유 완료!</h2>
+
+        {/* [추가] 피드 공유 보상 알림 UI
+        <div className="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded-full border border-yellow-200 mb-8 animate-bounce">
+          <Coins className="w-5 h-5 text-yellow-600" />
+          <span className="font-bold text-yellow-700">공유 보상 코너 적립 완료!</span>
+        </div> */}
+
+        {/* [수정] 적립 금액이 구체적으로 표시되는 UI */}
+        <div className="flex items-center gap-2 bg-yellow-50 px-5 py-2.5 rounded-full border border-yellow-200 mb-8 animate-bounce shadow-sm">
+          <div className="bg-yellow-400 rounded-full p-1">
+            <Coins className="w-4 h-4 text-white" />
+          </div>
+          <span className="font-bold text-yellow-700">
+            보너스 <span className="text-rose-500">+{FEED_REWARD_AMOUNT}</span> Pet Coin 적립 완료!
+          </span>
+        </div>
+
         <p className="text-gray-500 mb-8">우리 아이의 일기가 소셜 피드에 올라갔어요.</p>
 
         <div className="flex flex-col gap-3 w-full max-w-xs">
@@ -699,7 +723,7 @@ const AiDiaryPage = () => {
   const [earnedReward, setEarnedReward] = useState<number | null>(null);
 
   // [추가] 보관함 ID를 관리하기 위한 상태 정의 (빨간 줄 해결 포인트)
-  const [selectedArchiveId, setSelectedArchiveId] = useState(1);
+  const [selectedArchiveId] = useState(1);
 
   // [NEW] Auth 정보가 로드되면 펫 목록 설정
   useEffect(() => {
@@ -945,7 +969,7 @@ const AiDiaryPage = () => {
       if (user && user.id) {
         // 프론트에서 15코인으로 고정하여 요청
         const REWARD_AMOUNT = 15;
-        const coinResult = await earnCoin(user.id, REWARD_AMOUNT);
+        const coinResult = await earnCoin(user.id, REWARD_AMOUNT, 'WRITEDIARY');
 
         if (coinResult) {
           setEarnedReward(REWARD_AMOUNT); // 적립 성공 시 UI 표시용 State 업데이트
@@ -980,6 +1004,19 @@ const AiDiaryPage = () => {
       // 2. API 호출
       const feedId = await createSocialFeed(requestDto);
       console.log(`[Frontend] Feed created with ID: ${feedId}`);
+
+      // 2. [추가] 피드 공유 보너스 코인 적립 (예: 10코인)
+      const FEED_REWARD = 10;
+      const coinResult = await earnCoin(user.id, FEED_REWARD, 'WIRTEFEED');
+
+      if (coinResult) {
+        setEarnedReward(FEED_REWARD); // 적립 성공 시 UI 표시용 State 업데이트
+      }
+
+      if (coinResult) {
+        // 기존 적립금에 더하거나, 공유 적립금을 별도로 표시하기 위해 상태 업데이트
+        setEarnedReward(prev => (prev || 0) + FEED_REWARD);
+      }
 
       // 성공 시 피드 ID 반환 (CompleteStep에서 사용 가능)
       return feedId;
