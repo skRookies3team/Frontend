@@ -28,7 +28,17 @@ export function ProductCard({ product }: ProductCardProps) {
     const { addToCart } = useCart()
     const { toggleWishlist, isInWishlist } = useWishlist()
     const [isHovered, setIsHovered] = useState(false)
-    const isFavorite = isInWishlist(product.id)
+    const isFavorite = isInWishlist(String(product.id))
+
+    const productPayload: Product = {
+        id: String(product.id),
+        name: product.name,
+        price: product.price,
+        mileagePrice: product.mileagePrice ?? 0,
+        image: product.image ?? "/placeholder.svg",
+        category: product.category ?? "Uncategorized",
+        description: product.description
+    }
 
     return (
         <motion.div
@@ -55,7 +65,7 @@ export function ProductCard({ product }: ProductCardProps) {
                     <button
                         onClick={(e) => {
                             e.preventDefault()
-                            toggleWishlist(product)
+                            toggleWishlist(productPayload)
                         }}
                         className="absolute top-3 right-3 p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white text-pink-500 transition-all shadow-sm z-10"
                     >
@@ -74,7 +84,7 @@ export function ProductCard({ product }: ProductCardProps) {
                             className="w-full bg-white/90 backdrop-blur-sm hover:bg-pink-500 text-pink-600 hover:text-white border-none shadow-lg transition-all duration-300"
                             onClick={(e) => {
                                 e.preventDefault()
-                                addToCart(product)
+                                addToCart(productPayload)
                             }}
                         >
                             <ShoppingCart className="w-4 h-4 mr-2" />
