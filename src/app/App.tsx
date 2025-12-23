@@ -55,12 +55,12 @@ import PortfolioPage from "@/features/diary/pages/PortfolioPage"
 // Feature: PetMate
 import PetMatePage from "@/features/petmate/pages/PetMatePage"
 import MissingPetRegisterPage from "@/features/petmate/pages/MissingPetRegisterPage"
+import MessagesPage from "@/features/petmate/pages/MessagesPage"
 
 // Feature: Social
 import FeedPage from "@/features/social/pages/FeedPage"
 import FeedAiRecommendPage from "@/features/social/pages/FeedAiRecommendPage"
 import CreatePage from "@/features/social/pages/CreatePage"
-import MessagesPage from "@/features/social/pages/MessagesPage"
 import UserPage from "@/features/social/pages/UserPage"
 import ProfilePage from "@/features/social/pages/ProfilePage"
 
