@@ -22,7 +22,8 @@ export const useUserSearch = (keyword: string) => {
   return useQuery({
     queryKey: SEARCH_KEYS.users(debouncedKeyword),
     queryFn: () => feedApi.searchUsers(debouncedKeyword),
-    enabled: !!debouncedKeyword,
-    initialData: [],
+    // 검색어가 있을 때만 쿼리 실행
+    enabled: !!debouncedKeyword && debouncedKeyword.trim().length > 0,
+    initialData: [], // 초기값 빈 배열
   });
 };

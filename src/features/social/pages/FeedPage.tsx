@@ -39,9 +39,9 @@ export default function FeedPage() {
   const myUserId = user ? Number(user.id) : 0;
   const { mutate: toggleLike } = useFeedLike(myUserId);
 
+  // 검색 훅 실행
   const { data: searchResults, isLoading: isSearchLoading } = useUserSearch(searchQuery);
 
-  // [수정] '메시지' 항목 삭제됨
   const sidebarMenu: SidebarItem[] = [
     { 
       id: "home", label: "홈", icon: Home, link: "/feed", 
@@ -58,7 +58,6 @@ export default function FeedPage() {
       action: () => { setActiveFilter("popular"); setIsSearchOpen(false); }, 
       isActive: activeFilter === "popular" && !isSearchOpen
     },
-    // { id: "messages" ... } 삭제됨
     { 
       id: "create", label: "만들기", icon: PlusSquare, 
       action: () => setIsCreateOpen(true), 
@@ -73,12 +72,11 @@ export default function FeedPage() {
   return (
     <div className="flex justify-between w-full min-h-screen bg-[#FDFBFD] text-slate-800 font-sans selection:bg-[#FF69B4] selection:text-white pt-16 relative">
       
-      {/* [1] 왼쪽 사이드바 */}
+      {/* 왼쪽 사이드바 */}
       <aside className="hidden md:block sticky top-20 h-[calc(100vh-6rem)] shrink-0 z-50 ml-4 w-[80px] xl:w-[240px]">
         <div className={`relative h-full flex transition-all duration-300 ease-in-out ${
            isSearchOpen ? "w-[400px]" : "w-full"
         }`}>
-          
           <div className={`h-full bg-white rounded-[2.5rem] shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-gray-100 overflow-y-auto custom-scrollbar py-6 relative z-30 transition-all duration-300 ${
              isSearchOpen ? "w-[80px]" : "w-full"
           }`}>
@@ -120,7 +118,7 @@ export default function FeedPage() {
             </nav>
           </div>
 
-          {/* 검색 패널 (기존 유지) */}
+          {/* 검색 패널 */}
           <div 
               className={`absolute top-0 left-[90px] h-full bg-white z-20 rounded-[2.5rem] shadow-xl transition-all duration-300 ease-in-out overflow-hidden border border-[#FF69B4]/10 ${
               isSearchOpen ? "w-[300px] opacity-100 translate-x-0" : "w-0 opacity-0 -translate-x-4 pointer-events-none"
@@ -136,7 +134,7 @@ export default function FeedPage() {
                   
                   <div className="relative mb-4">
                       <Input 
-                          placeholder="ID 또는 이름 검색" 
+                          placeholder="소셜 아이디 또는 이름" 
                           className="bg-[#FFF0F5] border-none h-11 pl-4 pr-10 rounded-2xl text-sm transition-all focus-visible:ring-2 focus-visible:ring-[#FF69B4] text-gray-800 font-medium"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
@@ -157,12 +155,22 @@ export default function FeedPage() {
                                       onClick={() => setIsSearchOpen(false)}
                                   >
                                       <Avatar className="h-10 w-10 border border-white shadow-sm">
-                                          <AvatarImage src={u.profileImageUrl || "/placeholder-user.jpg"} />
-                                          <AvatarFallback className="bg-[#FFF0F5] text-[#FF69B4] font-bold text-xs">{u.nickname[0]}</AvatarFallback>
+                                          {/* [수정] u.profileImageUrl -> u.profileImage */}
+                                          <AvatarImage src={u.profileImage || "/placeholder-user.jpg"} />
+                                          <AvatarFallback className="bg-[#FFF0F5] text-[#FF69B4] font-bold text-xs">
+                                              {/* [수정] u.nickname -> u.username */}
+                                              {u.username ? u.username[0] : "U"}
+                                          </AvatarFallback>
                                       </Avatar>
                                       <div className="flex flex-col overflow-hidden">
-                                          <span className="font-bold text-sm text-gray-900 truncate">{u.nickname}</span>
-                                          <span className="text-[#FF69B4] text-[11px] font-medium truncate">@{u.username}</span>
+                                          {/* [수정] 닉네임 표시: u.nickname -> u.username */}
+                                          <span className="font-bold text-sm text-gray-900 truncate">
+                                            {u.username || "알 수 없음"}
+                                          </span>
+                                          {/* [수정] 아이디 표시: u.username -> u.social */}
+                                          <span className="text-[#FF69B4] text-[11px] font-medium truncate">
+                                            @{u.social || "user"}
+                                          </span>
                                       </div>
                                   </Link>
                               ))
@@ -175,23 +183,19 @@ export default function FeedPage() {
                   </div>
               </div>
           </div>
-          
         </div>
       </aside>
 
-      {/* [2] 중앙 메인 컨텐츠 */}
+      {/* 중앙 메인 컨텐츠 */}
       <main className="flex-1 flex justify-center min-w-0 bg-[#FDFBFD]" onClick={() => { if(isSearchOpen) setIsSearchOpen(false); }}>
         <div className="w-full max-w-[680px] px-4 pb-20 mt-4 md:mt-0">
-             {/* [수정] 모바일 헤더: 메시지 아이콘 삭제 */}
              <div className="md:hidden w-full fixed top-0 left-0 bg-white/95 backdrop-blur-md z-50 flex items-center justify-between px-5 py-3 border-b border-gray-100 shadow-sm">
                 <span className="font-black text-xl italic text-[#FF69B4] tracking-tighter">Petlog</span>
                 <div className="flex gap-4">
                     <Heart className="h-6 w-6 text-gray-800" />
-                    {/* <Link to="/messages"><MessageCircle ... /></Link> 삭제 */}
                 </div>
             </div>
 
-            {/* 피드 리스트 */}
             {activeFilter === 'popular' ? (
                 <PopularFeedGrid />
             ) : (
@@ -203,7 +207,7 @@ export default function FeedPage() {
         </div>
       </main>
 
-      {/* [3] 오른쪽 사이드바 (유지) */}
+      {/* 오른쪽 사이드바 */}
       <aside className="hidden lg:block sticky top-20 h-[calc(100vh-6rem)] w-[320px] shrink-0 mr-4 z-30">
         <div className="h-full bg-white rounded-[2.5rem] shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-gray-100 overflow-y-auto custom-scrollbar py-8 px-6">
             {user && (
@@ -211,7 +215,7 @@ export default function FeedPage() {
                     <Link to={`/user/${myUserId}`} className="flex items-center gap-3 group">
                         <Avatar className="h-10 w-10 border-[2px] border-white shadow-sm bg-white">
                             <AvatarImage src={user.avatar || "/placeholder-user.jpg"} />
-                            <AvatarFallback className="text-[#FF69B4] font-bold bg-[#FFF0F5]">{user.name?.[0]}</AvatarFallback>
+                            <AvatarFallback className="text-[#FF69B4] font-bold bg-[#FFF0F5]">{user.name?.[0] || "U"}</AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col">
                             <span className="font-bold text-sm text-gray-900 group-hover:text-[#FF69B4] transition-colors">{user.username}</span>

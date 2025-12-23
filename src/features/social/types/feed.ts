@@ -63,9 +63,13 @@ export interface CreateCommentRequest {
 // 4. 검색 결과 타입
 export interface SearchUserDto {
   userId: number;
-  username: string;
-  nickname: string;
-  profileImageUrl: string | null;
+  // 백엔드: username이 닉네임 역할
+  username: string; 
+  // 백엔드: social이 아이디 역할
+  social: string;   
+  // 백엔드: profileImage
+  profileImage: string | null; 
+  statusMessage?: string;
 }
 
 export interface SearchResponse {
