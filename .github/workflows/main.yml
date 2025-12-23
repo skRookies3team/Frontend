@@ -35,6 +35,7 @@ jobs:
         run: pnpm run build
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_KAKAO_API_KEY: ${{ secrets.VITE_KAKAO_API_KEY }}
 
       # AWS 인증 (GitHub Secrets 사용)
       - name: Configure AWS Credentials
