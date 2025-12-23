@@ -25,13 +25,18 @@ export interface LikerDto {
   profileImageUrl: string | null;
 }
 
+// [추가] 댓글 수정 요청 타입
+export interface UpdateCommentRequest {
+  userId: number;
+  content: string;
+}
+
 const FEED_BASE_URL = '/feeds';
 
 export const feedApi = {
   uploadImages: async (files: File[]) => {
     const formData = new FormData();
     files.forEach((file) => formData.append("multipartFile", file));
-    // [중요] /api 제거 -> /images/upload
     return await httpClient.post<string[]>('/images/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
@@ -46,11 +51,6 @@ export const feedApi = {
     return await httpClient.get<FeedSliceResponse>(`${FEED_BASE_URL}/viewer/${userId}?${params.toString()}`);
   },
 
-  /**
-   * [통합 검색]
-   * 프론트엔드에서 가장 중요한 수정 부분입니다.
-   * /api/search -> /search 로 변경하여 중복 경로(/api/api/search) 방지
-   */
   search: async (query: string, viewerId: number) => {
     const params = new URLSearchParams({ query, viewerId: String(viewerId) });
     return await httpClient.get<SearchResponse>(`/search?${params.toString()}`);
@@ -78,6 +78,11 @@ export const feedApi = {
 
   createComment: async (feedId: number, data: CreateCommentRequest) => {
     return await httpClient.post<void>(`${FEED_BASE_URL}/${feedId}/comments`, data);
+  },
+
+  // [추가] 댓글 수정 API
+  updateComment: async (commentId: number, data: UpdateCommentRequest) => {
+    return await httpClient.put<void>(`/api/comments/${commentId}`, data);
   },
 
   deleteComment: async (commentId: number, userId: number) => {
@@ -112,5 +117,22 @@ export const feedApi = {
       console.error("Search API Error:", e);
       return []; 
     }
-  }
+  },
+
+  // [추가] 신고 기능 (나중 구현을 위해 인터페이스만 유지)
+  report: async (reporterId: number, targetId: number, type: "FEED" | "USER" | "COMMENT", reason: string) => {
+    const params = new URLSearchParams({ 
+        reporterId: String(reporterId), 
+        targetId: String(targetId), 
+        type, 
+        reason 
+    });
+    return await httpClient.post<void>(`/api/reports?${params.toString()}`, {});
+  },
+
+  // [추가] 차단 기능
+  blockUser: async (blockerId: number, blockedId: number) => {
+    const params = new URLSearchParams({ blockerId: String(blockerId), blockedId: String(blockedId) });
+    return await httpClient.post<void>(`/api/blocks?${params.toString()}`, {});
+  },
 };

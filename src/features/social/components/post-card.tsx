@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
-import { Heart, MessageCircle, MoreHorizontal, MapPin, ChevronLeft, ChevronRight, Edit, Trash } from "lucide-react";
+import { Heart, MessageCircle, MoreHorizontal, MapPin, ChevronLeft, ChevronRight, Edit, Trash, AlertTriangle, Ban } from "lucide-react";
 import { FeedDto } from "../types/feed";
 import { Avatar, AvatarImage, AvatarFallback } from "@/shared/ui/avatar";
 import {
@@ -13,6 +13,8 @@ import {
 import { useAuth } from "@/features/auth/context/auth-context";
 import { useDeleteFeed, useLikers } from "../hooks/use-feed-query";
 import { FollowListModal } from "./FollowListModal";
+import { FeedCreateModal } from "./FeedCreateModal"; // [추가] 수정 모달 import
+import { feedApi } from "../api/feed-api";
 
 interface PostCardProps {
   post: FeedDto;
@@ -25,16 +27,19 @@ export function PostCard({ post, onLikeToggle, onClickPost }: PostCardProps) {
   const deleteFeedMutation = useDeleteFeed();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // [추가] 좋아요 목록 모달 상태
+  // 좋아요 목록 모달 상태
   const [showLikers, setShowLikers] = useState(false);
-  // 모달이 열려있을 때만 API 호출 (enabled: showLikers)
   const { data: likers, isLoading: isLikersLoading } = useLikers(post.feedId, showLikers);
+
+  // [추가] 수정 모달 상태
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const images = post.imageUrls || [];
   const hasMultipleImages = images.length > 1;
   
   // 작성자 본인 확인
   const isOwner = user && Number(user.id) === post.writerId;
+  const currentUserId = Number(user?.id);
 
   const handlePrevClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -53,8 +58,29 @@ export function PostCard({ post, onLikeToggle, onClickPost }: PostCardProps) {
   };
 
   const handleEdit = () => {
-    alert("게시물 수정 페이지로 이동 기능이 필요합니다.");
-    // navigate(`/feeds/${post.feedId}/edit`); 등 구현 필요
+    setIsEditModalOpen(true);
+  };
+
+  const handleReport = async () => {
+    if(confirm("이 게시물을 신고하시겠습니까?")) {
+       try {
+         await feedApi.report(currentUserId, post.feedId, "FEED", "부적절한 콘텐츠");
+         alert("신고가 접수되었습니다.");
+       } catch (e) {
+         alert("신고 처리 중 오류가 발생했습니다.");
+       }
+    }
+  };
+
+  const handleBlock = async () => {
+    if(confirm(`'${post.writerNickname}'님을 차단하시겠습니까?`)) {
+       try {
+         await feedApi.blockUser(currentUserId, post.writerId);
+         alert("차단되었습니다.");
+       } catch (e) {
+         alert("차단 처리 중 오류가 발생했습니다.");
+       }
+    }
   };
 
   // 내용과 이미지가 모두 없으면 렌더링 안 함
@@ -85,24 +111,35 @@ export function PostCard({ post, onLikeToggle, onClickPost }: PostCardProps) {
             </div>
           </div>
 
-          {/* [추가] 수정/삭제 메뉴 (본인일 때만 표시) */}
-          {isOwner && (
-            <DropdownMenu>
+          {/* 메뉴 (본인: 수정/삭제, 타인: 신고/차단) */}
+          <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="text-gray-400 hover:text-gray-700 transition-colors p-1 rounded-full hover:bg-gray-50 outline-none">
                   <MoreHorizontal className="w-5 h-5" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-white rounded-xl shadow-lg border-gray-100 min-w-[120px]">
-                <DropdownMenuItem onClick={handleEdit} className="cursor-pointer gap-2 p-2 hover:bg-gray-50 text-gray-700">
-                  <Edit className="w-4 h-4" /> 수정하기
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleDelete} className="cursor-pointer gap-2 p-2 hover:bg-red-50 text-red-600 focus:text-red-600 focus:bg-red-50">
-                  <Trash className="w-4 h-4" /> 삭제하기
-                </DropdownMenuItem>
+                {isOwner ? (
+                    <>
+                        <DropdownMenuItem onClick={handleEdit} className="cursor-pointer gap-2 p-2 hover:bg-gray-50 text-gray-700">
+                        <Edit className="w-4 h-4" /> 수정하기
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleDelete} className="cursor-pointer gap-2 p-2 hover:bg-red-50 text-red-600 focus:text-red-600 focus:bg-red-50">
+                        <Trash className="w-4 h-4" /> 삭제하기
+                        </DropdownMenuItem>
+                    </>
+                ) : (
+                    <>
+                        <DropdownMenuItem onClick={handleReport} className="cursor-pointer gap-2 p-2 hover:bg-gray-50 text-red-500">
+                            <AlertTriangle className="w-4 h-4" /> 신고하기
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleBlock} className="cursor-pointer gap-2 p-2 hover:bg-gray-50 text-gray-700">
+                            <Ban className="w-4 h-4" /> 차단하기
+                        </DropdownMenuItem>
+                    </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
-          )}
         </div>
 
         {/* 2. 이미지 영역 */}
@@ -118,7 +155,6 @@ export function PostCard({ post, onLikeToggle, onClickPost }: PostCardProps) {
             />
           )}
           
-          {/* 슬라이드 화살표 (2장 이상일 때) */}
           {hasMultipleImages && (
             <>
               <button onClick={handlePrevClick} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-black/20 text-white/80 rounded-full opacity-0 group-hover:opacity-100 hover:bg-black/50 transition-all backdrop-blur-[2px] z-10">
@@ -127,8 +163,6 @@ export function PostCard({ post, onLikeToggle, onClickPost }: PostCardProps) {
               <button onClick={handleNextClick} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-black/20 text-white/80 rounded-full opacity-0 group-hover:opacity-100 hover:bg-black/50 transition-all backdrop-blur-[2px] z-10">
                 <ChevronRight className="w-6 h-6" strokeWidth={2.5} />
               </button>
-              
-              {/* 인디케이터 */}
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 p-1.5 rounded-full bg-black/10 backdrop-blur-[2px]">
                 {images.map((_, idx) => (
                   <div key={idx} className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentImageIndex ? "bg-white w-4 shadow-sm" : "bg-white/60 w-1.5"}`} />
@@ -161,7 +195,6 @@ export function PostCard({ post, onLikeToggle, onClickPost }: PostCardProps) {
             </button>
           </div>
 
-          {/* [추가] 좋아요 개수 클릭 시 목록 보기 */}
           {post.likeCount > 0 && (
             <button 
               onClick={() => setShowLikers(true)} 
@@ -197,6 +230,16 @@ export function PostCard({ post, onLikeToggle, onClickPost }: PostCardProps) {
         users={likers}
         isLoading={isLikersLoading}
       />
+
+      {/* [추가] 게시물 수정 모달 연결 */}
+      {isEditModalOpen && (
+        <FeedCreateModal 
+           isOpen={isEditModalOpen} 
+           onClose={() => setIsEditModalOpen(false)} 
+           mode="edit"
+           initialData={post}
+        />
+      )}
     </>
   );
 }

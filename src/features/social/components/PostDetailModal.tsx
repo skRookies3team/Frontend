@@ -5,13 +5,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { ScrollArea } from "@/shared/ui/scroll-area";
-// [추가] ChevronLeft, ChevronRight 아이콘 추가
 import { Heart, MessageCircle, Send, MoreHorizontal, X, Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
-import { FeedDto } from "../types/feed";
+import { FeedDto, CommentDto } from "../types/feed";
 import { useAuth } from "@/features/auth/context/auth-context";
 import { useComments, useCreateComment, useDeleteComment } from "../hooks/use-comment-query";
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { feedApi } from "../api/feed-api";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface PostDetailModalProps {
   post: FeedDto;
@@ -20,11 +21,78 @@ interface PostDetailModalProps {
   onLikeToggle?: (id: number) => void;
 }
 
+// [추가] 댓글 아이템 컴포넌트 (수정 기능 포함)
+function CommentItem({ 
+  comment, 
+  currentUserId, 
+  onDelete, 
+  onUpdate 
+}: { 
+  comment: CommentDto, 
+  currentUserId: number, 
+  onDelete: (id: number) => void,
+  onUpdate: (id: number, content: string) => void
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(comment.content);
+
+  const handleUpdate = () => {
+    if (!editContent.trim()) return;
+    onUpdate(comment.commentId, editContent);
+    setIsEditing(false);
+  };
+
+  return (
+    <div className="flex gap-3 group items-start">
+        <Link to={`/user/${comment.writerNickname}`} className="shrink-0">
+            <Avatar className="h-8 w-8 mt-1">
+                <AvatarImage src={comment.writerProfileImage || "/placeholder-user.jpg"} />
+                <AvatarFallback className="bg-gray-50 text-gray-500 text-xs">{comment.writerNickname[0]}</AvatarFallback>
+            </Avatar>
+        </Link>
+        <div className="flex-1">
+            <div className="text-[14px] leading-relaxed">
+                <Link to={`/user/${comment.writerNickname}`} className="font-bold mr-2 text-gray-900 hover:text-[#FF69B4] transition-colors">
+                    {comment.writerNickname}
+                </Link>
+                
+                {/* 수정 모드 여부에 따른 UI 분기 */}
+                {isEditing ? (
+                   <div className="flex gap-2 mt-1">
+                      <Input 
+                         value={editContent} 
+                         onChange={(e) => setEditContent(e.target.value)} 
+                         className="h-8 text-xs bg-gray-50 border-gray-200" 
+                         autoFocus
+                      />
+                      <Button size="sm" onClick={handleUpdate} className="h-8 text-xs bg-[#FF69B4] hover:bg-[#FF1493]">완료</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)} className="h-8 text-xs">취소</Button>
+                   </div>
+                ) : (
+                   <span className="text-gray-700">{comment.content}</span>
+                )}
+            </div>
+            
+            <div className="flex items-center gap-3 mt-1.5 text-[11px] text-gray-400 font-medium">
+                <span>{formatDistanceToNow(new Date(comment.createdAt), { locale: ko })}</span>
+                
+                {/* 본인 댓글일 경우 수정/삭제 버튼 표시 */}
+                {(comment.writerId === currentUserId) && !isEditing && (
+                    <>
+                      <button onClick={() => setIsEditing(true)} className="hover:text-gray-600 font-bold opacity-0 group-hover:opacity-100 transition-all">수정</button>
+                      <button onClick={() => onDelete(comment.commentId)} className="hover:text-red-500 font-bold opacity-0 group-hover:opacity-100 transition-all">삭제</button>
+                    </>
+                )}
+            </div>
+        </div>
+    </div>
+  );
+}
+
 export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDetailModalProps) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [commentText, setCommentText] = useState("");
-  
-  // [추가] 이미지 슬라이드 인덱스 상태 관리
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const currentUserId = Number(user?.id);
@@ -33,17 +101,14 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
   const createCommentMutation = useCreateComment(post.feedId);
   const deleteCommentMutation = useDeleteComment(post.feedId);
 
-  // [추가] 이미지 데이터 준비
   const images = post.imageUrls || [];
   const hasMultipleImages = images.length > 1;
 
-  // [추가] 이전 이미지 보기
   const handlePrevClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
   };
 
-  // [추가] 다음 이미지 보기
   const handleNextClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
@@ -65,6 +130,18 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
     }
   };
 
+  // [추가] 댓글 수정 핸들러
+  const handleUpdateComment = async (commentId: number, newContent: string) => {
+      try {
+        await feedApi.updateComment(commentId, { userId: currentUserId, content: newContent });
+        // 쿼리 무효화로 댓글 목록 갱신
+        queryClient.invalidateQueries({ queryKey: ['comments', post.feedId] });
+      } catch (e) {
+        console.error(e);
+        alert("댓글 수정에 실패했습니다.");
+      }
+  };
+
   const handleLike = () => {
       onLikeToggle?.(post.feedId);
   };
@@ -84,18 +161,16 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
             <span className="sr-only">Close</span>
         </DialogClose>
 
-        {/* 1. 이미지 영역 (왼쪽) - 슬라이더 적용됨 */}
+        {/* 1. 이미지 영역 (왼쪽) */}
         <div className="relative bg-gray-100 flex items-center justify-center w-full h-[45vh] md:h-full md:flex-[1.5_1_0%] overflow-hidden border-r border-[#FFF0F5] group">
            {images.length > 0 ? (
              <>
-               {/* 이미지 표시 */}
                <img 
                  src={images[currentImageIndex]} 
                  alt={`Post-${currentImageIndex}`} 
                  className="w-full h-full object-cover"
                />
 
-               {/* 화살표 및 인디케이터 (이미지가 여러 장일 때만 표시) */}
                {hasMultipleImages && (
                  <>
                    <button 
@@ -111,7 +186,6 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
                      <ChevronRight className="w-6 h-6" />
                    </button>
 
-                   {/* 하단 점 (Dots) */}
                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 p-2 rounded-full bg-black/20 backdrop-blur-sm">
                      {images.map((_, idx) => (
                        <div
@@ -159,7 +233,7 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
 
           {/* 댓글 목록 */}
           <ScrollArea className="flex-1 p-6">
-              {/* 본문 내용 */}
+              {/* 본문 (첫 번째 항목처럼 표시) */}
               <div className="flex gap-4 mb-8">
                 <Link to={`/user/${post.writerNickname}`} className="shrink-0">
                     <Avatar className="h-10 w-10">
@@ -180,7 +254,7 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
                 </div>
               </div>
 
-              {/* 댓글 리스트 */}
+              {/* 실제 댓글 리스트 */}
               {isCommentsLoading ? (
                   <div className="flex justify-center items-center h-20">
                       <div className="animate-pulse flex gap-2">
@@ -192,35 +266,13 @@ export function PostDetailModal({ post, isOpen, onClose, onLikeToggle }: PostDet
               ) : (
                   <div className="space-y-6">
                      {comments?.map((comment) => (
-                         <div key={comment.commentId} className="flex gap-3 group">
-                             <Link to={`/user/${comment.writerNickname}`} className="shrink-0">
-                                 <Avatar className="h-8 w-8">
-                                     <AvatarImage src={comment.writerProfileImage || "/placeholder-user.jpg"} />
-                                     <AvatarFallback className="bg-gray-50 text-gray-500 text-xs">{comment.writerNickname[0]}</AvatarFallback>
-                                 </Avatar>
-                             </Link>
-                             <div className="flex-1">
-                                 <div className="text-[14px] leading-relaxed">
-                                     <Link to={`/user/${comment.writerNickname}`} className="font-bold mr-2 text-gray-900 hover:text-[#FF69B4] transition-colors">
-                                         {comment.writerNickname}
-                                     </Link>
-                                     <span className="text-gray-700">{comment.content}</span>
-                                 </div>
-                                 <div className="flex items-center gap-3 mt-1.5">
-                                     <span className="text-[11px] text-gray-400 font-medium">
-                                         {formatDistanceToNow(new Date(comment.createdAt), { locale: ko })}
-                                     </span>
-                                     {(comment.writerId === currentUserId || post.writerId === currentUserId) && (
-                                         <button 
-                                             onClick={() => handleDeleteComment(comment.commentId)}
-                                             className="text-[11px] text-gray-400 hover:text-[#FF69B4] font-bold opacity-0 group-hover:opacity-100 transition-all"
-                                         >
-                                             삭제
-                                         </button>
-                                     )}
-                                 </div>
-                             </div>
-                         </div>
+                         <CommentItem 
+                            key={comment.commentId} 
+                            comment={comment} 
+                            currentUserId={currentUserId}
+                            onDelete={handleDeleteComment}
+                            onUpdate={handleUpdateComment}
+                         />
                      ))}
                   </div>
               )}
