@@ -11,27 +11,32 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { useAuth } from "@/features/auth/context/auth-context";
-import { useDeleteFeed, useLikers } from "../hooks/use-feed-query";
+import { useDeleteFeed, useLikers, useFeedLike } from "../hooks/use-feed-query"; // [중요] useFeedLike 추가
 import { FollowListModal } from "./FollowListModal";
-import { FeedCreateModal } from "./FeedCreateModal"; // [추가] 수정 모달 import
+import { FeedCreateModal } from "./FeedCreateModal"; 
 import { feedApi } from "../api/feed-api";
 
 interface PostCardProps {
   post: FeedDto;
-  onLikeToggle: (feedId: number) => void;
+  // onLikeToggle 제거 (내부에서 처리)
   onClickPost?: (post: FeedDto) => void;
 }
 
-export function PostCard({ post, onLikeToggle, onClickPost }: PostCardProps) {
+export function PostCard({ post, onClickPost }: PostCardProps) {
   const { user } = useAuth();
+  const currentUserId = Number(user?.id);
+
+  // [수정] 여기서 직접 좋아요 훅 사용
+  const { mutate: toggleLike } = useFeedLike(currentUserId);
   const deleteFeedMutation = useDeleteFeed();
+  
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // 좋아요 목록 모달 상태
   const [showLikers, setShowLikers] = useState(false);
   const { data: likers, isLoading: isLikersLoading } = useLikers(post.feedId, showLikers);
 
-  // [추가] 수정 모달 상태
+  // 수정 모달 상태
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const images = post.imageUrls || [];
@@ -39,7 +44,6 @@ export function PostCard({ post, onLikeToggle, onClickPost }: PostCardProps) {
   
   // 작성자 본인 확인
   const isOwner = user && Number(user.id) === post.writerId;
-  const currentUserId = Number(user?.id);
 
   const handlePrevClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -51,9 +55,15 @@ export function PostCard({ post, onLikeToggle, onClickPost }: PostCardProps) {
     setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
   };
 
+  // [추가] 좋아요 핸들러
+  const handleLikeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleLike(post.feedId);
+  };
+
   const handleDelete = () => {
     if (confirm("정말 이 게시물을 삭제하시겠습니까?")) {
-      deleteFeedMutation.mutate({ feedId: post.feedId, userId: Number(user?.id) });
+      deleteFeedMutation.mutate({ feedId: post.feedId, userId: currentUserId });
     }
   };
 
@@ -111,7 +121,7 @@ export function PostCard({ post, onLikeToggle, onClickPost }: PostCardProps) {
             </div>
           </div>
 
-          {/* 메뉴 (본인: 수정/삭제, 타인: 신고/차단) */}
+          {/* 메뉴 */}
           <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="text-gray-400 hover:text-gray-700 transition-colors p-1 rounded-full hover:bg-gray-50 outline-none">
@@ -176,13 +186,14 @@ export function PostCard({ post, onLikeToggle, onClickPost }: PostCardProps) {
         <div className="p-4 pb-2">
           <div className="flex items-center gap-4 mb-3">
             <button
-              onClick={(e) => { e.stopPropagation(); onLikeToggle(post.feedId); }}
-              className="flex items-center gap-1.5 group transition-transform active:scale-90"
+              onClick={handleLikeClick}
+              className="flex items-center gap-1.5 group transition-transform active:scale-90 focus:outline-none"
             >
+              {/* [수정] 하트 색상: 빨강(red-600) */}
               <Heart
                 className={`w-7 h-7 transition-all duration-300 ${post.isLiked
-                  ? "fill-[#FF69B4] text-[#FF69B4] drop-shadow-sm scale-105"
-                  : "text-gray-700 group-hover:text-[#FF69B4]"
+                  ? "fill-red-600 text-red-600 drop-shadow-sm scale-105" // 좋아요 상태
+                  : "text-gray-700 group-hover:text-red-600" // 기본 상태
                 }`}
                 strokeWidth={post.isLiked ? 0 : 1.5}
               />
@@ -231,7 +242,7 @@ export function PostCard({ post, onLikeToggle, onClickPost }: PostCardProps) {
         isLoading={isLikersLoading}
       />
 
-      {/* [추가] 게시물 수정 모달 연결 */}
+      {/* 수정 모달 */}
       {isEditModalOpen && (
         <FeedCreateModal 
            isOpen={isEditModalOpen} 

@@ -49,11 +49,8 @@ export const feedApi = {
     return await httpClient.get<FeedSliceResponse>(`${FEED_BASE_URL}/viewer/${userId}?${params.toString()}`);
   },
 
-  // [추가] 특정 유저의 피드 목록 조회 (타 유저 프로필용)
   getUserFeeds: async (targetUserId: number, viewerId: number, page: number = 0) => {
     const params = new URLSearchParams({ page: String(page), size: '12' });
-    // 백엔드 구현에 따라 경로가 다를 수 있으나, 일반적인 패턴으로 작성
-    // 만약 백엔드에 이 경로가 없다면 getFeeds와 로직을 맞춰야 함
     return await httpClient.get<FeedSliceResponse>(`${FEED_BASE_URL}/user/${targetUserId}/viewer/${viewerId}?${params.toString()}`);
   },
 
@@ -94,32 +91,41 @@ export const feedApi = {
     return await httpClient.delete<void>(`/comments/${commentId}?userId=${userId}`);
   },
 
+  // [수정 완료] httpClient 사용하도록 변경
   toggleLike: async (feedId: number, userId: number) => {
-    return await httpClient.post<void>(`${FEED_BASE_URL}/${feedId}/likes?userId=${userId}`, {});
+    // POST /api/feeds/{feedId}/likes?userId={userId}
+    // Body(data)는 null로, Query Param(params)으로 userId 전달
+    const params = new URLSearchParams({ userId: String(userId) });
+    
+    // httpClient.post(url, body) 형태라면 url에 쿼리 스트링을 붙여서 호출
+    return await httpClient.post<string>(
+        `${FEED_BASE_URL}/${feedId}/likes?${params.toString()}`, 
+        null
+    );
   },
 
+  // [수정 완료] httpClient 사용하도록 변경
   getLikers: async (feedId: number) => {
+    // GET /api/feeds/{feedId}/likes
     return await httpClient.get<LikerDto[]>(`${FEED_BASE_URL}/${feedId}/likes`);
   },
 
-  // --- [추가] 팔로우 및 유저 관련 API ---
+  // --- 팔로우 API ---
 
   getFollowStats: async (userId: number) => {
-    // 경로에 /api 제거 (httpClient baseURL 사용 시)
     return await httpClient.get<FollowStatResponse>(`/follows/${userId}/stats`);
   },
 
   followUser: async (followerId: number, followingId: number) => {
-    const params = new URLSearchParams({ followerId: String(followerId), followingId: String(followingId) });
-    return await httpClient.post<void>(`/follows?${params.toString()}`);
+    const params = new URLSearchParams({ followerId: String(followerId) });
+    return await httpClient.post<void>(`/follows/${followingId}?${params.toString()}`);
   },
 
   unfollowUser: async (followerId: number, followingId: number) => {
-    const params = new URLSearchParams({ followerId: String(followerId), followingId: String(followingId) });
-    return await httpClient.delete<void>(`/follows?${params.toString()}`);
+    const params = new URLSearchParams({ followerId: String(followerId) });
+    return await httpClient.post<void>(`/follows/${followingId}?${params.toString()}`);
   },
 
-  // 팔로우 여부 확인 (목록에서 조회)
   checkFollow: async (followerId: number, followingId: number) => {
     try {
         const followings = await feedApi.getFollowings(followerId);
@@ -137,7 +143,6 @@ export const feedApi = {
     return await httpClient.get<FollowListResponse[]>(`/follows/${userId}/followings`);
   },
 
-  // [수정] viewerId 파라미터 추가하여 검색 정확도 향상
   searchUsers: async (query: string, viewerId: number = 0) => {
     try {
       const response = await feedApi.search(query, viewerId); 
