@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, MapPin, Sun, Smile, Edit3, ArrowRight } from 'lucide-react';
 import KakaoMap from './KakaoMap';
 import LocationSearchModal from './LocationSearchModal';

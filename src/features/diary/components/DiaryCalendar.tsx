@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
     format, addMonths, subMonths, startOfMonth, endOfMonth,
     startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay,
@@ -21,7 +21,7 @@ const DiaryCalendar = ({ selectedDate, onDateSelect, onRecapClick }: DiaryCalend
     const { user } = useDiaryAuth();
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [entries, setEntries] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
+
     const today = new Date();
 
     // Fetch monthly diaries when currentMonth or user changes
@@ -33,7 +33,7 @@ const DiaryCalendar = ({ selectedDate, onDateSelect, onRecapClick }: DiaryCalend
 
     const fetchMonthlyData = async () => {
         if (!user) return;
-        setLoading(true);
+
         try {
             // [MODIFIED] Use getDiariesByDate (daily API) to fetch for the whole month
             const monthStart = startOfMonth(currentMonth);
@@ -90,7 +90,7 @@ const DiaryCalendar = ({ selectedDate, onDateSelect, onRecapClick }: DiaryCalend
             console.error("Failed to fetch monthly diaries:", error);
             setEntries([]);
         } finally {
-            setLoading(false);
+
         }
     };
 

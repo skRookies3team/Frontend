@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Calendar, MapPin, Sun, Smile, Edit3, Save, Loader2, LayoutGrid, Layers, Columns, Grid, Maximize2, Minimize2, Type, Palette, Sparkles } from 'lucide-react';
 import KakaoMap from './KakaoMap';
 
