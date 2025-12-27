@@ -202,21 +202,13 @@ const AiDiaryPage = () => {
         formData.append("imageFiles", new Blob([], { type: 'application/octet-stream' }), "");
       }
 
-      // [FIX] 보관함 ID는 DB Not Null 제약조건으로 인해 항상 전송해야 함.
-      // 하지만 photoArchiveId가 있고 images 리스트가 있으면 백엔드가 '보관함 모드'로 인식하여 파일 업로드를 수행하지 않음.
-      // 따라서, 파일 업로드 시에는 images 리스트를 빈 배열로 보내 '보관함 모드' 진입을 막고 '갤러리 모드(파일 업로드)'로 유도함.
-      const shouldForceGalleryMode = imageFiles.length > 0;
-
-      // Find the first Archive image to use its ID as the photoArchiveId (for DB constraint)
-      const firstArchiveImage = selectedImages.find(img => img.source === ImageSource.ARCHIVE);
-      // If no archive image, use 1 (SYSTEM_DEFAULT) or any fallback to satisfy NOT NULL.
-      // If there IS an archive image, use its real ID.
-      const finalArchiveId = firstArchiveImage ? firstArchiveImage.archiveId : 1;
+      // [REF] Backend changed: photoArchiveId is removable. We now send archiveId per image.
+      // Top level ID is null to allow backend to process list-based IDs.
 
       const requestData = {
         userId: Number(user.id),
         petId: selectedPetId,
-        photoArchiveId: finalArchiveId,
+        photoArchiveId: null, // User requested to separate this, effectively nullifying top-level single ID
         content: "",
         visibility: "PRIVATE",
         isAiGen: true,
@@ -226,12 +218,12 @@ const AiDiaryPage = () => {
         latitude: location ? location.lat : null,
         longitude: location ? location.lng : null,
         locationName: locationName,
-        // 파일 업로드 중이면 images를 비워서 백엔드 로직이 Gallery 모드(파일 처리)로 빠지게 함
-        images: shouldForceGalleryMode ? [] : selectedImages.map((img, index) => ({
+        images: selectedImages.map((img, index) => ({
           imageUrl: img.imageUrl || "",
           imgOrder: index + 1,
           mainImage: index === 0,
-          source: img.source
+          source: img.source,
+          archiveId: img.archiveId || null // Send individual Archive ID
         }))
       };
 
