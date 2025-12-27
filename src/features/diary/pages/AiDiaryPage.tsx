@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, PawPrint } from 'lucide-react';
 
 import { getAllArchivesApi } from "@/features/auth/api/auth-api";
 import { ImageSource } from "../types/diary";
@@ -388,7 +388,11 @@ const AiDiaryPage = () => {
       <header className="sticky top-0 z-40 border-b border-pink-100 bg-white/95 backdrop-blur-sm shadow-sm">
         <div className="container mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <button onClick={handleBack} className="text-pink-600 hover:text-pink-700 transition-colors p-1"><ChevronLeft className="w-6 h-6" /></button>
-          <h1 className="text-lg font-bold text-pink-600 md:text-xl">Pet Log AI</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-[#FF6B8B] font-['Jua'] tracking-wider flex items-center gap-3">
+            <PawPrint className="w-6 h-6 animate-bounce text-[#FF8FAB] delay-100" />
+            <span>너와 나의 이야기</span>
+            <PawPrint className="w-6 h-6 animate-bounce text-[#FF8FAB] delay-300" />
+          </h1>
           <div className="flex items-center gap-2">
           </div>
         </div>
