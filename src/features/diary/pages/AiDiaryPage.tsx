@@ -16,6 +16,7 @@ import {
 import UploadStep from '../components/UploadStep';
 import GeneratingStep from '../components/GeneratingStep';
 import EditStep from '../components/EditStep';
+import StyleStep from '../components/StyleStep';
 import CompleteStep from '../components/CompleteStep';
 import GalleryModal from '../components/GalleryModal';
 
@@ -45,9 +46,12 @@ const AiDiaryPage = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
 
   // Style States
-  const [layoutStyle, setLayoutStyle] = useState("grid");
+  const [layoutStyle, setLayoutStyle] = useState("grid"); // galleryType
   const [textAlign, setTextAlign] = useState("left");
   const [fontSize, setFontSize] = useState(16);
+  const [sizeOption, setSizeOption] = useState("medium");
+  const [themeStyle, setThemeStyle] = useState("basic");
+  const [preset, setPreset] = useState<string | null>(null);
   const [backgroundColor, setBackgroundColor] = useState("#ffffff");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -360,7 +364,7 @@ const AiDiaryPage = () => {
         </div>
       </header>
 
-      <main className="container mx-auto max-w-4xl p-4 md:p-6">
+      <main className="container mx-auto max-w-7xl p-4 md:p-6">
         {step === 'upload' && (
           <UploadStep
             selectedImages={selectedImages} isSubmitting={isSubmitting} handleImageUpload={handleImageUpload} handleGenerate={handleGenerate}
@@ -373,8 +377,20 @@ const AiDiaryPage = () => {
           <EditStep
             selectedImages={selectedImages} editedDiary={editedDiary} setEditedDiary={setEditedDiary} weather={weather} setWeather={setWeather} mood={mood} setMood={setMood}
             locationName={locationName} setLocationName={setLocationName} locationCoords={locationCoords} selectedDate={selectedDate}
+            layoutStyle={layoutStyle} textAlign={textAlign} fontSize={fontSize} backgroundColor={backgroundColor}
+            onNext={() => setStep('style')}
+          />
+        )}
+        {step === 'style' && (
+          <StyleStep
+            selectedImages={selectedImages} editedDiary={editedDiary} weather={weather} mood={mood} locationName={locationName} locationCoords={locationCoords} selectedDate={selectedDate}
             layoutStyle={layoutStyle} setLayoutStyle={setLayoutStyle} textAlign={textAlign} setTextAlign={setTextAlign} fontSize={fontSize} setFontSize={setFontSize}
-            backgroundColor={backgroundColor} setBackgroundColor={setBackgroundColor} handleShareToFeed={handleShareToFeed} isSubmitting={isSubmitting}
+            backgroundColor={backgroundColor} setBackgroundColor={setBackgroundColor}
+            sizeOption={sizeOption} setSizeOption={setSizeOption}
+            themeStyle={themeStyle} setThemeStyle={setThemeStyle}
+            preset={preset} setPreset={setPreset}
+            handleShareToFeed={handleShareToFeed} isSubmitting={isSubmitting}
+            onBack={() => setStep('edit')}
           />
         )}
         {step === 'complete' && <CompleteStep onHome={handleReset} earnedAmount={earnedReward} onShare={handleSocialShare} />}

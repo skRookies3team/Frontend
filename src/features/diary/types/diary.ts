@@ -1,11 +1,17 @@
 // 일기 생성 단계
-export type DiaryStep = 'upload' | 'generating' | 'edit' | 'complete';
+export type DiaryStep = 'upload' | 'generating' | 'edit' | 'style' | 'complete';
 
 // 레이아웃 스타일
 export type LayoutStyle = 'grid' | 'masonry' | 'slide' | 'classic';
 
 // 텍스트 정렬
 export type TextAlign = 'left' | 'center' | 'right';
+
+// 이미지 크기 옵션
+export type SizeOption = 'small' | 'medium' | 'large';
+
+// 테마 스타일
+export type ThemeStyle = 'basic' | 'romantic' | 'modern';
 
 // 선택된 이미지 객체
 export interface SelectedImage {
@@ -27,6 +33,18 @@ export interface CreateDiaryResponse {
     message: string;
 }
 
+// [추가] 다이어리 스타일 요청 DTO
+export interface DiaryStyleRequest {
+    galleryType: string;   // grid, masonry, slider, classic
+    textAlignment: string; // left, center, right
+    fontSize: number;
+    sizeOption: string;    // small, medium, large
+    backgroundColor: string;
+    preset: string | null;
+    themeStyle: string;    // basic, romantic, modern
+    petId: number | null;
+}
+
 // [추가] 일기 생성 요청 DTO (프론트엔드에서 백엔드로 보낼 때 사용)
 export interface DiaryRequest {
     userId: number;
@@ -38,8 +56,8 @@ export interface DiaryRequest {
     mood: string | null;
     latitude?: number | null;
     longitude?: number | null;
-    // images는 별도 FormData로 처리되거나, 백엔드 로직에 따라 다름
     images?: DiaryImageDTO[];
+    // style?: DiaryStyleRequest; // 만약 스타일도 같이 보낸다면 추가
 }
 
 // Mock 데이터 상수
