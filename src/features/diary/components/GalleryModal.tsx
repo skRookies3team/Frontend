@@ -5,8 +5,8 @@ interface GalleryModalProps {
     showGallery: boolean;
     setShowGallery: (show: boolean) => void;
     selectedImages: any[];
-    handleSelectFromGallery: (imageUrl: string) => void;
-    archiveImages: string[];
+    handleSelectFromGallery: (image: { archiveId: number, url: string }) => void;
+    archiveImages: { archiveId: number, url: string }[];
 }
 
 const GalleryModal = ({ showGallery, setShowGallery, selectedImages, handleSelectFromGallery, archiveImages }: GalleryModalProps) => {
@@ -20,11 +20,11 @@ const GalleryModal = ({ showGallery, setShowGallery, selectedImages, handleSelec
                     <button onClick={() => setShowGallery(false)}><X className="text-gray-500" /></button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-6 grid grid-cols-3 gap-4">
-                    {archiveImages.map((img, idx) => {
-                        const isSelected = selectedImages.some((si: any) => si.imageUrl === img);
+                    {archiveImages.map((img: any, idx) => {
+                        const isSelected = selectedImages.some((si: any) => si.imageUrl === img.url);
                         return (
                             <div key={idx} onClick={() => handleSelectFromGallery(img)} className={`aspect-square rounded-xl overflow-hidden cursor-pointer relative ${isSelected ? 'ring-4 ring-pink-500' : ''}`}>
-                                <img src={img} className="w-full h-full object-cover" />
+                                <img src={img.url} className="w-full h-full object-cover" />
                                 {isSelected && <div className="absolute inset-0 bg-pink-500/20 flex items-center justify-center"><Check className="text-white" /></div>}
                             </div>
                         );

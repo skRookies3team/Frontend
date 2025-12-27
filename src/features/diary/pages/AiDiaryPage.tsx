@@ -56,8 +56,8 @@ const AiDiaryPage = () => {
   const [earnedReward, setEarnedReward] = useState<number | null>(null);
 
   // 보관함 ID를 관리하기 위한 상태 정의
-  const [selectedArchiveId] = useState(1);
-  const [archiveImages, setArchiveImages] = useState<string[]>([]);
+  // const [selectedArchiveId] = useState(1); // Removed hardcoded state
+  const [archiveImages, setArchiveImages] = useState<{ archiveId: number, url: string }[]>([]);
 
   // 보관함 이미지 불러오기
   useEffect(() => {
@@ -65,7 +65,11 @@ const AiDiaryPage = () => {
       getAllArchivesApi()
         .then((res) => {
           if (res && res.archives) {
-            setArchiveImages(res.archives.map((a: any) => a.url));
+            // Store full archive objects including ID
+            setArchiveImages(res.archives.map((a: any) => ({
+              archiveId: a.archiveId,
+              url: a.url
+            })));
           }
         })
         .catch(err => console.error("보관함 로드 실패:", err));
@@ -105,19 +109,24 @@ const AiDiaryPage = () => {
 
     const newPreviews = files.map(file => ({
       imageUrl: URL.createObjectURL(file),
-      source: ImageSource.GALLERY
+      source: ImageSource.GALLERY,
+      archiveId: null // Gallery upload has no archive ID yet
     }));
     setSelectedImages(prev => [...prev, ...newPreviews]);
 
     e.target.value = '';
   };
 
-  const handleSelectFromGallery = (imageUrl: string) => {
-    const isSelected = selectedImages.some(img => img.imageUrl === imageUrl);
+  const handleSelectFromGallery = (image: { archiveId: number, url: string }) => {
+    const isSelected = selectedImages.some(img => img.imageUrl === image.url);
     if (isSelected) {
-      setSelectedImages(prev => prev.filter(img => img.imageUrl !== imageUrl));
+      setSelectedImages(prev => prev.filter(img => img.imageUrl !== image.url));
     } else if (selectedImages.length < 10) {
-      setSelectedImages(prev => [...prev, { imageUrl, source: ImageSource.ARCHIVE }]);
+      setSelectedImages(prev => [...prev, {
+        imageUrl: image.url,
+        source: ImageSource.ARCHIVE,
+        archiveId: image.archiveId
+      }]);
     }
   };
 
@@ -198,10 +207,16 @@ const AiDiaryPage = () => {
       // 따라서, 파일 업로드 시에는 images 리스트를 빈 배열로 보내 '보관함 모드' 진입을 막고 '갤러리 모드(파일 업로드)'로 유도함.
       const shouldForceGalleryMode = imageFiles.length > 0;
 
+      // Find the first Archive image to use its ID as the photoArchiveId (for DB constraint)
+      const firstArchiveImage = selectedImages.find(img => img.source === ImageSource.ARCHIVE);
+      // If no archive image, use 1 (SYSTEM_DEFAULT) or any fallback to satisfy NOT NULL.
+      // If there IS an archive image, use its real ID.
+      const finalArchiveId = firstArchiveImage ? firstArchiveImage.archiveId : 1;
+
       const requestData = {
         userId: Number(user.id),
         petId: selectedPetId,
-        photoArchiveId: selectedArchiveId, // 항상 ID 전송 (DB Not Null)
+        photoArchiveId: finalArchiveId,
         content: "",
         visibility: "PRIVATE",
         isAiGen: true,
