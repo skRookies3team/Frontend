@@ -5,7 +5,7 @@ import {
     parseISO
 } from 'date-fns';
 // import { ko } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Sparkles, BookOpen, Dog, HelpCircle, X, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles, BookOpen, Dog, X, ArrowRight, Lightbulb } from 'lucide-react';
 
 import { useDiaryAuth } from "../hooks/useDiaryAuth";
 import { getDiariesByDate } from "../api/diary-api";
@@ -308,7 +308,7 @@ const DiaryCalendar = ({ selectedDate, onDateSelect, onRecapClick }: DiaryCalend
                     <Sparkles className="w-4 h-4 text-yellow-500" />
                 </div>
                 <span className="text-sm font-bold text-gray-700 font-['Jua'] group-hover:text-pink-500 transition-colors">
-                    100코인 받기
+                    펫 코인 받기
                 </span>
                 <span className="absolute -top-1 -right-1 flex h-3 w-3">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
@@ -321,51 +321,116 @@ const DiaryCalendar = ({ selectedDate, onDateSelect, onRecapClick }: DiaryCalend
             {/* Swipable content area could go here, but for now just grid */}
             {renderCells()}
 
-            {/* Info Modal Overlay */}
+            {/* Info Modal Overlay - AI Studio Dashboard */}
             {showInfoModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setShowInfoModal(false)}>
-                    <div className="bg-white rounded-[32px] w-full max-w-sm p-8 shadow-2xl relative animate-scale-up border border-pink-100" onClick={e => e.stopPropagation()}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowInfoModal(false)}>
+                    <div
+                        className="bg-[#FFF5F6] rounded-[40px] w-full max-w-5xl p-6 md:p-12 shadow-2xl relative animate-scale-up border-4 border-white overflow-hidden max-h-[90vh] overflow-y-auto"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Close Button */}
                         <button
                             onClick={() => setShowInfoModal(false)}
-                            className="absolute top-6 right-6 text-gray-300 hover:text-gray-500 transition-colors"
+                            className="absolute top-6 right-6 md:top-8 md:right-8 text-gray-300 hover:text-gray-500 transition-colors bg-white rounded-full p-2 shadow-sm hover:shadow-md z-10"
                         >
                             <X className="w-6 h-6" />
                         </button>
 
-                        <div className="flex flex-col items-center text-center">
-                            {/* Icon Box */}
-                            <div className="w-24 h-24 bg-gradient-to-br from-pink-400 to-rose-500 rounded-[28px] flex items-center justify-center mb-6 shadow-lg shadow-pink-200">
-                                <Sparkles className="w-12 h-12 text-white" />
+                        {/* Header Section */}
+                        <div className="text-center mb-8 md:mb-12 mt-4 md:mt-0">
+                            <div className="inline-flex items-center justify-center w-20 h-20 bg-[#FD4776] rounded-full text-white mb-6 shadow-lg shadow-pink-200 animate-bounce-slow">
+                                <Sparkles className="w-10 h-10" />
+                            </div>
+                            <h2 className="text-3xl md:text-4xl font-bold text-[#FD4776] mb-3 font-['Jua'] tracking-wide">AI 스튜디오</h2>
+                            <p className="text-gray-500 font-medium text-base md:text-lg">AI가 반려동물의 특별한 순간을 아름답게 기록해드려요</p>
+                        </div>
+
+                        {/* Cards Container */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mb-8 md:mb-12">
+                            {/* Left Card: AI Diary */}
+                            <div className="bg-white rounded-[32px] p-8 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border border-pink-50 flex flex-col items-start h-full relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-pink-50 rounded-bl-full -mr-16 -mt-16 opacity-50 group-hover:scale-110 transition-transform" />
+
+                                <div className="w-16 h-16 bg-gradient-to-br from-[#FF6B8B] to-[#FF8FAB] rounded-2xl flex items-center justify-center mb-6 shadow-md text-white z-10">
+                                    <Sparkles className="w-8 h-8" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-[#FD4776] mb-4 font-['Jua'] z-10">AI 다이어리</h3>
+                                <p className="text-gray-600 mb-6 leading-relaxed font-medium z-10">
+                                    오늘 하루 반려동물과 함께한 순간을 사진으로 업로드하면, AI가 감성적인 일기를 작성해드려요
+                                </p>
+                                <ul className="space-y-3 mb-8 w-full z-10">
+                                    <li className="flex items-center gap-3 text-gray-600 font-medium">
+                                        <div className="w-2 h-2 rounded-full bg-[#FD4776]" />
+                                        사진 1-10장 업로드
+                                    </li>
+                                    <li className="flex items-center gap-3 text-gray-600 font-medium">
+                                        <div className="w-2 h-2 rounded-full bg-[#FD4776]" />
+                                        AI가 자동으로 일기 작성
+                                    </li>
+                                    <li className="flex items-center gap-3 text-[#FD4776] font-bold">
+                                        <div className="w-2 h-2 rounded-full bg-[#FD4776]" />
+                                        100 펫코인 획득
+                                    </li>
+                                </ul>
+                                <div className="mt-auto w-full z-10">
+                                    <button
+                                        onClick={() => {
+                                            setShowInfoModal(false);
+                                            onDateSelect(format(new Date(), 'yyyy-MM-dd'));
+                                        }}
+                                        className="w-full bg-gradient-to-r from-[#FD4776] to-[#FF8FAB] text-white font-bold py-4 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 group/btn"
+                                    >
+                                        다이어리 작성하기 <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+                                    </button>
+                                </div>
                             </div>
 
-                            <h3 className="text-2xl font-bold text-pink-600 mb-3 font-['Jua']">AI 다이어리</h3>
+                            {/* Right Card: AI Recap */}
+                            <div className="bg-white rounded-[32px] p-8 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border border-purple-50 flex flex-col items-start h-full relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-bl-full -mr-16 -mt-16 opacity-50 group-hover:scale-110 transition-transform" />
 
-                            <p className="text-gray-600 mb-8 leading-relaxed break-keep font-medium text-sm">
-                                오늘 하루 반려동물과 함께한 순간을 사진으로 업로드하면, AI가 감성적인 일기를 작성해드려요
+                                <div className="w-16 h-16 bg-gradient-to-br from-[#AF52DE] to-[#D987F5] rounded-2xl flex items-center justify-center mb-6 shadow-md text-white z-10">
+                                    <BookOpen className="w-8 h-8" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-[#AF52DE] mb-4 font-['Jua'] z-10">AI 리캡</h3>
+                                <p className="text-gray-600 mb-6 leading-relaxed font-medium z-10">
+                                    1달마다 자동으로 생성되는 반려동물의 특별한 순간들을 모아 감동적인 리캡을 만들어드려요
+                                </p>
+                                <ul className="space-y-3 mb-8 w-full z-10">
+                                    <li className="flex items-center gap-3 text-gray-600 font-medium">
+                                        <div className="w-2 h-2 rounded-full bg-[#AF52DE]" />
+                                        1달마다 자동 생성
+                                    </li>
+                                    <li className="flex items-center gap-3 text-gray-600 font-medium">
+                                        <div className="w-2 h-2 rounded-full bg-[#AF52DE]" />
+                                        주요 순간 자동 선택
+                                    </li>
+                                    <li className="flex items-center gap-3 text-[#AF52DE] font-bold">
+                                        <div className="w-2 h-2 rounded-full bg-[#AF52DE]" />
+                                        500 펫코인 획득
+                                    </li>
+                                </ul>
+                                <div className="mt-auto w-full z-10">
+                                    <button
+                                        onClick={() => {
+                                            setShowInfoModal(false);
+                                            if (onRecapClick) onRecapClick();
+                                        }}
+                                        className="w-full bg-gradient-to-r from-[#AF52DE] to-[#D987F5] text-white font-bold py-4 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 group/btn"
+                                    >
+                                        리캡 보기 <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Bottom Tip Section */}
+                        <div className="bg-[#FFE4E8] rounded-2xl p-6 flex flex-col md:flex-row items-center justify-center gap-3 text-center md:text-left animate-pulse-slow">
+                            <Lightbulb className="w-6 h-6 text-[#FD4776] fill-current" />
+                            <p className="text-[#FD4776] font-bold text-lg font-['Jua']">Tip</p>
+                            <p className="text-gray-600 font-medium">
+                                AI가 생성한 콘텐츠는 언제든지 수정할 수 있어요. 여러분만의 특별한 이야기를 더해주세요!
                             </p>
-
-                            <div className="w-full space-y-3 mb-8 text-left pl-4">
-                                <div className="flex items-center gap-3 text-gray-600">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-pink-500" />
-                                    <span className="font-medium text-sm">사진 1-10장 업로드</span>
-                                </div>
-                                <div className="flex items-center gap-3 text-gray-600">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-pink-500" />
-                                    <span className="font-medium text-sm">AI가 자동으로 일기 작성</span>
-                                </div>
-                                <div className="flex items-center gap-3 text-gray-600">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-pink-500" />
-                                    <span className="font-medium text-sm">100 펫코인 획득</span>
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={() => setShowInfoModal(false)}
-                                className="w-full bg-[#FF6B8B] hover:bg-[#ff527a] text-white font-bold py-3.5 rounded-2xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 group"
-                            >
-                                <span>다이어리 작성하기</span>
-                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                            </button>
                         </div>
                     </div>
                 </div>
