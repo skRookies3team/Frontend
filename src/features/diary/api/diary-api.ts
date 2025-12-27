@@ -1,4 +1,5 @@
 import { SelectedImage, ImageType, CreateDiaryResponse } from '../types/diary';
+import httpClient from '@/shared/api/http-client';
 
 // Mock S3 업로드 시뮬레이션
 const mockS3Upload = (file: File): Promise<string> => {
@@ -147,4 +148,53 @@ export const getPetStyle = async (petId: number): Promise<any> => {
 
     if (!response.ok) throw new Error('펫 스타일 조회 실패');
     return await response.json();
+};
+// [NEW] 위치 이력 조회
+export const getLocationHistory = async (userId: number, date: string) => {
+    try {
+        const response = await httpClient.get<any>(`/locations/history`, {
+            params: { userId, date }
+        });
+        return response;
+    } catch (error) {
+        console.warn("[Service] 위치 조회 실패:", error);
+        return null;
+    }
+};
+
+// [NEW] 코인 적립 API
+export const earnCoin = async (userId: number, amount: number, type: 'WRITEDIARY' | 'WIRTEFEED') => {
+    try {
+        const response = await httpClient.post<any>(`/users/${userId}/coin/earn`, {
+            amount,
+            type
+        });
+        return response;
+    } catch (error) {
+        console.error("[Service] 코인 적립 실패:", error);
+        return null;
+    }
+};
+
+// [NEW] 소셜 피드 생성 API
+export const createSocialFeed = async (data: any) => {
+    try {
+        const response = await httpClient.post<any>(`/feeds`, data);
+        const feedId = response.feedId || response.id || response;
+        return feedId;
+    } catch (error) {
+        console.error("[Service] 소셜 피드 생성 실패:", error);
+        throw error;
+    }
+};
+
+// [modified] createAiDiary to use httpClient
+export const createAiDiaryApi = async (data: FormData): Promise<CreateDiaryResponse> => {
+    // axios handles FormData automatically if we pass it, letting the browser set the Content-Type header with usage of boundary.
+    // However, since httpClient has default 'application/json', we must override it. 
+    // Setting 'multipart/form-data' explicitly prompts axios/browser to handle it correctly (or we set to undefined).
+    const response = await httpClient.post<CreateDiaryResponse>('/diaries/ai', data, {
+        headers: { "Content-Type": "multipart/form-data" }
+    });
+    return response;
 };
