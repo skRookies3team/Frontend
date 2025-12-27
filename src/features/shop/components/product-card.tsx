@@ -10,10 +10,17 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 
 interface ProductCardProps {
-    product: Product & {
-        rating: number
-        reviews: number
-        isFavorite: boolean
+    product: {
+        id: string | number
+        name: string
+        price: number
+        mileagePrice?: number
+        image?: string
+        category?: string
+        description?: string
+        rating?: number
+        reviews?: number
+        isFavorite?: boolean
     }
 }
 
@@ -21,7 +28,17 @@ export function ProductCard({ product }: ProductCardProps) {
     const { addToCart } = useCart()
     const { toggleWishlist, isInWishlist } = useWishlist()
     const [isHovered, setIsHovered] = useState(false)
-    const isFavorite = isInWishlist(product.id)
+    const isFavorite = isInWishlist(String(product.id))
+
+    const productPayload: Product = {
+        id: String(product.id),
+        name: product.name,
+        price: product.price,
+        mileagePrice: product.mileagePrice ?? 0,
+        image: product.image ?? "/placeholder.svg",
+        category: product.category ?? "Uncategorized",
+        description: product.description
+    }
 
     return (
         <motion.div
@@ -48,14 +65,14 @@ export function ProductCard({ product }: ProductCardProps) {
                     <button
                         onClick={(e) => {
                             e.preventDefault()
-                            toggleWishlist(product)
+                            toggleWishlist(productPayload)
                         }}
                         className="absolute top-3 right-3 p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white text-pink-500 transition-all shadow-sm z-10"
                     >
                         <Heart className={`w-5 h-5 ${isFavorite ? 'fill-pink-500 text-pink-500' : 'text-gray-400'}`} />
                     </button>
 
-                    {product.mileagePrice > 0 && (
+                    {(product.mileagePrice ?? 0) > 0 && (
                         <Badge className="absolute top-3 left-3 bg-pink-500/90 backdrop-blur-sm text-white border-none">
                             {product.mileagePrice} P 적립
                         </Badge>
@@ -67,7 +84,7 @@ export function ProductCard({ product }: ProductCardProps) {
                             className="w-full bg-white/90 backdrop-blur-sm hover:bg-pink-500 text-pink-600 hover:text-white border-none shadow-lg transition-all duration-300"
                             onClick={(e) => {
                                 e.preventDefault()
-                                addToCart(product)
+                                addToCart(productPayload)
                             }}
                         >
                             <ShoppingCart className="w-4 h-4 mr-2" />
@@ -80,8 +97,8 @@ export function ProductCard({ product }: ProductCardProps) {
                 <div className="p-4">
                     <div className="flex items-center gap-1 mb-2">
                         <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm font-medium text-gray-700">{product.rating}</span>
-                        <span className="text-xs text-gray-400">({product.reviews})</span>
+                        <span className="text-sm font-medium text-gray-700">{product.rating ?? 0}</span>
+                        <span className="text-xs text-gray-400">({product.reviews ?? 0})</span>
                     </div>
 
                     <h3 className="font-bold text-gray-800 mb-1 line-clamp-1 group-hover:text-pink-600 transition-colors">

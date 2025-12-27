@@ -1,294 +1,440 @@
 import { useState } from "react"
-import { useParams, Link } from "react-router-dom"
+import { useParams, useNavigate, Link } from "react-router-dom"
 import { TabNavigation } from "@/shared/components/tab-navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
 import { Button } from "@/shared/ui/button"
 import { Card, CardContent } from "@/shared/ui/card"
-import { ArrowLeft, MoreHorizontal, Heart, MessageCircle, Grid, BookOpen } from "lucide-react"
+import { Input } from "@/shared/ui/input"
+import { 
+  MoreHorizontal, Heart, MessageCircle, Grid, BookOpen, 
+  Ban, AlertTriangle, Loader2, Home, Search, TrendingUp, PlusSquare, User, X
+} from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu"
-
-// Mock user data
-const MOCK_USERS: Record<
-  string,
-  {
-    id: string
-    name: string
-    username: string
-    avatar: string
-    bio: string
-    posts: number
-    followers: number
-    following: number
-    isFollowing: boolean
-    pets: Array<{ name: string; breed: string; avatar: string }>
-    userPosts: Array<{ id: string; image: string; likes: number; comments: number }>
-  }
-> = {
-  "1": {
-    id: "1",
-    name: "최유진",
-    username: "@yujin_choi",
-    avatar: "/diverse-woman-avatar.png",
-    bio: "🐕 골든 리트리버 맥스와 함께하는 일상 💕\n서울 강남구 | 반려동물 사진작가\n#멍스타그램 #반려견일상",
-    posts: 142,
-    followers: 1200,
-    following: 387,
-    isFollowing: false,
-    pets: [
-      { name: "맥스", breed: "골든 리트리버", avatar: "/golden-retriever.png" },
-      { name: "루시", breed: "포메라니안", avatar: "/pomeranian.png" },
-    ],
-    userPosts: [
-      { id: "1", image: "/golden-retriever-playing-park.jpg", likes: 89, comments: 12 },
-      { id: "2", image: "/dog-running-grass.jpg", likes: 124, comments: 18 },
-      { id: "3", image: "/pomeranian.jpg", likes: 67, comments: 9 },
-      { id: "4", image: "/corgi.jpg", likes: 95, comments: 14 },
-      { id: "5", image: "/dog-birthday-party.png", likes: 156, comments: 24 },
-      { id: "6", image: "/tabby-cat-sunbeam.png", likes: 78, comments: 11 },
-    ],
-  },
-  "2": {
-    id: "2",
-    name: "강민호",
-    username: "@minho_k",
-    avatar: "/man-avatar.png",
-    bio: "🐈 고양이 집사 | 서울 송파구\n일상 속 고양이들의 소소한 행복을 공유합니다",
-    posts: 89,
-    followers: 2500,
-    following: 512,
-    isFollowing: true,
-    pets: [{ name: "루나", breed: "코리안 숏헤어", avatar: "/tabby-cat-sunbeam.png" }],
-    userPosts: [
-      { id: "1", image: "/cat-in-box.jpg", likes: 234, comments: 45 },
-      { id: "2", image: "/tabby-cat-sunbeam.png", likes: 189, comments: 32 },
-      { id: "3", image: "/golden-retriever.png", likes: 145, comments: 28 },
-    ],
-  },
-}
+import { useAuth } from "@/features/auth/context/auth-context"
+import { feedApi } from "../api/feed-api"
+import { getUserApi } from "@/features/auth/api/auth-api" 
+import { FeedDto, SearchUserDto } from "../types/feed"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { PostDetailModal } from "../components/PostDetailModal"
+import { FollowListModal } from "../components/FollowListModal"
+import { FeedCreateModal } from "../components/FeedCreateModal"
+import { useUserSearch } from "../hooks/use-search-query"
 
 export default function UserPage() {
-  const params = useParams()
-  const userId = params.id as string
-  const user = MOCK_USERS[userId] || MOCK_USERS["1"]
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const { user: currentUser } = useAuth()
+  const queryClient = useQueryClient()
+  const currentUserId = currentUser ? Number(currentUser.id) : 0;
 
-  const [isFollowing, setIsFollowing] = useState(user.isFollowing)
-  const [followers, setFollowers] = useState(user.followers)
+  // --- State ---
   const [activeTab, setActiveTab] = useState<"posts" | "diary">("posts")
+  const [selectedPost, setSelectedPost] = useState<FeedDto | null>(null)
+  
+  // 사이드바 상태
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [sidebarSearchQuery, setSidebarSearchQuery] = useState("")
 
-  const handleFollow = () => {
-    if (isFollowing) {
-      setIsFollowing(false)
-      setFollowers(followers - 1)
-    } else {
-      setIsFollowing(true)
-      setFollowers(followers + 1)
+  // 모달 상태
+  const [showFollowers, setShowFollowers] = useState(false)
+  const [showFollowings, setShowFollowings] = useState(false)
+
+  // --- Data Fetching ---
+  const cleanId = id?.startsWith('@') ? id.slice(1) : id;
+
+  const { data: targetUser, isLoading: isUserLoading } = useQuery({
+    queryKey: ['searchUser', cleanId],
+    queryFn: async () => {
+      if (!cleanId) return null;
+      if (/^\d+$/.test(cleanId)) {
+        try {
+          const directUser = await getUserApi(Number(cleanId));
+          if (directUser) return { ...directUser, userId: Number(cleanId) };
+        } catch (e) { console.warn("Fallback to search"); }
+      }
+      const users = await feedApi.searchUsers(cleanId, currentUserId);
+      const exactMatch = users.find(u => u.social === cleanId || u.username === cleanId);
+      return exactMatch || users[0] || null;
+    },
+    enabled: !!cleanId,
+    retry: 1
+  });
+
+  const targetUserId = targetUser?.userId;
+
+  const { data: followStats } = useQuery({
+    queryKey: ['followStats', targetUserId],
+    queryFn: () => feedApi.getFollowStats(targetUserId!),
+    enabled: !!targetUserId
+  });
+
+  const { data: isFollowing, isLoading: isFollowCheckLoading } = useQuery({
+    queryKey: ['isFollowing', currentUserId, targetUserId],
+    queryFn: () => feedApi.checkFollow(currentUserId, targetUserId!),
+    enabled: !!currentUserId && !!targetUserId && currentUserId !== targetUserId
+  });
+
+  const { data: userFeeds, isLoading: isFeedsLoading } = useQuery({
+    queryKey: ['userFeeds', targetUserId],
+    queryFn: () => feedApi.getUserFeeds(targetUserId!, currentUserId),
+    enabled: !!targetUserId
+  });
+
+  const { data: followersList, isLoading: isFollowersLoading } = useQuery({
+    queryKey: ['followers', targetUserId],
+    queryFn: () => feedApi.getFollowers(targetUserId!),
+    enabled: !!targetUserId && showFollowers
+  });
+
+  const { data: followingsList, isLoading: isFollowingsLoading } = useQuery({
+    queryKey: ['followings', targetUserId],
+    queryFn: () => feedApi.getFollowings(targetUserId!),
+    enabled: !!targetUserId && showFollowings
+  });
+
+  const { data: searchResults, isLoading: isSearchLoading } = useUserSearch(sidebarSearchQuery);
+
+  // --- Mutations ---
+  const followMutation = useMutation({
+    mutationFn: () => feedApi.followUser(currentUserId, targetUserId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['isFollowing'] });
+      queryClient.invalidateQueries({ queryKey: ['followStats'] });
+      queryClient.invalidateQueries({ queryKey: ['followers'] });
+    }
+  });
+
+  const unfollowMutation = useMutation({
+    mutationFn: () => feedApi.unfollowUser(currentUserId, targetUserId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['isFollowing'] });
+      queryClient.invalidateQueries({ queryKey: ['followStats'] });
+      queryClient.invalidateQueries({ queryKey: ['followers'] });
+    }
+  });
+
+  // --- Handlers ---
+  const handleFollowToggle = () => {
+    if (!targetUserId) return;
+    if (isFollowing) unfollowMutation.mutate();
+    else followMutation.mutate();
+  };
+
+  const handleBlock = async () => {
+      if(confirm("이 사용자를 차단하시겠습니까?")) {
+          if (targetUserId) {
+            await feedApi.blockUser(currentUserId, targetUserId);
+            alert("차단되었습니다.");
+            navigate('/feed');
+          }
+      }
+  }
+
+  const handleReport = async () => {
+    if(confirm("이 사용자를 신고하시겠습니까?")) {
+        if (targetUserId) {
+            await feedApi.report(currentUserId, targetUserId, "USER", "부적절한 사용자");
+            alert("신고가 접수되었습니다.");
+        }
     }
   }
 
+  // --- Sidebar Config ---
+  const sidebarMenu = [
+    { id: "home", label: "홈", icon: Home, link: "/feed", action: () => setIsSearchOpen(false), isActive: false },
+    { id: "search", label: "검색", icon: Search, action: () => setIsSearchOpen(!isSearchOpen), isActive: isSearchOpen },
+    { id: "popular", label: "인기", icon: TrendingUp, link: "/feed", action: () => setIsSearchOpen(false), isActive: false },
+    { id: "create", label: "만들기", icon: PlusSquare, action: () => setIsCreateOpen(true), isActive: false },
+    { id: "profile", label: "프로필", icon: User, isProfile: true, link: `/user/${currentUserId}`, isActive: Number(targetUserId) === currentUserId },
+  ];
+
+  if (isUserLoading) return <div className="flex justify-center items-center min-h-screen"><Loader2 className="h-8 w-8 animate-spin text-[#FF69B4]" /></div>;
+  if (!targetUser) return <div className="flex justify-center items-center min-h-screen text-gray-500">사용자를 찾을 수 없습니다.</div>;
+
+  const posts = userFeeds?.content || [];
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <Link to="/feed">
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <h1 className="flex-1 text-center text-lg font-bold text-foreground">{user.username}</h1>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <MoreHorizontal className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="rounded-xl">
-              <DropdownMenuItem className="text-destructive">차단하기</DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive">신고하기</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+    <div className="flex w-full min-h-screen bg-[#FDFBFD] text-slate-900 font-sans selection:bg-[#FF69B4] selection:text-white pt-10">
+      
+      {/* [1. 왼쪽 사이드바 - 아이콘형 고정 (변경 없음)] */}
+      <aside className="hidden md:block fixed left-4 top-20 bottom-4 z-50">
+        <div className="relative h-full flex w-[80px]">
+          
+          {/* 메뉴 바 */}
+          <div className="w-full h-full bg-white rounded-[2.5rem] shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-gray-100 overflow-y-auto custom-scrollbar pt-4 pb-6 relative z-30 flex flex-col items-center">
+            <nav className="flex-1 flex flex-col gap-4 w-full px-3"> 
+            {sidebarMenu.map((item) => {
+                return (
+                <div key={item.id} className="w-full flex justify-center">
+                    {item.link ? (
+                        <Link to={item.link} onClick={item.action} className={`flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-200 group hover:bg-[#FFF0F5] hover:text-[#FF69B4] ${item.isActive ? "bg-[#FF69B4] text-white shadow-md shadow-[#FF69B4]/30" : "text-gray-600"}`}>
+                            {item.isProfile ? (
+                                <Avatar className={`h-7 w-7 transition-transform group-hover:scale-105 ${item.isActive ? "ring-2 ring-white" : ""}`}>
+                                    <AvatarImage src={currentUser?.avatar || "/placeholder-user.jpg"} />
+                                    <AvatarFallback className="text-[10px] bg-white text-[#FF69B4] font-bold">Me</AvatarFallback>
+                                </Avatar>
+                            ) : ( 
+                                <item.icon className={`h-6 w-6 transition-transform group-hover:scale-110 ${item.isActive ? "stroke-[2.5px]" : "stroke-[2px]"}`} /> 
+                            )}
+                        </Link>
+                    ) : (
+                        <button onClick={item.action} className={`flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-200 group hover:bg-[#FFF0F5] hover:text-[#FF69B4] ${item.isActive ? "bg-[#FF69B4] text-white shadow-md shadow-[#FF69B4]/30" : "text-gray-600"}`}>
+                            <item.icon className={`h-6 w-6 transition-transform group-hover:scale-110 ${item.isActive ? "stroke-[2.5px]" : "stroke-[2px]"}`} />
+                        </button>
+                    )}
+                </div>
+            )})}
+            </nav>
+          </div>
 
-      <main className="mx-auto max-w-5xl pb-20 md:pb-8">
-        <div className="p-4 md:p-6">
-          {/* Profile Header */}
-          <div className="mb-6">
-            <div className="mb-6 flex items-start gap-4 md:gap-8">
-              {/* Avatar */}
-              <Avatar className="h-20 w-20 border-4 border-border md:h-32 md:w-32">
-                <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
-                <AvatarFallback className="bg-gradient-to-br from-pink-400 to-rose-400 text-2xl text-white">
-                  {user.name[0]}
-                </AvatarFallback>
-              </Avatar>
-
-              {/* Stats - Desktop */}
-              <div className="hidden flex-1 md:block">
-                <div className="mb-4 flex items-center gap-4">
-                  <h2 className="text-2xl font-bold text-foreground">{user.name}</h2>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleFollow}
-                      variant={isFollowing ? "outline" : "default"}
-                      className={
-                        isFollowing
-                          ? "rounded-full"
-                          : "rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white hover:opacity-90"
-                      }
-                    >
-                      {isFollowing ? "팔로잉" : "팔로우"}
-                    </Button>
-                    <Link to="/messages">
-                      <Button variant="outline" className="rounded-full bg-transparent">
-                        메시지
-                      </Button>
-                    </Link>
+          {/* 검색 패널 */}
+          <div className={`absolute top-0 left-[90px] h-full bg-white z-20 rounded-[2.5rem] shadow-xl transition-all duration-300 ease-in-out overflow-hidden border border-[#FF69B4]/10 ${isSearchOpen ? "w-[300px] opacity-100 translate-x-0" : "w-0 opacity-0 -translate-x-4 pointer-events-none"}`}>
+              <div className="p-5 h-full flex flex-col w-[300px]">
+                  <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-xl font-black text-[#FF69B4] tracking-tight">검색</h2>
+                      <button onClick={() => setIsSearchOpen(false)} className="p-1.5 hover:bg-gray-100 rounded-full"><X className="h-5 w-5 text-gray-400" /></button>
                   </div>
-                </div>
-
-                <div className="mb-4 flex gap-8">
-                  <div>
-                    <span className="text-lg font-bold text-foreground">{user.posts}</span>
-                    <span className="ml-1 text-sm text-muted-foreground">게시물</span>
+                  <div className="relative mb-4">
+                      <Input placeholder="소셜 아이디 또는 이름" className="bg-[#FFF0F5] border-none h-11 pl-4 pr-10 rounded-2xl text-sm transition-all focus-visible:ring-2 focus-visible:ring-[#FF69B4]" value={sidebarSearchQuery} onChange={(e) => setSidebarSearchQuery(e.target.value)} />
+                      <Search className="absolute right-3.5 top-3 h-5 w-5 text-[#FF69B4]/50" />
                   </div>
-                  <button className="transition-colors hover:text-foreground">
-                    <span className="text-lg font-bold text-foreground">{followers.toLocaleString()}</span>
-                    <span className="ml-1 text-sm text-muted-foreground">팔로워</span>
-                  </button>
-                  <button className="transition-colors hover:text-foreground">
-                    <span className="text-lg font-bold text-foreground">{user.following}</span>
-                    <span className="ml-1 text-sm text-muted-foreground">팔로잉</span>
-                  </button>
-                </div>
-
-                <p className="whitespace-pre-line text-sm text-foreground">{user.bio}</p>
-              </div>
-            </div>
-
-            {/* Stats - Mobile */}
-            <div className="mb-4 md:hidden">
-              <h2 className="mb-2 text-xl font-bold text-foreground">{user.name}</h2>
-              <p className="mb-4 whitespace-pre-line text-sm text-foreground">{user.bio}</p>
-
-              <div className="mb-4 flex justify-around border-y border-border py-3">
-                <div className="text-center">
-                  <p className="text-lg font-bold text-foreground">{user.posts}</p>
-                  <p className="text-xs text-muted-foreground">게시물</p>
-                </div>
-                <button className="text-center transition-colors hover:text-foreground">
-                  <p className="text-lg font-bold text-foreground">{followers.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">팔로워</p>
-                </button>
-                <button className="text-center transition-colors hover:text-foreground">
-                  <p className="text-lg font-bold text-foreground">{user.following}</p>
-                  <p className="text-xs text-muted-foreground">팔로잉</p>
-                </button>
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleFollow}
-                  variant={isFollowing ? "outline" : "default"}
-                  className={
-                    isFollowing
-                      ? "flex-1 rounded-full"
-                      : "flex-1 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white hover:opacity-90"
-                  }
-                >
-                  {isFollowing ? "팔로잉" : "팔로우"}
-                </Button>
-                <Link to="/messages" className="flex-1">
-                  <Button variant="outline" className="w-full rounded-full bg-transparent">
-                    메시지
-                  </Button>
-                </Link>
-              </div>
-            </div>
-
-            {/* Pets */}
-            {user.pets.length > 0 && (
-              <Card className="border-0 shadow-md">
-                <CardContent className="p-4">
-                  <p className="mb-3 text-sm font-semibold text-foreground">반려동물</p>
-                  <div className="flex gap-4">
-                    {user.pets.map((pet, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <Avatar className="h-10 w-10 border-2 border-pink-400">
-                          <AvatarImage src={pet.avatar || "/placeholder.svg"} alt={pet.name} />
-                          <AvatarFallback>{pet.name[0]}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-semibold text-foreground">{pet.name}</p>
-                          <p className="text-xs text-muted-foreground">{pet.breed}</p>
-                        </div>
+                  <div className="flex-1 overflow-y-auto custom-scrollbar px-1">
+                      <div className="space-y-2">
+                          {isSearchLoading ? <div className="flex justify-center py-10"><Loader2 className="animate-spin h-6 w-6 text-[#FF69B4]"/></div> : 
+                           searchResults && searchResults.length > 0 ? searchResults.map((u: SearchUserDto) => (
+                                  <Link key={u.userId} to={`/user/${u.userId}`} className="flex items-center gap-3 p-2.5 hover:bg-[#FFF0F5] rounded-[16px] transition-all cursor-pointer group" onClick={() => setIsSearchOpen(false)}>
+                                      <Avatar className="h-10 w-10 border border-white shadow-sm">
+                                          <AvatarImage src={u.profileImage || "/placeholder-user.jpg"} />
+                                          <AvatarFallback className="bg-[#FFF0F5] text-[#FF69B4] font-bold text-xs">{u.username?.[0] || "U"}</AvatarFallback>
+                                      </Avatar>
+                                      <div className="flex flex-col overflow-hidden">
+                                          <span className="font-bold text-sm text-gray-900 truncate">{u.username}</span>
+                                          <span className="text-[#FF69B4] text-[11px] font-medium truncate">@{u.social}</span>
+                                      </div>
+                                  </Link>
+                              )) : <div className="py-10 text-center text-sm text-gray-400">결과가 없어요 🥲</div>}
                       </div>
-                    ))}
                   </div>
-                </CardContent>
-              </Card>
+              </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* [2. 중앙 메인 컨텐츠] */}
+      {/* w-full, justify-center: 화면 가로 중앙 정렬 유지 */}
+      <main className="flex-1 w-full flex justify-center px-4 pb-20 pt-8" onClick={() => isSearchOpen && setIsSearchOpen(false)}>
+        <div className="w-full max-w-[935px]"> 
+          
+          <div className="p-4 md:p-6 bg-white rounded-[2.5rem] shadow-sm border border-gray-100 min-h-[80vh]">
+            
+            {/* [프로필 헤더] */}
+            {/* md:pl-[60px]: 이 부분만 오른쪽으로 60px 밀어서 검색창과 겹침 방지 */}
+            <div className="mb-6 md:pl-[90px] transition-all duration-300">
+              <div className="mb-6 flex items-start gap-4 md:gap-8">
+                <Avatar className="h-20 w-20 border-4 border-border md:h-32 md:w-32">
+                  <AvatarImage src={targetUser.profileImage || "/placeholder-user.jpg"} alt={targetUser.username} className="object-cover" />
+                  <AvatarFallback className="bg-gradient-to-br from-pink-400 to-rose-400 text-2xl text-white">
+                    {targetUser.username[0]}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="hidden flex-1 md:block">
+                  <div className="mb-4 flex items-center gap-4">
+                    <h2 className="text-2xl font-bold text-foreground">{targetUser.username}</h2>
+                    <div className="flex gap-2">
+                        {currentUserId !== targetUserId ? (
+                            <>
+                                <Button
+                                    onClick={handleFollowToggle}
+                                    variant={isFollowing ? "outline" : "default"}
+                                    disabled={isFollowCheckLoading || followMutation.isPending || unfollowMutation.isPending}
+                                    className={`rounded-full px-6 transition-all ${
+                                        isFollowing 
+                                        ? "border-gray-200 text-gray-700 bg-white hover:bg-gray-50" 
+                                        : "bg-[#FF69B4] hover:bg-[#FF1493] text-white shadow-md shadow-pink-200 border-none"
+                                    }`}
+                                >
+                                    {isFollowing ? "팔로잉" : "팔로우"}
+                                </Button>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100"><MoreHorizontal className="h-5 w-5 text-gray-500" /></Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="rounded-xl">
+                                        <DropdownMenuItem onClick={handleBlock} className="text-destructive cursor-pointer gap-2"><Ban className="w-4 h-4"/>차단하기</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={handleReport} className="text-destructive cursor-pointer gap-2"><AlertTriangle className="w-4 h-4"/>신고하기</DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </>
+                        ) : (
+                            <Button variant="outline" className="rounded-full" onClick={() => navigate('/profile')}>프로필 편집</Button>
+                        )}
+                    </div>
+                  </div>
+
+                  <div className="mb-4 flex gap-8">
+                    <div>
+                      <span className="text-lg font-bold text-foreground">{posts.length}</span>
+                      <span className="ml-1 text-sm text-muted-foreground">게시물</span>
+                    </div>
+                    <button onClick={() => setShowFollowers(true)} className="transition-colors hover:text-foreground">
+                      <span className="text-lg font-bold text-foreground">{followStats?.followerCount || 0}</span>
+                      <span className="ml-1 text-sm text-muted-foreground">팔로워</span>
+                    </button>
+                    <button onClick={() => setShowFollowings(true)} className="transition-colors hover:text-foreground">
+                      <span className="text-lg font-bold text-foreground">{followStats?.followingCount || 0}</span>
+                      <span className="ml-1 text-sm text-muted-foreground">팔로잉</span>
+                    </button>
+                  </div>
+
+                  <p className="whitespace-pre-line text-sm text-foreground">{targetUser.statusMessage}</p>
+                </div>
+              </div>
+
+              <div className="mb-4 md:hidden">
+                <h2 className="mb-2 text-xl font-bold text-foreground">{targetUser.username}</h2>
+                <p className="mb-4 whitespace-pre-line text-sm text-foreground">{targetUser.statusMessage}</p>
+
+                <div className="mb-4 flex justify-around border-y border-border py-3">
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-foreground">{posts.length}</p>
+                    <p className="text-xs text-muted-foreground">게시물</p>
+                  </div>
+                  <button onClick={() => setShowFollowers(true)} className="text-center transition-colors hover:text-foreground">
+                    <p className="text-lg font-bold text-foreground">{followStats?.followerCount || 0}</p>
+                    <p className="text-xs text-muted-foreground">팔로워</p>
+                  </button>
+                  <button onClick={() => setShowFollowings(true)} className="text-center transition-colors hover:text-foreground">
+                    <p className="text-lg font-bold text-foreground">{followStats?.followingCount || 0}</p>
+                    <p className="text-xs text-muted-foreground">팔로잉</p>
+                  </button>
+                </div>
+
+                <div className="flex gap-2">
+                    {currentUserId !== targetUserId ? (
+                        <>
+                            <Button 
+                                onClick={handleFollowToggle} 
+                                variant={isFollowing ? "outline" : "default"} 
+                                disabled={isFollowCheckLoading}
+                                className={`flex-1 rounded-full ${isFollowing ? "" : "bg-[#FF69B4] hover:bg-[#FF1493] text-white border-none"}`}
+                            >
+                                {isFollowing ? "팔로잉" : "팔로우"}
+                            </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100"><MoreHorizontal className="h-5 w-5 text-gray-500" /></Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="rounded-xl">
+                                    <DropdownMenuItem onClick={handleBlock} className="text-destructive cursor-pointer gap-2"><Ban className="w-4 h-4"/>차단하기</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={handleReport} className="text-destructive cursor-pointer gap-2"><AlertTriangle className="w-4 h-4"/>신고하기</DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </>
+                    ) : (
+                        <Button variant="outline" className="flex-1 rounded-full" onClick={() => navigate('/profile')}>프로필 편집</Button>
+                    )}
+                </div>
+              </div>
+
+              {targetUser.pets && targetUser.pets.length > 0 && (
+                <Card className="border-0 shadow-md mt-6 md:mx-6">
+                  <CardContent className="p-4">
+                    <p className="mb-3 text-sm font-semibold text-foreground">반려동물</p>
+                    <div className="flex gap-4 overflow-x-auto pb-2">
+                      {targetUser.pets.map((pet: any) => (
+                        <div key={pet.petId} className="flex items-center gap-2 min-w-fit">
+                          <Avatar className="h-10 w-10 border-2 border-pink-400">
+                            <AvatarImage src={pet.profileImage || "/placeholder.svg"} alt={pet.petName} />
+                            <AvatarFallback>{pet.petName[0]}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">{pet.petName}</p>
+                            <p className="text-xs text-muted-foreground">{pet.breed}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* [탭 & 그리드] */}
+            {/* 여기는 여백 추가 없음 (중앙 정렬 유지) */}
+            <div className="mb-4 border-t border-border">
+              <div className="flex">
+                <button
+                  onClick={() => setActiveTab("posts")}
+                  className={`flex flex-1 items-center justify-center gap-2 border-t-2 py-3 transition-colors ${activeTab === "posts"
+                    ? "border-foreground text-foreground"
+                    : "border-transparent text-muted-foreground"
+                    }`}
+                >
+                  <Grid className="h-5 w-5" />
+                  <span className="text-sm font-semibold">게시물</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("diary")}
+                  className={`flex flex-1 items-center justify-center gap-2 border-t-2 py-3 transition-colors ${activeTab === "diary"
+                    ? "border-foreground text-foreground"
+                    : "border-transparent text-muted-foreground"
+                    }`}
+                >
+                  <BookOpen className="h-5 w-5" />
+                  <span className="text-sm font-semibold">AI 다이어리 보관함</span>
+                </button>
+              </div>
+            </div>
+
+            {activeTab === "posts" && (
+                isFeedsLoading ? (
+                    <div className="flex justify-center py-20"><Loader2 className="animate-spin text-gray-300" /></div>
+                ) : posts.length > 0 ? (
+                    <div className="grid grid-cols-3 gap-1 md:gap-3">
+                        {posts.map((post) => (
+                        <div key={post.feedId} className="group relative aspect-square overflow-hidden rounded-lg cursor-pointer" onClick={() => setSelectedPost(post)}>
+                            {post.imageUrls && post.imageUrls.length > 0 ? (
+                                <img src={post.imageUrls[0]} alt="Post" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                            ) : (
+                                <div className="h-full w-full flex items-center justify-center bg-gray-100 text-gray-400 text-xs p-2 text-center">{post.content.slice(0, 20)}</div>
+                            )}
+                            <div className="absolute inset-0 flex items-center justify-center gap-4 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                                <div className="flex items-center gap-1 text-white">
+                                    <Heart className="h-5 w-5 fill-white" />
+                                    <span className="font-semibold">{post.likeCount}</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-white">
+                                    <MessageCircle className="h-5 w-5 fill-white" />
+                                    <span className="font-semibold">{post.commentCount}</span>
+                                </div>
+                            </div>
+                        </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="py-20 text-center text-gray-500">게시물이 없습니다.</div>
+                )
+            )}
+
+            {activeTab === "diary" && (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <BookOpen className="mb-4 h-16 w-16 text-muted-foreground" />
+                <h3 className="mb-2 text-lg font-semibold text-foreground">AI 다이어리는 본인만 볼 수 있어요</h3>
+                <p className="text-sm text-muted-foreground">{targetUser.username}님의 AI 다이어리는 비공개로 설정되어 있습니다</p>
+              </div>
             )}
           </div>
-
-          {/* Tabs */}
-          <div className="mb-4 border-t border-border">
-            <div className="flex">
-              <button
-                onClick={() => setActiveTab("posts")}
-                className={`flex flex-1 items-center justify-center gap-2 border-t-2 py-3 transition-colors ${activeTab === "posts"
-                  ? "border-foreground text-foreground"
-                  : "border-transparent text-muted-foreground"
-                  }`}
-              >
-                <Grid className="h-5 w-5" />
-                <span className="text-sm font-semibold">게시물</span>
-              </button>
-              <button
-                onClick={() => setActiveTab("diary")}
-                className={`flex flex-1 items-center justify-center gap-2 border-t-2 py-3 transition-colors ${activeTab === "diary"
-                  ? "border-foreground text-foreground"
-                  : "border-transparent text-muted-foreground"
-                  }`}
-              >
-                <BookOpen className="h-5 w-5" />
-                <span className="text-sm font-semibold">AI 다이어리 보관함</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Posts Grid */}
-          {activeTab === "posts" && (
-            <div className="grid grid-cols-3 gap-1 md:gap-3">
-              {user.userPosts.map((post) => (
-                <div key={post.id} className="group relative aspect-square overflow-hidden rounded-lg">
-                  <img src={post.image || "/placeholder.svg"} alt="Post" className="h-full w-full object-cover" />
-                  <div className="absolute inset-0 flex items-center justify-center gap-4 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                    <div className="flex items-center gap-1 text-white">
-                      <Heart className="h-5 w-5 fill-white" />
-                      <span className="font-semibold">{post.likes}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-white">
-                      <MessageCircle className="h-5 w-5 fill-white" />
-                      <span className="font-semibold">{post.comments}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* AI 다이어리 보관함 탭 내용 */}
-          {activeTab === "diary" && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <BookOpen className="mb-4 h-16 w-16 text-muted-foreground" />
-              <h3 className="mb-2 text-lg font-semibold text-foreground">AI 다이어리는 본인만 볼 수 있어요</h3>
-              <p className="text-sm text-muted-foreground">{user.name}님의 AI 다이어리는 비공개로 설정되어 있습니다</p>
-            </div>
-          )}
         </div>
       </main>
 
+      {/* Modals */}
       <TabNavigation />
+      {selectedPost && <PostDetailModal post={selectedPost} isOpen={!!selectedPost} onClose={() => setSelectedPost(null)} />}
+      <FeedCreateModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} />
+      <FollowListModal isOpen={showFollowers} onClose={() => setShowFollowers(false)} title="팔로워" users={followersList} isLoading={isFollowersLoading} />
+      <FollowListModal isOpen={showFollowings} onClose={() => setShowFollowings(false)} title="팔로잉" users={followingsList} isLoading={isFollowingsLoading} />
     </div>
   )
 }

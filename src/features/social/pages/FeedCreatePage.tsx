@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/shared/ui/card"
 import { X, ImageIcon, ChevronLeft, Loader2 } from "lucide-react"
 import { useAuth } from "@/features/auth/context/auth-context"
 import { feedApi } from "../api/feed-api"
+import { imageApi } from "../api/image-api" // [추가] 이미지 API 임포트
 
 export default function FeedCreatePage() {
     const navigate = useNavigate()
@@ -27,10 +28,28 @@ export default function FeedCreatePage() {
         if (!user || !content.trim()) return;
         setIsSubmitting(true);
         try {
+            let uploadedImageUrl = "";
+
+            // 1. 이미지가 있다면 먼저 업로드 (User Service)
+            if (selectedImage) {
+                try {
+                    uploadedImageUrl = await imageApi.uploadImage(selectedImage);
+                } catch (imgError) {
+                    console.error("Image upload failed:", imgError);
+                    alert("이미지 업로드에 실패했습니다. 다시 시도해주세요.");
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
+
+            // 2. 피드 작성 요청 (Social Service) - JSON 전송
             await feedApi.createFeed({
                 userId: Number(user.id),
                 content: content,
-            }, selectedImage);
+                imageUrls: uploadedImageUrl ? [uploadedImageUrl] : [], // URL이 있으면 담아서 보냄
+                petId: 1,
+            });
+
             navigate("/feed");
         } catch (error) {
             console.error("Failed to create feed:", error);

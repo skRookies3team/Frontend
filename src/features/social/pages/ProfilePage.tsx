@@ -31,69 +31,46 @@ import { useAuth } from "@/features/auth/context/auth-context"
 import { AI_DIARIES } from "@/features/healthcare/data/pet-data"
 import { RECAPS, Recap } from "@/features/diary/data/recap-data"
 import { RecapModal } from "@/features/diary/components/recap-modal"
-import { Link, useNavigate, Outlet } from "react-router-dom"
+import { Link, useNavigate, Outlet, useLocation } from "react-router-dom"
 import { useState, useRef, type ChangeEvent, useEffect } from "react"
+import { getUserApi, updateProfileApi, getAllArchivesApi, type GetUserDto } from "@/features/auth/api/auth-api"
 
-
-
-const ALL_PHOTOS = [
-  {
-    id: "1",
-    url: "/golden-retriever-playing-park.jpg",
-    category: "산책",
-    date: "2024.01.15",
-    likes: 124,
-    comments: 18,
-  },
-  {
-    id: "2",
-    url: "/dog-running-grass.jpg",
-    category: "놀이",
-    date: "2024.01.14",
-    likes: 98,
-    comments: 12,
-  },
-  {
-    id: "3",
-    url: "/cat-in-box.jpg",
-    category: "일상",
-    date: "2024.01.13",
-    likes: 145,
-    comments: 24,
-  },
-  {
-    id: "4",
-    url: "/tabby-cat-sunbeam.png",
-    category: "휴식",
-    date: "2024.01.12",
-    likes: 167,
-    comments: 31,
-  },
-  {
-    id: "5",
-    url: "/corgi.jpg",
-    category: "훈련",
-    date: "2024.01.11",
-    likes: 89,
-    comments: 15,
-  },
-  {
-    id: "6",
-    url: "/golden-retriever.png",
-    category: "식사",
-    date: "2024.01.10",
-    likes: 112,
-    comments: 19,
-  },
-]
 
 
 
 export default function ProfilePage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user, logout, updateUser, addPet, updatePet, deletePet } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null)
+
+  // API state
+  const [apiUserData, setApiUserData] = useState<GetUserDto | null>(null)
+  // const [isLoadingApi, setIsLoadingApi] = useState(false)
+
+  // Fetch user data from API
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        // setIsLoadingApi(true)
+        const storedUser = localStorage.getItem('petlog_user')
+        if (storedUser) {
+          const userData = JSON.parse(storedUser)
+          const userId = parseInt(userData.id)
+          if (userId) {
+            const response = await getUserApi(userId)
+            setApiUserData(response)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch user data:', err)
+      } finally {
+        // setIsLoadingApi(false)
+      }
+    }
+    fetchUserData()
+  }, [])
 
   useEffect(() => {
     if (selectedPhoto) {
@@ -101,7 +78,39 @@ export default function ProfilePage() {
     }
   }, [selectedPhoto])
 
-  const [selectedCategory] = useState("전체")
+  const [photos, setPhotos] = useState<any[]>([])
+
+  const fetchArchives = async () => {
+    try {
+      const response = await getAllArchivesApi()
+      const mappedPhotos = response.archives.map((archive) => ({
+        id: archive.archiveId.toString(),
+        url: archive.url,
+        category: "일상", // Default as API doesn't return category yet
+        date: archive.uploadTime?.split('T')[0]?.replace(/-/g, '.') || new Date().toISOString().split('T')[0].replace(/-/g, '.'),
+        likes: 0,
+        comments: 0
+      }))
+      setPhotos(mappedPhotos)
+    } catch (error) {
+      console.error("Failed to fetch archives:", error)
+    }
+  }
+
+  useEffect(() => {
+    fetchArchives()
+  }, [])
+
+  // Re-fetch when returning from upload page (optional if we just rely on mount, but good for UX)
+  useEffect(() => {
+    if (location.state?.refresh) {
+      fetchArchives()
+      // Clear state
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [location.state, navigate, location.pathname])
+
+
   const [selectedRecap, setSelectedRecap] = useState<Recap | null>(null)
 
   const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -109,10 +118,19 @@ export default function ProfilePage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [dialogDate, setDialogDate] = useState<string>("")
 
-  // Pet Management State
-  // Pet Management State
-  // const [pets, setPets] = useState<Pet[]>(MY_PETS) // Removed local state
-  const pets = user?.pets || []
+  // Pet Management State - use API data if available
+  const pets = apiUserData?.pets.map(pet => ({
+    id: pet.petId.toString(),
+    name: pet.petName,
+    species: pet.species === 'DOG' ? '강아지' : '고양이',
+    breed: pet.breed,
+    age: pet.age,
+    photo: pet.profileImage || '/placeholder-pet.jpg',
+    gender: pet.genderType === 'MALE' ? '남아' : '여아',
+    neutered: pet.is_neutered,
+    birthday: pet.birth,
+    isMemorial: false, // Default to false for API pets
+  })) || user?.pets || []
   const [showAddPetDialog, setShowAddPetDialog] = useState(false)
   const [showAddPetConfirmDialog, setShowAddPetConfirmDialog] = useState(false)
   const [showManagePetsDialog, setShowManagePetsDialog] = useState(false)
@@ -122,26 +140,46 @@ export default function ProfilePage() {
   const [showEditProfileDialog, setShowEditProfileDialog] = useState(false)
   const [editName, setEditName] = useState("")
   const [editUsername, setEditUsername] = useState("")
-  const [editBio, setEditBio] = useState("")
   const [editAvatar, setEditAvatar] = useState<string | null>(null)
+
+  const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null)
 
   // Initialize edit state when dialog opens
   const handleOpenEditProfile = () => {
-    setEditName(user?.name || "")
-    setEditUsername(user?.username || "")
-    setEditBio(user?.bio || "")
-    setEditAvatar(user?.avatar || null)
+    setEditName(apiUserData?.username || user?.name || "")
+    setEditUsername(apiUserData?.social || user?.username || "")
+    // Bio removed
+    setEditAvatar(apiUserData?.profileImage || user?.avatar || null)
+    setSelectedPhotoFile(null)
     setShowEditProfileDialog(true)
   }
 
-  const handleUpdateProfile = () => {
-    updateUser({
-      name: editName,
-      username: editUsername,
-      bio: editBio,
-      ...(editAvatar && { avatar: editAvatar })
-    })
-    setShowEditProfileDialog(false)
+  const handleUpdateProfile = async () => {
+    try {
+      if (!user) return
+
+      const userId = parseInt(user.id)
+      await updateProfileApi(
+        {
+          username: editName,
+          social: editUsername
+        },
+        selectedPhotoFile
+      )
+
+      // Refresh user data
+      const response = await getUserApi(userId)
+      setApiUserData(response)
+      updateUser({
+        name: response.username,
+        username: response.social,
+        avatar: response.profileImage
+      })
+
+      setShowEditProfileDialog(false)
+    } catch (error) {
+      console.error("Failed to update profile", error)
+    }
   }
 
   // New Pet Form State
@@ -153,6 +191,7 @@ export default function ProfilePage() {
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      setSelectedPhotoFile(file)
       const reader = new FileReader()
       reader.onloadend = () => {
         setEditAvatar(reader.result as string)
@@ -193,7 +232,7 @@ export default function ProfilePage() {
           photos: 0
         }
       }
-      addPet(newPet)
+      addPet(newPet, null)
     }
 
     setShowAddPetDialog(false)
@@ -216,8 +255,7 @@ export default function ProfilePage() {
     deletePet(id)
   }
 
-  const filteredPhotos =
-    selectedCategory === "전체" ? ALL_PHOTOS : ALL_PHOTOS.filter((photo) => photo.category === selectedCategory)
+
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear()
@@ -268,8 +306,8 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center gap-6 md:flex-row md:items-start">
                 <div className="relative">
                   <Avatar className="h-24 w-24 border-4 border-border md:h-32 md:w-32">
-                    <AvatarImage src={user?.avatar || "/placeholder-user.jpg"} alt={user?.name || "User"} />
-                    <AvatarFallback>{user?.name?.[0] || "U"}</AvatarFallback>
+                    <AvatarImage src={apiUserData?.profileImage || user?.avatar || "/placeholder-user.jpg"} alt={apiUserData?.username || user?.name || "User"} />
+                    <AvatarFallback>{apiUserData?.username?.[0] || user?.name?.[0] || "U"}</AvatarFallback>
                   </Avatar>
                   <button
                     className="absolute -bottom-2 -right-2 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 p-2 text-white shadow-md hover:opacity-90"
@@ -288,7 +326,7 @@ export default function ProfilePage() {
 
                 <div className="flex-1 text-center md:text-left">
                   <div className="mb-4 flex items-center justify-center gap-3 md:justify-between">
-                    <h2 className="text-2xl font-bold text-foreground md:text-3xl">{user?.name || "김서연"}</h2>
+                    <h2 className="text-2xl font-bold text-foreground md:text-3xl">{apiUserData?.username || user?.name || "김서연"}</h2>
                     <div className="flex gap-2">
                       <Link to="/settings">
                         <Button
@@ -311,25 +349,7 @@ export default function ProfilePage() {
                       </Button>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">@{user?.username || user?.email?.split('@')[0] || "user"}</p>
-                  {user?.bio && (
-                    <p className="mt-2 text-sm text-foreground">{user.bio}</p>
-                  )}
-
-                  <div className="flex justify-center gap-8 md:justify-start mt-4">
-                    <div>
-                      <p className="text-xl font-bold text-foreground md:text-2xl">1</p>
-                      <p className="text-sm text-muted-foreground">게시물</p>
-                    </div>
-                    <div>
-                      <p className="text-xl font-bold text-foreground md:text-2xl">9548M</p>
-                      <p className="text-sm text-muted-foreground">팔로워</p>
-                    </div>
-                    <div>
-                      <p className="text-xl font-bold text-foreground md:text-2xl">1</p>
-                      <p className="text-sm text-muted-foreground">팔로잉</p>
-                    </div>
-                  </div>
+                  <p className="text-sm text-muted-foreground">@{apiUserData?.social || user?.username || user?.email?.split('@')[0] || "user"}</p>
                 </div>
               </div>
             </CardContent>
@@ -581,12 +601,9 @@ export default function ProfilePage() {
             {/* 사진 보관함 탭 */}
             <TabsContent value="gallery" className="mt-6">
               <Tabs defaultValue="all" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="all" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary">
-                    전체 <Badge className="ml-1.5 bg-muted text-muted-foreground">{ALL_PHOTOS.length}</Badge>
-                  </TabsTrigger>
-                  <TabsTrigger value="post" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary">
-                    내 게시물
+                    사진 <Badge className="ml-1.5 bg-muted text-muted-foreground">{photos.length}</Badge>
                   </TabsTrigger>
                   <TabsTrigger value="diary" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary">
                     다이어리 <Badge className="ml-1.5 bg-muted text-muted-foreground">{AI_DIARIES.length}</Badge>
@@ -595,8 +612,14 @@ export default function ProfilePage() {
 
                 {/* 전체 탭 */}
                 <TabsContent value="all">
+                  <div className="mb-4 flex justify-end">
+                    <Button onClick={() => navigate('/photo/upload')} size="sm" className="gap-1">
+                      <Plus className="h-4 w-4" />
+                      사진 업로드
+                    </Button>
+                  </div>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-                    {ALL_PHOTOS.map((photo) => (
+                    {photos.map((photo) => (
                       <div
                         key={photo.id}
                         className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg"
@@ -630,38 +653,7 @@ export default function ProfilePage() {
                   </div>
                 </TabsContent>
 
-                {/* 내 게시물 탭 */}
-                <TabsContent value="post">
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-                    {filteredPhotos.map((photo) => (
-                      <div
-                        key={photo.id}
-                        className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg"
-                        onClick={() => setSelectedPhoto(photo.url)}
-                      >
-                        <img
-                          src={photo.url}
-                          alt={`Photo ${photo.id}`}
-                          className="h-full w-full object-cover transition-transform group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100">
-                          <div className="absolute bottom-2 left-2 right-2 text-white">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="flex items-center gap-1">
-                                <Heart className="h-3 w-3" />
-                                {photo.likes}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <MessageCircle className="h-3 w-3" />
-                                {photo.comments}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </TabsContent>
+
 
                 {/* 다이어리 탭 */}
                 <TabsContent value="diary">
@@ -750,18 +742,7 @@ export default function ProfilePage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-bio" className="text-right">
-                소개
-              </Label>
-              <Input
-                id="edit-bio"
-                value={editBio}
-                onChange={(e) => setEditBio(e.target.value)}
-                className="col-span-3"
-                placeholder="자기소개를 입력하세요"
-              />
-            </div>
+
           </div>
           <DialogFooter>
             <Button onClick={handleUpdateProfile}>저장하기</Button>
