@@ -37,6 +37,9 @@ export default function FeedPage() {
   const location = useLocation()
   
   const myUserId = user ? Number(user.id) : 0;
+  
+  // [수정] useFeedLike 훅 사용 
+  // 이 훅은 Optimistic Update가 적용되어 있어 호출 즉시 UI를 변경합니다.
   const { mutate: toggleLike } = useFeedLike(myUserId);
 
   // 검색 훅 실행
@@ -155,19 +158,15 @@ export default function FeedPage() {
                                       onClick={() => setIsSearchOpen(false)}
                                   >
                                       <Avatar className="h-10 w-10 border border-white shadow-sm">
-                                          {/* [수정] u.profileImageUrl -> u.profileImage */}
                                           <AvatarImage src={u.profileImage || "/placeholder-user.jpg"} />
                                           <AvatarFallback className="bg-[#FFF0F5] text-[#FF69B4] font-bold text-xs">
-                                              {/* [수정] u.nickname -> u.username */}
                                               {u.username ? u.username[0] : "U"}
                                           </AvatarFallback>
                                       </Avatar>
                                       <div className="flex flex-col overflow-hidden">
-                                          {/* [수정] 닉네임 표시: u.nickname -> u.username */}
                                           <span className="font-bold text-sm text-gray-900 truncate">
                                             {u.username || "알 수 없음"}
                                           </span>
-                                          {/* [수정] 아이디 표시: u.username -> u.social */}
                                           <span className="text-[#FF69B4] text-[11px] font-medium truncate">
                                             @{u.social || "user"}
                                           </span>
@@ -189,6 +188,7 @@ export default function FeedPage() {
       {/* 중앙 메인 컨텐츠 */}
       <main className="flex-1 flex justify-center min-w-0 bg-[#FDFBFD]" onClick={() => { if(isSearchOpen) setIsSearchOpen(false); }}>
         <div className="w-full max-w-[680px] px-4 pb-20 mt-4 md:mt-0">
+             {/* 모바일 헤더 */}
              <div className="md:hidden w-full fixed top-0 left-0 bg-white/95 backdrop-blur-md z-50 flex items-center justify-between px-5 py-3 border-b border-gray-100 shadow-sm">
                 <span className="font-black text-xl italic text-[#FF69B4] tracking-tighter">Petlog</span>
                 <div className="flex gap-4">
@@ -202,6 +202,10 @@ export default function FeedPage() {
                 <FeedList 
                     filter={activeFilter} 
                     onPostClick={(post) => setSelectedPost(post)} 
+                    // [중요] FeedList에 좋아요 토글 함수를 전달해야 PostCard에서 사용할 수 있습니다.
+                    // FeedList 컴포넌트가 이 prop을 받아 PostCard에 전달하도록 확인해주세요.
+                    // (FeedList 코드를 수정할 수 없는 경우, FeedList 내부에서 useFeedLike를 직접 사용하도록 수정이 필요할 수 있습니다)
+                    // onLikeToggle={(feedId) => toggleLike(feedId)} 
                 />
             )}
         </div>

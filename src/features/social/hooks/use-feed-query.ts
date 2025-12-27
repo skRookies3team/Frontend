@@ -6,7 +6,7 @@ import {
   InfiniteData 
 } from '@tanstack/react-query';
 import { feedApi } from '../api/feed-api';
-import { FeedSliceResponse, FeedDto, FollowStatResponse, LikerDto } from '../types/feed'; // 타입 경로는 실제 위치에 맞게 확인해주세요
+import { FeedSliceResponse, FeedDto, FollowStatResponse, LikerDto } from '../types/feed';
 import { useToast } from '@/shared/hooks/use-toast';
 
 // 쿼리 키 관리
@@ -28,17 +28,15 @@ export const FEED_KEYS = {
 
 /**
  * [단순 목록 조회] 그리드 뷰용 (프로필 페이지 등)
- * - 한 번에 많은 양(50개)을 불러옵니다.
  */
 export const useFeeds = (userId: number = 0) => {
   return useQuery<FeedDto[]>({
     queryKey: FEED_KEYS.grid(userId),
     queryFn: async () => {
-      // 50개 조회 후 content 배열만 반환
       const response = await feedApi.getFeeds(userId, 0, 50);
       return response.content; 
     },
-    staleTime: 1000 * 60 * 5, // 5분간 캐시
+    staleTime: 1000 * 60 * 5, 
   });
 };
 
@@ -66,30 +64,32 @@ export const useTrendingFeeds = (viewerId: number = 0) => {
   return useQuery<FeedSliceResponse>({
     queryKey: FEED_KEYS.trending,
     queryFn: () => feedApi.getTrendingFeeds(viewerId),
-    staleTime: 1000 * 60 * 10, // 10분간 캐시 (인기글은 자주 안바뀜)
+    staleTime: 1000 * 60 * 10,
   });
 };
 
 /**
  * [좋아요 토글] 낙관적 업데이트 적용 (화면 깜빡임 방지)
- * - 메인 피드, 그리드, 인기 피드 모두 동시에 업데이트합니다.
+ * - 메인 피드, 그리드, 인기 피드, 상세 모달 모두 동시에 업데이트합니다.
  */
 export const useFeedLike = (userId: number) => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    // [수정됨] isLiked 상태를 인자로 받을 필요 없음. API가 알아서 토글함.
     mutationFn: (feedId: number) => feedApi.toggleLike(feedId, userId),
     
     onMutate: async (feedId) => {
-      // 1. 진행 중인 쿼리 취소
+      // 1. 쿼리 취소
       await queryClient.cancelQueries({ queryKey: FEED_KEYS.all });
 
       // 2. 스냅샷 저장
       const previousFeeds = queryClient.getQueriesData<InfiniteData<FeedSliceResponse>>({ queryKey: FEED_KEYS.all });
       const previousGrid = queryClient.getQueryData<FeedDto[]>(FEED_KEYS.grid(userId));
       const previousTrending = queryClient.getQueryData<FeedSliceResponse>(FEED_KEYS.trending);
+      const previousDetail = queryClient.getQueryData<FeedDto>(FEED_KEYS.detail(feedId));
 
-      // 3. 캐시 수정 함수 (공통 로직)
+      // 3. 캐시 업데이트 함수 (UI상에서만 미리 뒤집기)
       const updateFeedLike = (feed: FeedDto) => {
         if (feed.feedId === feedId) {
           const newIsLiked = !feed.isLiked;
@@ -102,7 +102,7 @@ export const useFeedLike = (userId: number) => {
         return feed;
       };
 
-      // 4-1. 무한 스크롤 데이터 업데이트
+      // 4. 각 쿼리 데이터 업데이트
       queryClient.setQueriesData<InfiniteData<FeedSliceResponse>>(
         { queryKey: FEED_KEYS.all }, 
         (oldData) => {
@@ -117,7 +117,6 @@ export const useFeedLike = (userId: number) => {
         }
       );
 
-      // 4-2. 그리드 데이터 업데이트
       if (previousGrid) {
         queryClient.setQueryData<FeedDto[]>(
           FEED_KEYS.grid(userId),
@@ -125,7 +124,6 @@ export const useFeedLike = (userId: number) => {
         );
       }
 
-      // 4-3. 인기 게시물 데이터 업데이트
       if (previousTrending) {
         queryClient.setQueryData<FeedSliceResponse>(
           FEED_KEYS.trending,
@@ -133,10 +131,17 @@ export const useFeedLike = (userId: number) => {
         );
       }
 
-      return { previousFeeds, previousGrid, previousTrending };
+      if (previousDetail) {
+        queryClient.setQueryData<FeedDto>(
+          FEED_KEYS.detail(feedId),
+          (old) => old ? updateFeedLike(old) : old
+        );
+      }
+
+      return { previousFeeds, previousGrid, previousTrending, previousDetail };
     },
     
-    onError: (_err, _feedId, context) => {
+    onError: (_err, feedId, context) => {
       // 에러 시 롤백
       if (context?.previousFeeds) {
         context.previousFeeds.forEach(([key, data]) => queryClient.setQueryData(key, data));
@@ -147,7 +152,17 @@ export const useFeedLike = (userId: number) => {
       if (context?.previousTrending) {
         queryClient.setQueryData(FEED_KEYS.trending, context.previousTrending);
       }
+      if (context?.previousDetail) {
+        queryClient.setQueryData(FEED_KEYS.detail(feedId), context.previousDetail);
+      }
+      // alert("좋아요 처리에 실패했습니다."); // 필요 시 주석 해제
     },
+
+    onSuccess: (_, feedId) => {
+      // 서버 데이터와 동기화
+      queryClient.invalidateQueries({ queryKey: FEED_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: FEED_KEYS.detail(feedId) });
+    }
   });
 };
 
@@ -163,7 +178,6 @@ export const useDeleteFeed = () => {
       feedApi.deleteFeed(feedId, userId),
     onSuccess: () => {
       toast({ title: "피드가 삭제되었습니다." });
-      // 모든 피드 관련 쿼리 무효화 (새로고침)
       queryClient.invalidateQueries({ queryKey: FEED_KEYS.all });
     },
     onError: () => {
@@ -207,6 +221,6 @@ export const useLikers = (feedId: number, isOpen: boolean) => {
   return useQuery<LikerDto[]>({
     queryKey: FEED_KEYS.likes(feedId),
     queryFn: () => feedApi.getLikers(feedId),
-    enabled: !!feedId && isOpen, // 모달이 열려있을 때만 요청
+    enabled: !!feedId && isOpen, 
   });
 };
