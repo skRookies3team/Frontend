@@ -5,6 +5,7 @@ import { ChevronLeft } from 'lucide-react';
 import { getAllArchivesApi } from "@/features/auth/api/auth-api";
 import { ImageSource } from "../types/diary";
 import { useDiaryAuth } from "../hooks/useDiaryAuth";
+import { format } from 'date-fns';
 import {
   getLocationHistory,
   earnCoin,
@@ -19,15 +20,17 @@ import EditStep from '../components/EditStep';
 import StyleStep from '../components/StyleStep';
 import CompleteStep from '../components/CompleteStep';
 import GalleryModal from '../components/GalleryModal';
+import DiaryCalendar from '../components/DiaryCalendar';
 
 const AiDiaryPage = () => {
   const navigate = useNavigate();
   const { user } = useDiaryAuth();
 
   // --- States ---
-  const [step, setStep] = useState("upload");
+  const [step, setStep] = useState("calendar"); // Default to Calendar (Dashboard removed)
   const [selectedImages, setSelectedImages] = useState<any[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [mainImageIndex, setMainImageIndex] = useState<number>(0); // Default first image as main
 
   // 펫 선택 State
   const [pets, setPets] = useState<any[]>([]);
@@ -43,7 +46,8 @@ const AiDiaryPage = () => {
   const [showGallery, setShowGallery] = useState(false);
   const [editedDiary, setEditedDiary] = useState("");
   const [progress, setProgress] = useState(0);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  // ... States ...
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
   // Style States
   const [layoutStyle, setLayoutStyle] = useState("grid"); // galleryType
@@ -60,7 +64,6 @@ const AiDiaryPage = () => {
   const [earnedReward, setEarnedReward] = useState<number | null>(null);
 
   // 보관함 ID를 관리하기 위한 상태 정의
-  // const [selectedArchiveId] = useState(1); // Removed hardcoded state
   const [archiveImages, setArchiveImages] = useState<{ archiveId: number, url: string }[]>([]);
 
   // 보관함 이미지 불러오기
@@ -100,6 +103,32 @@ const AiDiaryPage = () => {
 
   // --- Handlers ---
 
+  const handleDateSelect = (date: string) => {
+    setSelectedDate(date);
+    setStep("upload");
+  };
+
+  const handleRecapClick = () => {
+    // Navigate to recap page or feature
+    navigate('/ai-studio/recap');
+  };
+
+  const handleBack = () => {
+    if (step === 'calendar') {
+      navigate(-1);
+    } else if (step === 'upload') {
+      setStep('calendar');
+    } else if (step === 'edit') {
+      if (window.confirm("편집 내용을 취소하고 다시 사진을 선택하시겠습니까?")) {
+        setStep('upload');
+      }
+    } else if (step === 'style') {
+      setStep('edit');
+    } else {
+      setStep('calendar'); // Default fallback
+    }
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
@@ -133,6 +162,12 @@ const AiDiaryPage = () => {
       }]);
     }
   };
+
+  // ... (omitting handleGenerate logic for brevity of replacement, wait replace_file_content replaces chunks so I must bridge correctly)
+  // I will just replace the top handlers block and the render block in 2 steps or 1 large step if contigous?
+  // They are not contigous. I need 2 chunks.
+  // I will use multi_replace.
+
 
   const handleGenerate = async () => {
     if (imageFiles.length === 0 && selectedImages.length === 0) {
@@ -169,15 +204,16 @@ const AiDiaryPage = () => {
     }, 200);
 
     try {
-      const today = new Date().toISOString().split("T")[0];
+      const today = format(new Date(), 'yyyy-MM-dd');
       let location: { lat: number, lng: number } | null = null;
+
+      console.log(`=== [Frontend Debug] Generating Diary for Date: ${selectedDate} (Today: ${today}) ===`);
 
       if (selectedDate === today) {
         console.log("=== [Frontend] 오늘 날짜 선택: 현재 위치 조회 시도 ===");
         location = await getCurrentPosition();
       } else {
         console.log(`=== [Frontend] 과거 날짜(${selectedDate}) 선택: 위치 기록 조회 시도 (PostGIS) ===`);
-        console.log(`=== [Frontend] 현재 User ID: ${user.id} ===`);
 
         const historyLocation = await getLocationHistory(user.id, selectedDate);
 
@@ -185,7 +221,7 @@ const AiDiaryPage = () => {
           location = { lat: historyLocation.latitude, lng: historyLocation.longitude };
           console.log("=== [Frontend] 과거 위치 기록 발견(DB 사용) ===", location);
         } else {
-          console.warn(`=== [Frontend] 과거 위치 기록 없음(DB 데이터 없음). 현재 위치로 대체합니다. (검색 조건: UserID=${user.id}, Date=${selectedDate}) ===`);
+          console.warn(`=== [Frontend] 과거 위치 기록 없음. 현재 위치로 대체합니다. ===`);
           location = await getCurrentPosition();
         }
       }
@@ -201,18 +237,13 @@ const AiDiaryPage = () => {
       if (imageFiles.length > 0) {
         imageFiles.forEach((file) => { formData.append("imageFiles", file); });
       } else {
-        // [FIX] 보관함 사진만 선택했을 때도 'imageFiles' 파트가 없으면 400 에러 발생 가능하므로 빈 파일 전송
-        // (Backend Controller: required = false이지만 Multipart 요청 구조 유지를 위해 전송)
         formData.append("imageFiles", new Blob([], { type: 'application/octet-stream' }), "");
       }
-
-      // [REF] Backend changed: photoArchiveId is removable. We now send archiveId per image.
-      // Top level ID is null to allow backend to process list-based IDs.
 
       const requestData = {
         userId: Number(user.id),
         petId: selectedPetId,
-        photoArchiveId: null, // User requested to separate this, effectively nullifying top-level single ID
+        photoArchiveId: null,
         content: "",
         visibility: "PRIVATE",
         isAiGen: true,
@@ -222,20 +253,25 @@ const AiDiaryPage = () => {
         latitude: location ? location.lat : null,
         longitude: location ? location.lng : null,
         locationName: locationName,
-        images: selectedImages.map((img, index) => ({
-          imageUrl: img.imageUrl || "",
-          imgOrder: index + 1,
-          mainImage: index === 0,
-          source: img.source,
-          archiveId: img.archiveId || null // Send individual Archive ID
-        }))
+        images: selectedImages.map((img, index) => {
+          // [MODIFIED] Use mainImageIndex to determine mainImage
+          // Note: imgOrder should start at 1
+          const isMain = index === mainImageIndex;
+          console.log(`[Frontend Debug] Image ${index}: URL=${img.imageUrl.substring(0, 20)}..., Main=${isMain} (TargetIndex=${mainImageIndex})`);
+          return {
+            imageUrl: img.imageUrl || "",
+            imgOrder: index + 1,
+            mainImage: isMain,
+            source: img.source,
+            archiveId: img.archiveId || null
+          };
+        })
       };
 
-      console.log("=== [Frontend] Request Payload ===", requestData);
+      console.log("=== [Frontend Debug] FINAL PAYLOAD ===", JSON.stringify(requestData, null, 2));
 
       formData.append("request", new Blob([JSON.stringify(requestData)], { type: "application/json" }));
 
-      // Use the API function from diary-api.ts
       const response = await createAiDiaryApi(formData);
 
       const diaryId = response.diaryId;
@@ -259,7 +295,6 @@ const AiDiaryPage = () => {
       }
 
       if (diaryDetail.images && Array.isArray(diaryDetail.images)) {
-        console.log("=== [Frontend] Updating images with permanent URLs ===", diaryDetail.images);
         const permanentImages = diaryDetail.images.map((img: any) => ({
           imageUrl: img.imageUrl,
           source: 'GALLERY'
@@ -287,10 +322,6 @@ const AiDiaryPage = () => {
     if (!createdDiaryId) return;
     setIsSubmitting(true);
     try {
-      // 1. 일기 내용 최종 업데이트 logic (assumed handled or can be added if needed)
-      // await updateDiary(createdDiaryId, { ... });
-
-      // 2. 마일리지(코인) 적립 로직 실행
       console.log("=== [Frontend] Saving Diary... ===");
       if (user && user.id) {
         const REWARD_AMOUNT = 15;
@@ -302,7 +333,6 @@ const AiDiaryPage = () => {
         }
       }
       console.log("=== [Frontend] Diary Saved & Process Completed ===");
-
       setStep("complete");
 
     } catch (error: any) {
@@ -344,7 +374,7 @@ const AiDiaryPage = () => {
   };
 
   const handleReset = () => {
-    setStep("upload");
+    setStep("calendar"); // Reset to calendar
     setSelectedImages([]);
     setImageFiles([]);
     setEditedDiary("");
@@ -357,7 +387,7 @@ const AiDiaryPage = () => {
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-rose-50 pb-20 font-sans text-gray-800">
       <header className="sticky top-0 z-40 border-b border-pink-100 bg-white/95 backdrop-blur-sm shadow-sm">
         <div className="container mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <button onClick={() => navigate(-1)} className="text-pink-600 hover:text-pink-700 transition-colors p-1"><ChevronLeft className="w-6 h-6" /></button>
+          <button onClick={handleBack} className="text-pink-600 hover:text-pink-700 transition-colors p-1"><ChevronLeft className="w-6 h-6" /></button>
           <h1 className="text-lg font-bold text-pink-600 md:text-xl">Pet Log AI</h1>
           <div className="flex items-center gap-2">
           </div>
@@ -365,11 +395,21 @@ const AiDiaryPage = () => {
       </header>
 
       <main className="container mx-auto max-w-7xl p-4 md:p-6">
+
+        {step === 'calendar' && (
+          <DiaryCalendar
+            selectedDate={selectedDate}
+            onDateSelect={handleDateSelect}
+            onRecapClick={handleRecapClick}
+          />
+        )}
+
         {step === 'upload' && (
           <UploadStep
             selectedImages={selectedImages} isSubmitting={isSubmitting} handleImageUpload={handleImageUpload} handleGenerate={handleGenerate}
             setSelectedImages={setSelectedImages} setShowGallery={setShowGallery} pets={pets} selectedPetId={selectedPetId} setSelectedPetId={setSelectedPetId}
             selectedDate={selectedDate} setSelectedDate={setSelectedDate}
+            mainImageIndex={mainImageIndex} setMainImageIndex={setMainImageIndex}
           />
         )}
         {step === 'generating' && <GeneratingStep progress={progress} />}

@@ -198,3 +198,16 @@ export const createAiDiaryApi = async (data: FormData): Promise<CreateDiaryRespo
     });
     return response;
 };
+
+// [NEW] 캘린더 날짜별 조회 API
+export const getDiariesByDate = async (userId: number, date: string) => {
+    try {
+        const response = await httpClient.get<any>(`/diary-queries/calendar`, {
+            params: { userId, date }
+        });
+        return response;
+    } catch (error) {
+        console.warn("[Service] 날짜별 다이어리 조회 실패:", error);
+        return [];
+    }
+};
