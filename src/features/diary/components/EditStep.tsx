@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, MapPin, Sun, Smile, Edit3, ArrowRight } from 'lucide-react';
 import KakaoMap from './KakaoMap';
+import LocationSearchModal from './LocationSearchModal';
+import { petMateApi } from '@/features/petmate/api/petmate-api';
 
 interface EditStepProps {
+    userId?: number;
     selectedImages: any[];
     editedDiary: string;
     setEditedDiary: (diary: string) => void;
@@ -13,6 +16,7 @@ interface EditStepProps {
     locationName: string;
     setLocationName: (name: string) => void;
     locationCoords: { lat: number, lng: number } | null;
+    setLocationCoords: (coords: { lat: number, lng: number }) => void;
     selectedDate: string;
 
     // Style props for preview only
@@ -25,9 +29,66 @@ interface EditStepProps {
 }
 
 const EditStep = ({
-    selectedImages, editedDiary, setEditedDiary, weather, setWeather, mood, setMood, locationName, setLocationName, locationCoords,
+    userId, selectedImages, editedDiary, setEditedDiary, weather, setWeather, mood, setMood, locationName, setLocationName, locationCoords, setLocationCoords,
     selectedDate, layoutStyle, textAlign, fontSize, backgroundColor, onNext
 }: EditStepProps) => {
+    const [showLocationModal, setShowLocationModal] = useState(false);
+
+    // Auto-load location if missing (Saved Location -> GPS) -> pattern from PetMate
+    useEffect(() => {
+        const loadLocation = async () => {
+            // Only load if location is not already set (e.g. by history)
+            if (locationName && locationName !== "위치 정보 없음" && locationName !== "주소 불러오는 중...") return;
+
+            // 1. Try Saved Location
+            if (userId) {
+                try {
+                    const saved = await petMateApi.getSavedLocation(userId);
+                    if (saved && saved.latitude && saved.longitude) {
+                        setLocationCoords({ lat: saved.latitude, lng: saved.longitude });
+                        setLocationName(saved.location || "저장된 위치");
+                        console.log("[EditStep] Loaded saved location");
+                        return;
+                    }
+                } catch (e) {
+                    console.warn("[EditStep] No saved location found or error", e);
+                }
+            }
+
+            // 2. Try GPS (Current Location)
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (pos) => {
+                        const { latitude, longitude } = pos.coords;
+                        setLocationCoords({ lat: latitude, lng: longitude });
+
+                        try {
+                            const addr = await petMateApi.getAddressFromCoords(longitude, latitude);
+                            const name = addr.buildingName || addr.fullAddress;
+                            setLocationName(name);
+                            console.log("[EditStep] Loaded current GPS location");
+
+                            // Optional: Save as default if user has none? Leaving out for now to minimize side effects.
+                        } catch (e) {
+                            console.error("[EditStep] Failed to reverse geocode", e);
+                            setLocationName("위치 정보 없음");
+                        }
+                    },
+                    (err) => {
+                        console.error("[EditStep] Geolocation error", err);
+                    },
+                    { enableHighAccuracy: true, timeout: 5000 }
+                );
+            }
+        };
+
+        loadLocation();
+    }, [userId]);
+
+    const handleLocationSelect = (name: string, lat: number, lng: number) => {
+        setLocationName(name);
+        setLocationCoords({ lat, lng });
+    };
 
     return (
         <div className="flex flex-col lg:flex-row gap-8 items-start animate-fade-in">
@@ -39,10 +100,13 @@ const EditStep = ({
                             {new Date(selectedDate).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
                         </div>
                         <div className="flex gap-2">
-                            <div className="flex items-center gap-1 bg-green-50 px-3 py-1 rounded-full text-green-600 text-sm">
+                            <button
+                                onClick={() => setShowLocationModal(true)}
+                                className="flex items-center gap-1 bg-green-50 px-3 py-1 rounded-full text-green-600 text-sm hover:bg-green-100 transition-colors"
+                            >
                                 <MapPin className="w-3 h-3" />
-                                <input value={locationName} onChange={(e) => setLocationName(e.target.value)} className="bg-transparent w-48 outline-none text-center truncate" />
-                            </div>
+                                <span className="truncate max-w-[150px] inline-block align-middle">{locationName || "위치 추가"}</span>
+                            </button>
                             <div className="flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full text-blue-600 text-sm">
                                 <Sun className="w-3 h-3" />
                                 <input value={weather} onChange={(e) => setWeather(e.target.value)} className="bg-transparent w-12 outline-none text-center" />
@@ -85,6 +149,12 @@ const EditStep = ({
                     <span>디자인 꾸미러 가기</span> <ArrowRight className="w-5 h-5" />
                 </button>
             </div>
+            {/* Location Search Modal */}
+            <LocationSearchModal
+                isOpen={showLocationModal}
+                onClose={() => setShowLocationModal(false)}
+                onSelectLocation={handleLocationSelect}
+            />
         </div>
     );
 };

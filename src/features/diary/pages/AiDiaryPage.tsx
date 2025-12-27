@@ -415,8 +415,11 @@ const AiDiaryPage = () => {
         {step === 'generating' && <GeneratingStep progress={progress} />}
         {step === 'edit' && (
           <EditStep
+            userId={Number(user?.id)}
             selectedImages={selectedImages} editedDiary={editedDiary} setEditedDiary={setEditedDiary} weather={weather} setWeather={setWeather} mood={mood} setMood={setMood}
-            locationName={locationName} setLocationName={setLocationName} locationCoords={locationCoords} selectedDate={selectedDate}
+            locationName={locationName} setLocationName={setLocationName}
+            locationCoords={locationCoords} setLocationCoords={setLocationCoords}
+            selectedDate={selectedDate}
             layoutStyle={layoutStyle} textAlign={textAlign} fontSize={fontSize} backgroundColor={backgroundColor}
             onNext={() => setStep('style')}
           />
