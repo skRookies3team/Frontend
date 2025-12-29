@@ -104,11 +104,7 @@ export default function LoginPage() {
     // Save credentials to sessionStorage
     sessionStorage.setItem("signup_user_info", JSON.stringify({
       email: signupEmail,
-      password: signupPassword,
-      name: signupEmail.split("@")[0],
-      username: signupEmail.split("@")[0],
-      birthday: null,
-      gender: null
+      password: signupPassword
     }));
 
     navigate("/signup/info");
