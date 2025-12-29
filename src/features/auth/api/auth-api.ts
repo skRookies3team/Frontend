@@ -68,15 +68,24 @@ export const signupApi = async (
     const formData = new FormData();
 
     // Add user profile if provided
+    console.log("signupApi start");
+    console.log(userProfile);
     if (userProfile) {
+        console.log("userProfile append");
         formData.append('userProfile', userProfile);
     }
 
     // Add pet profile if provided
+    console.log(petProfile);
     if (petProfile) {
+        console.log("petProfile append");
         formData.append('petProfile', petProfile);
     }
 
+    console.log(request);
+    
+    console.log("///////////////////////////");
+    console.log(formData);
     // Add request DTO as JSON blob
     formData.append('request', new Blob([JSON.stringify(request)], {
         type: 'application/json'
