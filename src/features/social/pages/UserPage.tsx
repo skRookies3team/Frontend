@@ -143,7 +143,7 @@ export default function UserPage() {
   const sidebarMenu = [
     { id: "home", label: "홈", icon: Home, link: "/feed", action: () => setIsSearchOpen(false), isActive: false },
     { id: "search", label: "검색", icon: Search, action: () => setIsSearchOpen(!isSearchOpen), isActive: isSearchOpen },
-    { id: "popular", label: "인기", icon: TrendingUp, link: "/feed", action: () => setIsSearchOpen(false), isActive: false },
+    { id: "popular", label: "인기", icon: TrendingUp, link: "/popular", action: () => setIsSearchOpen(false), isActive: false },
     { id: "create", label: "만들기", icon: PlusSquare, action: () => setIsCreateOpen(true), isActive: false },
     { id: "profile", label: "프로필", icon: User, isProfile: true, link: `/user/${currentUserId}`, isActive: Number(targetUserId) === currentUserId },
   ];
