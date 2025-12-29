@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, Calendar, PawPrint, Upload, Image as ImageIcon, X, Edit3 } from 'lucide-react';
+import { Camera, Calendar, PawPrint, Upload, Image as ImageIcon, X, Edit3, Star } from 'lucide-react';
 
 const Icon = ({ children, className }: { children: React.ReactNode, className?: string }) => (
     <span className={`inline-flex items-center justify-center ${className}`}>{children}</span>
@@ -17,11 +17,13 @@ interface UploadStepProps {
     setSelectedPetId: (id: number) => void;
     selectedDate: string;
     setSelectedDate: (date: string) => void;
+    mainImageIndex: number;
+    setMainImageIndex: (index: number) => void;
 }
 
 const UploadStep = ({
     selectedImages, isSubmitting, handleImageUpload, handleGenerate, setSelectedImages, setShowGallery,
-    pets, selectedPetId, setSelectedPetId, selectedDate, setSelectedDate
+    pets, selectedPetId, setSelectedPetId, selectedDate, setSelectedDate, mainImageIndex, setMainImageIndex
 }: UploadStepProps) => (
     <div className="space-y-6 animate-fade-in">
         <div className="text-center">
@@ -89,9 +91,28 @@ const UploadStep = ({
                 <div className="space-y-6">
                     <div className="rounded-2xl bg-pink-50 p-4 grid grid-cols-3 gap-3 md:grid-cols-5">
                         {selectedImages.map((image: any, index: number) => (
-                            <div key={index} className="relative aspect-square rounded-xl overflow-hidden group">
+                            <div
+                                key={index}
+                                className={`relative aspect-square rounded-xl overflow-hidden group border-2 ${mainImageIndex === index ? 'border-yellow-400 ring-2 ring-yellow-200' : 'border-transparent'}`}
+                            >
                                 <img src={image.imageUrl} alt="upload" className="w-full h-full object-cover" />
+
+                                {/* Main Image Selector (Star) */}
+                                <button
+                                    onClick={() => setMainImageIndex(index)}
+                                    className={`absolute top-1 left-1 p-1 rounded-full backdrop-blur-sm transition-all ${mainImageIndex === index ? 'bg-yellow-400 text-white' : 'bg-black/30 text-white/70 hover:bg-yellow-400 hover:text-white'}`}
+                                    title="대표 이미지로 설정"
+                                >
+                                    <Star className={`w-3.5 h-3.5 ${mainImageIndex === index ? 'fill-current' : ''}`} />
+                                </button>
+
                                 <button onClick={() => setSelectedImages(selectedImages.filter((_: any, i: number) => i !== index))} className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1"><X className="w-3 h-3" /></button>
+
+                                {mainImageIndex === index && (
+                                    <div className="absolute bottom-0 inset-x-0 bg-yellow-400/90 text-white text-[10px] font-bold text-center py-0.5">
+                                        대표 이미지
+                                    </div>
+                                )}
                             </div>
                         ))}
                         <label className="flex items-center justify-center border-2 border-dashed border-pink-300 rounded-xl cursor-pointer hover:bg-white">
