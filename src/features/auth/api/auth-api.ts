@@ -85,11 +85,16 @@ export const signupApi = async (
     console.log(request);
     
     console.log("///////////////////////////");
-    console.log(formData);
+
     // Add request DTO as JSON blob
     formData.append('request', new Blob([JSON.stringify(request)], {
         type: 'application/json'
     }));
+
+    console.log("=== FormData entries ===");
+    for (const [key, value] of formData.entries()) {
+        console.log(key, value);
+    }
 
     
     console.log(formData)
@@ -98,9 +103,9 @@ export const signupApi = async (
 
     const response = await httpClient.post<SignupResponse>('/users/signup', formData, {
         skipAuth: true,
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        }
+        // headers: {
+        //     'Content-Type': 'multipart/form-data'
+        // }
     });
     return response;
 };
