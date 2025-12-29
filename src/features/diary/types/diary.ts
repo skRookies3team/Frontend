@@ -46,6 +46,7 @@ export interface DiaryStyleRequest {
 }
 
 // [추가] 일기 생성 요청 DTO (프론트엔드에서 백엔드로 보낼 때 사용)
+// [추가] 일기 생성 요청 DTO (프론트엔드에서 백엔드로 보낼 때 사용)
 export interface DiaryRequest {
     userId: number;
     petId: number;
@@ -56,8 +57,27 @@ export interface DiaryRequest {
     mood: string | null;
     latitude?: number | null;
     longitude?: number | null;
+    locationName?: string; // [New]
+    date?: string; // [New] yyyy-MM-dd
+
+    // Legacy image objects (optional if we use imageUrls/archiveIds)
     images?: DiaryImageDTO[];
-    // style?: DiaryStyleRequest; // 만약 스타일도 같이 보낸다면 추가
+
+    // [New] Preview result based IDs (for final save)
+    imageUrls?: string[];
+    archiveIds?: number[];
+}
+
+// [New] AI Diary Preview Response
+export interface AiDiaryResponse {
+    content: string;
+    weather: string;
+    mood: string;
+    locationName: string;
+    latitude: number;
+    longitude: number;
+    imageUrls: string[];
+    archiveIds: number[];
 }
 
 // Mock 데이터 상수

@@ -1,4 +1,4 @@
-import { SelectedImage, ImageType, CreateDiaryResponse } from '../types/diary';
+import { SelectedImage, ImageType, CreateDiaryResponse, AiDiaryResponse } from '../types/diary';
 import httpClient from '@/shared/api/http-client';
 
 // Mock S3 업로드 시뮬레이션
@@ -188,12 +188,18 @@ export const createSocialFeed = async (data: any) => {
     }
 };
 
-// [modified] createAiDiary to use httpClient
-export const createAiDiaryApi = async (data: FormData): Promise<CreateDiaryResponse> => {
-    // axios handles FormData automatically if we pass it, letting the browser set the Content-Type header with usage of boundary.
-    // However, since httpClient has default 'application/json', we must override it. 
-    // Setting 'multipart/form-data' explicitly prompts axios/browser to handle it correctly (or we set to undefined).
-    const response = await httpClient.post<CreateDiaryResponse>('/diaries/ai', data, {
+// [Modified] createAiDiary - Now sends JSON (DiaryRequest.Create)
+// Note: The backend 'POST /api/diaries' now expects @RequestBody DiaryRequest.Create (JSON)
+export const createAiDiaryApi = async (data: any): Promise<number> => {
+    // 'data' passed here should be the DiaryRequest object, not FormData
+    const response = await httpClient.post<number>('/diaries', data);
+    return response;
+};
+
+// [NEW] AI Diary Preview
+export const generateAiDiaryPreview = async (data: FormData): Promise<AiDiaryResponse> => {
+    // Calls POST /api/diaries/ai/preview with Multipart Form Data
+    const response = await httpClient.post<AiDiaryResponse>('/diaries/ai/preview', data, {
         headers: { "Content-Type": "multipart/form-data" }
     });
     return response;

@@ -5,8 +5,9 @@ import { useDiaryAuth } from "../hooks/useDiaryAuth";
 import { format } from 'date-fns';
 import { ImageSource } from "../types/diary";
 import {
-    createAiDiaryApi,
-    getDiary
+    // createAiDiaryApi, // [REMOVED] Not used here anymore
+    generateAiDiaryPreview,
+    // getDiary // [REMOVED] Not used here anymore
 } from "../api/diary-api";
 
 import { petMateApi } from "@/features/petmate/api/petmate-api";
@@ -223,35 +224,46 @@ const DiaryUploadPage = () => {
 
             const formData = new FormData();
             imageFiles.forEach((file) => formData.append("imageFiles", file));
-            if (imageFiles.length === 0) formData.append("imageFiles", new Blob([], { type: 'application/octet-stream' }), "");
+            if (imageFiles.length === 0) {
+                // Even if empty, some backends might need this key. 
+                // But typically specific backends might fail if empty file is sent as part. 
+                // User's controller says required=false for imageFiles. So maybe we can skip if empty?
+                // But let's keep empty blob just in case it's harmless or commonly handled.
+                formData.append("imageFiles", new Blob([], { type: 'application/octet-stream' }), "");
+            }
 
-            const requestData = {
-                userId: Number(user.id),
-                petId: selectedPetId,
-                photoArchiveId: null,
-                content: "",
-                visibility: "PRIVATE",
-                isAiGen: true,
-                weather: "",
-                mood: "",
-                date: selectedDate,
-                latitude: location ? location.lat : null,
-                longitude: location ? location.lng : null,
-                locationName: resolvedLocationName,
-                images: selectedImages.map((img, index) => ({
-                    imageUrl: img.imageUrl || "",
-                    imgOrder: index + 1,
-                    mainImage: index === mainImageIndex,
-                    source: img.source,
-                    archiveId: img.archiveId || null
-                }))
-            };
-            formData.append("request", new Blob([JSON.stringify(requestData)], { type: "application/json" }));
+            // [FIX] Backend expects individual parts: userId, petId, images
+            formData.append("userId", new Blob([String(user.id)], { type: "application/json" })); // or text/plain depending on string converter
+            formData.append("petId", new Blob([String(selectedPetId)], { type: "application/json" }));
+
+            // "images" part
+            const imagesDto = selectedImages.map((img, index) => ({
+                imageUrl: img.imageUrl || "",
+                imgOrder: index + 1,
+                mainImage: index === mainImageIndex,
+                source: img.source,
+                archiveId: img.archiveId || null
+            }));
+            formData.append("images", new Blob([JSON.stringify(imagesDto)], { type: "application/json" }));
+
+            // Also send lat/lng/date if backend adds support for them in this split parameter style?
+            // The provided controller ONLY has: imageFiles, userId, petId, images.
+            // It does NOT seem to take location/date in the signature provided by user.
+            // check user request: "@RequestPart("userId") Long userId, @RequestPart("petId") Long petId, ..."
+            // It misses date/location/content! 
+            // If the backend needs date/location for weather, it won't get it with that signature.
+            // However, I must match the signature EXACTLY first to fix 400.
+
+            // Warning: The Preview might fail to set accurate weather if lat/lng is missing, 
+            // but we can't send what isn't accepted.
+            // Wait, looking at User's controller code, `previewAiDiary` calls `diaryService.previewAiDiary(userId, petId, images, imageFiles)`.
+            // The service method DOES NOT take lat/lng/date either in that snippet!
+            // So it seems Preview is purely image-based or uses default weather?
+            // Let's stick to the signature.
 
             // API Call
-            const response = await createAiDiaryApi(formData);
-            const diaryId = response.diaryId;
-            const diaryDetail = await getDiary(diaryId); // Get full details
+            // [CHANGED] Call Preview API instead of Create API
+            const previewData = await generateAiDiaryPreview(formData);
 
             clearInterval(interval);
             setProgress(100);
@@ -262,16 +274,18 @@ const DiaryUploadPage = () => {
                 step: 'edit',
                 selectedDate, // Persist date
                 selectedPetId,
-                createdDiaryId: diaryId,
-                editedDiary: diaryDetail.content || "AI가 일기를 생성하지 못했습니다.",
-                weather: diaryDetail.weather || "맑음",
-                mood: diaryDetail.mood || "행복",
-                locationName: diaryDetail.locationName || "위치 정보 없음",
+                createdDiaryId: null, // [CHANGED] No diaryId yet!
+                editedDiary: previewData.content || "AI가 일기를 생성하지 못했습니다.",
+                weather: previewData.weather || "맑음",
+                mood: previewData.mood || "행복",
+                locationName: previewData.locationName || resolvedLocationName,
                 locationCoords: location ? { lat: location.lat, lng: location.lng } : null,
-                selectedImages: diaryDetail.images ? diaryDetail.images.map((img: any) => ({
-                    imageUrl: img.imageUrl,
-                    source: 'GALLERY'
-                })) : [],
+                selectedImages: selectedImages, // Keep original images for display
+
+                // [NEW] Persist Backend-generated IDs for final save
+                previewImageUrls: previewData.imageUrls || [],
+                previewArchiveIds: previewData.archiveIds || [],
+
                 // Default styles
                 layoutStyle: "grid",
                 textAlign: "left",

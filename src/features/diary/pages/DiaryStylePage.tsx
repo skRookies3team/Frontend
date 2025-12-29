@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, PawPrint } from 'lucide-react';
 import { useDiaryAuth } from "../hooks/useDiaryAuth";
@@ -71,12 +71,54 @@ const DiaryStylePage = () => {
     };
 
     const handleShareToFeed = async () => {
-        if (!createdDiaryId) return;
         setIsSubmitting(true);
         try {
-            console.log("=== [Frontend] Saving Diary... ===");
-            if (user && user.id) {
-                // Save style settings here if needed?
+            console.log("=== [Frontend] Finalizing Diary... ===");
+
+            let finalDiaryId = createdDiaryId;
+
+            // [NEW] If no diaryId (Draft Mode), create it now!
+            if (!finalDiaryId) {
+                if (!user) { throw new Error("로그인이 필요합니다."); }
+
+                // Get Preview IDs from storage
+                const previewImageUrls = getSavedState('previewImageUrls', []);
+                const previewArchiveIds = getSavedState('previewArchiveIds', []);
+
+                // Construct Request JSON
+                const requestData = {
+                    userId: Number(user.id),
+                    petId: selectedPetId,
+                    photoArchiveId: null,
+                    content: editedDiary,
+                    visibility: "PRIVATE",
+                    isAiGen: true,
+                    weather: weather,
+                    mood: mood,
+                    date: selectedDate,
+                    latitude: locationCoords ? locationCoords.lat : null,
+                    longitude: locationCoords ? locationCoords.lng : null,
+                    locationName: locationName,
+                    imageUrls: previewImageUrls,
+                    archiveIds: previewArchiveIds,
+                    images: []
+                };
+
+                // Use the Real Create API (JSON)
+                const { createAiDiaryApi } = await import("../api/diary-api");
+                // Response is now just the ID (number)
+                const responseId = await createAiDiaryApi(requestData);
+                finalDiaryId = responseId;
+
+                // Update State
+                sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    ...JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '{}'),
+                    createdDiaryId: finalDiaryId
+                }));
+            }
+
+            if (user && user.id && finalDiaryId) {
+                // Save style settings here if needed? (Ideally style is saved to Diary or Style entity)
 
                 const REWARD_AMOUNT = 15;
                 const coinResult = await earnCoin(user.id, REWARD_AMOUNT, 'WRITEDIARY');
@@ -90,6 +132,7 @@ const DiaryStylePage = () => {
             setStep("complete");
 
         } catch (error: any) {
+            console.error("저장 실패:", error);
             alert(`저장 실패: ${error.message}`);
         } finally {
             setIsSubmitting(false);
