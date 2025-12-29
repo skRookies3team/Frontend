@@ -38,11 +38,8 @@ export default function FeedPage() {
   
   const myUserId = user ? Number(user.id) : 0;
   
-  // [수정] useFeedLike 훅 사용 
-  // 이 훅은 Optimistic Update가 적용되어 있어 호출 즉시 UI를 변경합니다.
   const { mutate: toggleLike } = useFeedLike(myUserId);
 
-  // 검색 훅 실행
   const { data: searchResults, isLoading: isSearchLoading } = useUserSearch(searchQuery);
 
   const sidebarMenu: SidebarItem[] = [
@@ -73,7 +70,8 @@ export default function FeedPage() {
   ]
 
   return (
-    <div className="flex justify-between w-full min-h-screen bg-[#FDFBFD] text-slate-800 font-sans selection:bg-[#FF69B4] selection:text-white pt-16 relative">
+    // [수정] pt-16 -> pt-0 (상단 여백 제거)
+    <div className="flex justify-between w-full min-h-screen bg-[#FDFBFD] text-slate-800 font-sans selection:bg-[#FF69B4] selection:text-white pt-0 relative">
       
       {/* 왼쪽 사이드바 */}
       <aside className="hidden md:block sticky top-20 h-[calc(100vh-6rem)] shrink-0 z-50 ml-4 w-[80px] xl:w-[240px]">
@@ -186,8 +184,9 @@ export default function FeedPage() {
       </aside>
 
       {/* 중앙 메인 컨텐츠 */}
-      <main className="flex-1 flex justify-center min-w-0 bg-[#FDFBFD]" onClick={() => { if(isSearchOpen) setIsSearchOpen(false); }}>
-        <div className="w-full max-w-[680px] px-4 pb-20 mt-4 md:mt-0">
+      {/* [수정] mt-4 md:mt-0 제거하고 pt-20 추가하여 사이드바와 높이 맞춤 */}
+      <main className="flex-1 flex justify-center min-w-0 bg-[#FDFBFD] pt-5 px-4 pb-20" onClick={() => { if(isSearchOpen) setIsSearchOpen(false); }}>
+        <div className="w-full max-w-[680px]">
              {/* 모바일 헤더 */}
              <div className="md:hidden w-full fixed top-0 left-0 bg-white/95 backdrop-blur-md z-50 flex items-center justify-between px-5 py-3 border-b border-gray-100 shadow-sm">
                 <span className="font-black text-xl italic text-[#FF69B4] tracking-tighter">Petlog</span>
@@ -202,10 +201,6 @@ export default function FeedPage() {
                 <FeedList 
                     filter={activeFilter} 
                     onPostClick={(post) => setSelectedPost(post)} 
-                    // [중요] FeedList에 좋아요 토글 함수를 전달해야 PostCard에서 사용할 수 있습니다.
-                    // FeedList 컴포넌트가 이 prop을 받아 PostCard에 전달하도록 확인해주세요.
-                    // (FeedList 코드를 수정할 수 없는 경우, FeedList 내부에서 useFeedLike를 직접 사용하도록 수정이 필요할 수 있습니다)
-                    // onLikeToggle={(feedId) => toggleLike(feedId)} 
                 />
             )}
         </div>
