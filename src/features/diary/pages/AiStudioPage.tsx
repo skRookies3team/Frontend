@@ -19,7 +19,7 @@ export default function AiStudioPage() {
 
         <div className="grid gap-6 md:grid-cols-2">
           {/* AI 다이어리 */}
-          <Link to="/ai-studio/diary">
+          <Link to="/ai-studio/diary/calendar">
             <Card className="group cursor-pointer border-pink-100 shadow-lg transition-all hover:shadow-xl hover:scale-105">
               <CardContent className="p-6 md:p-8">
                 <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 md:h-20 md:w-20">

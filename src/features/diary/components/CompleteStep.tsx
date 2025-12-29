@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, Loader2, Share2, BookOpen, Coins } from 'lucide-react';
+import { Check, Share2, BookOpen, Coins } from 'lucide-react';
 
 interface CompleteStepProps {
     onHome: () => void;

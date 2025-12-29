@@ -1,5 +1,3 @@
-import React from 'react';
-
 const GeneratingStep = ({ progress }: { progress: number }) => (
     <div className="flex flex-col items-center justify-center py-20 space-y-8 animate-fade-in">
         <div className="relative w-32 h-32">

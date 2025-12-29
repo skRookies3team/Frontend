@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 
 const getEnv = (key: string) => {
