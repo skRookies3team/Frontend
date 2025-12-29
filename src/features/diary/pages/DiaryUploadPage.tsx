@@ -233,8 +233,17 @@ const DiaryUploadPage = () => {
             }
 
             // [FIX] Backend expects individual parts: userId, petId, images
-            formData.append("userId", new Blob([String(user.id)], { type: "application/json" })); // or text/plain depending on string converter
+            formData.append("userId", new Blob([String(user.id)], { type: "application/json" }));
             formData.append("petId", new Blob([String(selectedPetId)], { type: "application/json" }));
+
+            // [NEW] Send Location & Date for accurate weather/context
+            if (location) {
+                formData.append("latitude", new Blob([String(location.lat)], { type: "application/json" }));
+                formData.append("longitude", new Blob([String(location.lng)], { type: "application/json" }));
+            }
+            if (selectedDate) {
+                formData.append("date", new Blob([String(selectedDate)], { type: "application/json" }));
+            }
 
             // "images" part
             const imagesDto = selectedImages.map((img, index) => ({
@@ -245,21 +254,6 @@ const DiaryUploadPage = () => {
                 archiveId: img.archiveId || null
             }));
             formData.append("images", new Blob([JSON.stringify(imagesDto)], { type: "application/json" }));
-
-            // Also send lat/lng/date if backend adds support for them in this split parameter style?
-            // The provided controller ONLY has: imageFiles, userId, petId, images.
-            // It does NOT seem to take location/date in the signature provided by user.
-            // check user request: "@RequestPart("userId") Long userId, @RequestPart("petId") Long petId, ..."
-            // It misses date/location/content! 
-            // If the backend needs date/location for weather, it won't get it with that signature.
-            // However, I must match the signature EXACTLY first to fix 400.
-
-            // Warning: The Preview might fail to set accurate weather if lat/lng is missing, 
-            // but we can't send what isn't accepted.
-            // Wait, looking at User's controller code, `previewAiDiary` calls `diaryService.previewAiDiary(userId, petId, images, imageFiles)`.
-            // The service method DOES NOT take lat/lng/date either in that snippet!
-            // So it seems Preview is purely image-based or uses default weather?
-            // Let's stick to the signature.
 
             // API Call
             // [CHANGED] Call Preview API instead of Create API
