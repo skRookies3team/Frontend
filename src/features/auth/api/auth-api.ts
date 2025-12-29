@@ -103,9 +103,9 @@ export const signupApi = async (
 
     const response = await httpClient.post<SignupResponse>('/users/signup', formData, {
         skipAuth: true,
-        // headers: {
-        //     'Content-Type': 'multipart/form-data'
-        // }
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
     });
     return response;
 };
