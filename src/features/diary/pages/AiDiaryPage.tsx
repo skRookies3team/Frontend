@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, PawPrint } from 'lucide-react';
 
 import { getAllArchivesApi } from "@/features/auth/api/auth-api";
-import { ImageSource } from "../types/diary";
 import { useDiaryAuth } from "../hooks/useDiaryAuth";
 import { format } from 'date-fns';
 import {
@@ -18,7 +17,7 @@ import GalleryModal from '../components/GalleryModal';
 
 const AiDiaryPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+
   const { user } = useDiaryAuth();
 
   const STORAGE_KEY = 'ai_diary_backup';
@@ -45,7 +44,6 @@ const AiDiaryPage = () => {
   // imageFiles, mainImageIndex removed as they are upload-time only, or mainImage logic handled in DB.
 
   // 펫 선택 State
-  const [pets, setPets] = useState<any[]>([]);
   const [selectedPetId] = useState<number | null>(() => getSavedState('selectedPetId', null));
 
   // 날씨 & 기분 & 위치 State
@@ -54,7 +52,7 @@ const AiDiaryPage = () => {
   const [locationName, setLocationName] = useState("");
   const [locationCoords, setLocationCoords] = useState<{ lat: number, lng: number } | null>(null);
 
-  const [createdDiaryId, setCreatedDiaryId] = useState<number | null>(null);
+  const [createdDiaryId] = useState<number | null>(null);
   const [showGallery, setShowGallery] = useState(false);
   const [editedDiary, setEditedDiary] = useState(() => getSavedState('editedDiary', ""));
   // progress removed
@@ -93,33 +91,6 @@ const AiDiaryPage = () => {
         .catch(err => console.error("보관함 로드 실패:", err));
     }
   }, [user, showGallery]);
-
-  // Auth 정보가 로드되면 펫 목록 설정
-  useEffect(() => {
-    if (user) {
-      const userPets = user.pets || [];
-      const mappedPets = userPets.map((p: any) => ({
-        petId: Number(p.petId || p.id),
-        petName: p.petName || p.name,
-        species: (p.species === 'CAT' || p.species === '고양이') ? 'CAT' : 'DOG',
-      }));
-
-      setPets(mappedPets);
-
-      // Setter removed - read only here?
-      // Actually AiDiaryPage is now "Edit" page, so it shouldn't auto-select pet if not present?
-      // But if we want to support defaults:
-      // We can't set it if we don't have the setter. 
-      // We only have `selectedPetId`.
-      // Let's just remove the block or use a temp setter if absolutely needed, but for now just cleanup.
-      if (mappedPets.length > 0 && !selectedPetId) {
-        // We can't update state because we removed the setter to be read-only from session logic?
-        // Wait, I removed `setSelectedPetId` from the state declaration earlier!
-        // Restore it or remove this effect.
-        // Since this is Edit page, the pet should already be selected in Upload.
-      }
-    }
-  }, [user]);
 
   // --- Handlers ---
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, PawPrint } from 'lucide-react';
 import DiaryCalendar from '../components/DiaryCalendar';

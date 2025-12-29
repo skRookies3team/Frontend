@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, PawPrint } from 'lucide-react';
 import { useDiaryAuth } from "../hooks/useDiaryAuth";
 import { format } from 'date-fns';
 import { ImageSource } from "../types/diary";
 import {
-    getLocationHistory,
     createAiDiaryApi,
     getDiary
 } from "../api/diary-api";
@@ -53,7 +52,7 @@ const DiaryUploadPage = () => {
     const [pets, setPets] = useState<any[]>([]);
     const [selectedPetId, setSelectedPetId] = useState<number | null>(() => getSavedState('selectedPetId', null));
 
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSubmitting] = useState(false);
     const [progress, setProgress] = useState(0);
     const [showGallery, setShowGallery] = useState(false);
     const [archiveImages, setArchiveImages] = useState<{ archiveId: number, url: string }[]>([]);
@@ -92,15 +91,7 @@ const DiaryUploadPage = () => {
 
     // Persist State
     useEffect(() => {
-        const stateToSave = {
-            step, // Should be 'upload' or 'generating' (but generating isn't usually persisted safely, we'll see)
-            selectedDate,
-            selectedPetId,
-            selectedImages: selectedImages.filter(img => img.source !== 'GALLERY' || img.imageUrl.startsWith('http')),
-            // We persist these too so the next page can pick them up? 
-            // Actually, the next page needs 'createdDiaryId', 'editedDiary' etc.
-            // We will save them ON SUCCESS before navigating.
-        };
+
         // We update session storage with current selections so if they refresh they stay here
         // But we don't want to overwrite the 'edit' page data if we are just here.
         // Ideally we merge? Simple setItem overwrites.
@@ -191,7 +182,7 @@ const DiaryUploadPage = () => {
         }, 200);
 
         try {
-            const today = format(new Date(), 'yyyy-MM-dd');
+
             let location: { lat: number, lng: number } | null = null;
             let resolvedLocationName = "위치 정보 없음";
 
