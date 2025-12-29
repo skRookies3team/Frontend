@@ -90,64 +90,52 @@ export const deleteDiary = async (diaryId: number): Promise<void> => {
     if (!response.ok) throw new Error('일기 삭제 실패');
 };
 
-export const createStyle = async (data: any): Promise<any> => {
-    const token = localStorage.getItem('petlog_token');
-    const response = await fetch('http://localhost:8000/api/v1/diary/styles', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : ''
-        },
-        body: JSON.stringify(data)
-    });
+import { DiaryStyleRequest } from '../types/diary';
 
-    if (!response.ok) throw new Error('스타일 저장 실패');
-    return await response.json();
+// [NEW] 스타일 설정 저장 (Upsert)
+export const saveDiaryStyleApi = async (userId: number, data: DiaryStyleRequest) => {
+    try {
+        const response = await httpClient.post<any>('/v1/diary/styles', data, {
+            headers: {
+                'X-USER-ID': userId.toString()
+            }
+        });
+        return response;
+    } catch (error) {
+        console.error("[Service] 스타일 저장 실패:", error);
+        throw error; // Let the caller handle or ignore
+    }
 };
 
-export const updateStyle = async (styleId: number, data: any): Promise<any> => {
-    const token = localStorage.getItem('petlog_token');
-    const response = await fetch(`http://localhost:8000/api/v1/diary/styles/${styleId}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : ''
-        },
-        body: JSON.stringify(data)
-    });
-
-    if (!response.ok) throw new Error('스타일 수정 실패');
-    return await response.json();
+// [NEW] 내 스타일 조회
+export const getMyStyleApi = async (userId: number, petId?: number) => {
+    try {
+        const response = await httpClient.get<any>('/v1/diary/styles/me', {
+            headers: {
+                'X-USER-ID': userId.toString()
+            },
+            params: { petId }
+        });
+        return response;
+    } catch (error) {
+        console.warn("[Service] 스타일 조회 실패:", error);
+        return null;
+    }
 };
 
-export const getMyStyle = async (petId?: number): Promise<any> => {
-    const token = localStorage.getItem('petlog_token');
-    const url = petId
-        ? `http://localhost:8000/api/v1/diary/styles/me?petId=${petId}`
-        : 'http://localhost:8000/api/v1/diary/styles/me';
-
-    const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-            'Authorization': token ? `Bearer ${token}` : ''
-        }
-    });
-
-    if (!response.ok) throw new Error('스타일 조회 실패');
-    return await response.json();
-};
-
-export const getPetStyle = async (petId: number): Promise<any> => {
-    const token = localStorage.getItem('petlog_token');
-    const response = await fetch(`http://localhost:8000/api/v1/diary/styles/pet/${petId}`, {
-        method: 'GET',
-        headers: {
-            'Authorization': token ? `Bearer ${token}` : ''
-        }
-    });
-
-    if (!response.ok) throw new Error('펫 스타일 조회 실패');
-    return await response.json();
+// [NEW] 펫 스타일 조회
+export const getPetStyleApi = async (userId: number, petId: number) => {
+    try {
+        const response = await httpClient.get<any>(`/v1/diary/styles/pet/${petId}`, {
+            headers: {
+                'X-USER-ID': userId.toString()
+            }
+        });
+        return response;
+    } catch (error) {
+        console.warn("[Service] 펫 스타일 조회 실패:", error);
+        return null;
+    }
 };
 // [NEW] 위치 이력 조회
 export const getLocationHistory = async (userId: number, date: string) => {

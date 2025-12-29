@@ -119,10 +119,27 @@ const DiaryStylePage = () => {
             }
 
             if (user && user.id && finalDiaryId) {
-                // Save style settings here if needed? (Ideally style is saved to Diary or Style entity)
+                // [NEW] Save Style Preference
+                const { saveDiaryStyleApi, earnCoin } = await import("../api/diary-api");
+
+                try {
+                    await saveDiaryStyleApi(Number(user.id), {
+                        galleryType: layoutStyle,
+                        textAlignment: textAlign,
+                        fontSize: fontSize,
+                        sizeOption: sizeOption,
+                        backgroundColor: backgroundColor,
+                        preset: preset,
+                        themeStyle: themeStyle,
+                        petId: selectedPetId
+                    });
+                    console.log("=== [Frontend] Style Saved ===");
+                } catch (e) {
+                    console.warn("Style Save Failed (Non-critical)", e);
+                }
 
                 const REWARD_AMOUNT = 15;
-                const coinResult = await earnCoin(user.id, REWARD_AMOUNT, 'WRITEDIARY');
+                const coinResult = await earnCoin(Number(user.id), REWARD_AMOUNT, 'WRITEDIARY');
 
                 if (coinResult) {
                     console.log("=== [Frontend] Pet Coin Earned ===", coinResult);
