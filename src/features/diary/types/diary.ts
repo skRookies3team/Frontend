@@ -39,7 +39,7 @@ export interface DiaryRequest {
     latitude?: number | null;
     longitude?: number | null;
     // images는 별도 FormData로 처리되거나, 백엔드 로직에 따라 다름
-    images?: DiaryImageDTO[]; 
+    images?: DiaryImageDTO[];
 }
 
 // Mock 데이터 상수
@@ -55,7 +55,12 @@ export const GALLERY_IMAGES: string[] = [
 ];
 
 // 이미지 출처 타입
+export enum ImageSource {
+    GALLERY = 'GALLERY', // 외부 갤러리 (새로 업로드) -> 외부 서비스 전송 O
+    ARCHIVE = 'ARCHIVE'  // 내부 보관함 (기존 사진 선택) -> 외부 서비스 전송 X
+}
+
 export const ImageType = {
-    GALLERY: 'GALLERY', // 로컬 PC에서 새로 업로드
-    ARCHIVE: 'ARCHIVE', // 웹사이트 내부 보관함에서 선택
+    GALLERY: ImageSource.GALLERY,
+    ARCHIVE: ImageSource.ARCHIVE,
 } as const;

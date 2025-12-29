@@ -1,96 +1,88 @@
+import { useTrendingFeeds } from "../hooks/use-feed-query";
+import { Loader2, Heart, MessageCircle } from "lucide-react";
 import { useState } from "react";
-import { Heart, Loader2, RefreshCw } from "lucide-react";
-import { FeedDto } from "../types/feed";
-import { useTrendingFeeds, useFeedLike, useFeeds } from "../hooks/use-feed-query";
 import { PostDetailModal } from "./PostDetailModal";
+import { FeedDto } from "../types/feed";
+import { useFeedLike } from "../hooks/use-feed-query"; // 좋아요 동기화용
 import { useAuth } from "@/features/auth/context/auth-context";
-import { Button } from "@/shared/ui/button";
 
 export function PopularFeedGrid() {
   const { user } = useAuth();
-  const myUserId = user ? Number(user.id) : 0;
+  const currentUserId = user ? Number(user.id) : 0;
   
-  // 1. 인기 게시물 API 호출
-  const { data: trendingData, isLoading: isTrendingLoading, refetch } = useTrendingFeeds(myUserId);
+  // 데이터 조회
+  const { data, isLoading } = useTrendingFeeds(currentUserId);
   
-  // 2. [폴백] 데이터가 없으면 전체 피드 호출해서 클라이언트에서 정렬
-  const { data: allFeedsData, isLoading: isAllLoading } = useFeeds(myUserId);
-  
-  const { mutate: toggleLike } = useFeedLike(myUserId);
+  // 모달 상태
   const [selectedPost, setSelectedPost] = useState<FeedDto | null>(null);
 
-  // 로딩 상태 처리
-  if (isTrendingLoading || (isAllLoading && !trendingData)) {
+  // 좋아요 동기화 훅 (모달에 전달용)
+  const { mutate: toggleLike } = useFeedLike(currentUserId);
+
+  if (isLoading) {
     return (
-      <div className="flex flex-col justify-center items-center w-full py-20 gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
-        <span className="text-sm text-gray-400">인기 게시물을 불러오고 있어요...</span>
+      <div className="flex justify-center items-center h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#FF69B4]" />
       </div>
     );
   }
 
-  // 데이터 우선순위: 백엔드 인기글 -> 없으면 전체글 중 좋아요순 정렬 -> 없으면 빈 배열
-  let feeds = trendingData?.content || [];
-  
-  if (feeds.length === 0 && allFeedsData) {
-    // 백엔드 인기글이 0개면, 전체 글을 좋아요 순으로 정렬해서 보여줌 (Fallback)
-    feeds = [...allFeedsData].sort((a, b) => b.likeCount - a.likeCount);
-  }
+  const feeds = data?.content || [];
 
   if (feeds.length === 0) {
     return (
-      <div className="text-center py-20 w-full flex flex-col items-center">
-        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-          <Heart className="w-8 h-8 text-gray-300" />
-        </div>
-        <p className="text-gray-500 font-bold mb-2">아직 인기 게시물이 없어요!</p>
-        <p className="text-sm text-gray-400 mb-6">첫 번째 인기 스타가 되어보세요.</p>
-        <Button onClick={() => refetch()} variant="outline" size="sm" className="gap-2">
-          <RefreshCw className="w-4 h-4" /> 새로고침
-        </Button>
+      <div className="flex flex-col items-center justify-center h-[50vh] text-gray-400">
+        <div className="text-4xl mb-2">🔥</div>
+        <p>아직 인기 게시물이 없어요.</p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-1 md:gap-6 w-full pb-20">
-        {feeds.map((post) => (
+      {/* 그리드 레이아웃: 모바일 3열 유지 (인스타 스타일) */}
+      <div className="grid grid-cols-3 gap-1 md:gap-4 md:px-4">
+        {feeds.map((feed) => (
           <div 
-            key={post.feedId}
-            onClick={() => setSelectedPost(post)}
-            className="group relative aspect-square cursor-pointer overflow-hidden rounded-[16px] md:rounded-[24px] bg-gray-100 shadow-sm border border-gray-50"
+            key={feed.feedId} 
+            className="relative aspect-square group cursor-pointer overflow-hidden bg-gray-100 md:rounded-lg"
+            onClick={() => setSelectedPost(feed)}
           >
-            {post.imageUrls && post.imageUrls.length > 0 ? (
+            {/* 이미지 */}
+            {feed.imageUrls && feed.imageUrls.length > 0 ? (
               <img 
-                src={post.imageUrls[0]} 
-                alt="popular-feed" 
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                src={feed.imageUrls[0]} 
+                alt="popular feed" 
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-[#FFF0F5] p-4 text-center">
-                <span className="text-[10px] md:text-xs font-bold text-[#FF69B4] line-clamp-4 leading-relaxed">
-                  {post.content}
-                </span>
+              <div className="w-full h-full flex items-center justify-center p-4 text-xs text-gray-400 text-center bg-white">
+                {feed.content.slice(0, 30)}...
               </div>
             )}
 
-            <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex items-center justify-center gap-4 text-white font-bold backdrop-blur-[2px]">
-              <div className="flex items-center gap-1">
-                <Heart className="h-5 w-5 fill-white text-white drop-shadow-md" />
-                <span className="text-lg drop-shadow-md">{post.likeCount}</span>
+            {/* 호버 오버레이 (PC에서만/모바일은 터치 시 효과가 없으므로 제외할 수도 있음) */}
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center gap-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <div className="flex items-center text-white font-bold text-lg gap-2">
+                <Heart className="w-6 h-6 fill-white text-white" />
+                {feed.likeCount}
+              </div>
+              <div className="flex items-center text-white font-bold text-lg gap-2">
+                <MessageCircle className="w-6 h-6 fill-white text-white rotate-[-90deg]" />
+                {feed.commentCount}
               </div>
             </div>
           </div>
         ))}
       </div>
 
+      {/* 상세 모달 연결 */}
       {selectedPost && (
         <PostDetailModal
-           isOpen={!!selectedPost}
-           onClose={() => setSelectedPost(null)}
-           post={selectedPost}
-           onLikeToggle={(id) => toggleLike(id)}
+          isOpen={!!selectedPost}
+          onClose={() => setSelectedPost(null)}
+          post={selectedPost}
+          onLikeToggle={(id) => toggleLike(id)}
         />
       )}
     </>

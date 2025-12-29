@@ -37,9 +37,9 @@ export default function FeedPage() {
   const location = useLocation()
   
   const myUserId = user ? Number(user.id) : 0;
+  
   const { mutate: toggleLike } = useFeedLike(myUserId);
 
-  // 검색 훅 실행
   const { data: searchResults, isLoading: isSearchLoading } = useUserSearch(searchQuery);
 
   const sidebarMenu: SidebarItem[] = [
@@ -70,7 +70,8 @@ export default function FeedPage() {
   ]
 
   return (
-    <div className="flex justify-between w-full min-h-screen bg-[#FDFBFD] text-slate-800 font-sans selection:bg-[#FF69B4] selection:text-white pt-16 relative">
+    // [수정] pt-16 -> pt-0 (상단 여백 제거)
+    <div className="flex justify-between w-full min-h-screen bg-[#FDFBFD] text-slate-800 font-sans selection:bg-[#FF69B4] selection:text-white pt-0 relative">
       
       {/* 왼쪽 사이드바 */}
       <aside className="hidden md:block sticky top-20 h-[calc(100vh-6rem)] shrink-0 z-50 ml-4 w-[80px] xl:w-[240px]">
@@ -155,19 +156,15 @@ export default function FeedPage() {
                                       onClick={() => setIsSearchOpen(false)}
                                   >
                                       <Avatar className="h-10 w-10 border border-white shadow-sm">
-                                          {/* [수정] u.profileImageUrl -> u.profileImage */}
                                           <AvatarImage src={u.profileImage || "/placeholder-user.jpg"} />
                                           <AvatarFallback className="bg-[#FFF0F5] text-[#FF69B4] font-bold text-xs">
-                                              {/* [수정] u.nickname -> u.username */}
                                               {u.username ? u.username[0] : "U"}
                                           </AvatarFallback>
                                       </Avatar>
                                       <div className="flex flex-col overflow-hidden">
-                                          {/* [수정] 닉네임 표시: u.nickname -> u.username */}
                                           <span className="font-bold text-sm text-gray-900 truncate">
                                             {u.username || "알 수 없음"}
                                           </span>
-                                          {/* [수정] 아이디 표시: u.username -> u.social */}
                                           <span className="text-[#FF69B4] text-[11px] font-medium truncate">
                                             @{u.social || "user"}
                                           </span>
@@ -187,8 +184,10 @@ export default function FeedPage() {
       </aside>
 
       {/* 중앙 메인 컨텐츠 */}
-      <main className="flex-1 flex justify-center min-w-0 bg-[#FDFBFD]" onClick={() => { if(isSearchOpen) setIsSearchOpen(false); }}>
-        <div className="w-full max-w-[680px] px-4 pb-20 mt-4 md:mt-0">
+      {/* [수정] mt-4 md:mt-0 제거하고 pt-20 추가하여 사이드바와 높이 맞춤 */}
+      <main className="flex-1 flex justify-center min-w-0 bg-[#FDFBFD] pt-5 px-4 pb-20" onClick={() => { if(isSearchOpen) setIsSearchOpen(false); }}>
+        <div className="w-full max-w-[680px]">
+             {/* 모바일 헤더 */}
              <div className="md:hidden w-full fixed top-0 left-0 bg-white/95 backdrop-blur-md z-50 flex items-center justify-between px-5 py-3 border-b border-gray-100 shadow-sm">
                 <span className="font-black text-xl italic text-[#FF69B4] tracking-tighter">Petlog</span>
                 <div className="flex gap-4">
