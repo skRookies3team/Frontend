@@ -102,7 +102,7 @@ export default function LoginPage() {
     console.log("회원가입:", { signupEmail, signupPassword });
 
     // Save credentials to sessionStorage
-    sessionStorage.setItem("signup_user_info", JSON.stringify({
+    sessionStorage.setItem("signup_credentials", JSON.stringify({
       email: signupEmail,
       password: signupPassword
     }));
@@ -283,4 +283,3 @@ export default function LoginPage() {
     </div>
   )
 }
-
