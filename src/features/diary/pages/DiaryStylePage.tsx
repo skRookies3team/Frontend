@@ -37,7 +37,7 @@ const DiaryStylePage = () => {
     const [selectedImages] = useState<any[]>(() => getSavedState('selectedImages', []));
     const [selectedDate] = useState(() => getSavedState('selectedDate', format(new Date(), 'yyyy-MM-dd')));
     const [selectedPetId] = useState<number | null>(() => getSavedState('selectedPetId', null));
-    const [createdDiaryId] = useState<number | null>(() => getSavedState('createdDiaryId', null));
+    const [createdDiaryId, setCreatedDiaryId] = useState<number | null>(() => getSavedState('createdDiaryId', null));
 
     // Content (Read-only for preview)
     const [editedDiary] = useState(() => getSavedState('editedDiary', ""));
@@ -115,6 +115,7 @@ const DiaryStylePage = () => {
                     ...JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '{}'),
                     createdDiaryId: finalDiaryId
                 }));
+                setCreatedDiaryId(finalDiaryId);
             }
 
             if (user && user.id && finalDiaryId) {
@@ -142,13 +143,15 @@ const DiaryStylePage = () => {
     const handleSocialShare = async (visibility: string) => {
         if (!createdDiaryId || !user) return;
         try {
+            // [FIX] Use persistent S3 URLs, not local blob URLs
+            const previewImageUrls = getSavedState('previewImageUrls', []);
             const requestDto = {
                 userId: Number(user.id),
                 petId: selectedPetId,
                 content: editedDiary,
                 location: locationName,
                 visibility: visibility,
-                imageUrls: selectedImages.map(img => img.imageUrl)
+                imageUrls: previewImageUrls.length > 0 ? previewImageUrls : selectedImages.map(img => img.imageUrl)
             };
 
             const feedId = await createSocialFeed(requestDto);
