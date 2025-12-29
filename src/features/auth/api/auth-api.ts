@@ -82,6 +82,11 @@ export const signupApi = async (
         type: 'application/json'
     }));
 
+    
+    console.log(formData)
+    alert(formData);
+
+
     const response = await httpClient.post<SignupResponse>('/users/signup', formData, {
         skipAuth: true,
         headers: {
