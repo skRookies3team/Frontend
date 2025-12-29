@@ -124,6 +124,7 @@ const DiaryStylePage = () => {
 
                 try {
                     await saveDiaryStyleApi(Number(user.id), {
+                        diaryId: finalDiaryId, // [FIX] ID 연동
                         galleryType: layoutStyle,
                         textAlignment: textAlign,
                         fontSize: fontSize,

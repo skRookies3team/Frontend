@@ -188,7 +188,8 @@ export const createAiDiaryApi = async (data: any): Promise<number> => {
 export const generateAiDiaryPreview = async (data: FormData): Promise<AiDiaryResponse> => {
     // Calls POST /api/diaries/ai/preview with Multipart Form Data
     const response = await httpClient.post<AiDiaryResponse>('/diaries/ai/preview', data, {
-        headers: { "Content-Type": "multipart/form-data" }
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 60000 // [FIX] Increase timeout to 60s for AI generation
     });
     return response;
 };

@@ -43,6 +43,7 @@ export interface DiaryStyleRequest {
     preset: string | null;
     themeStyle: string;    // basic, romantic, modern
     petId: number | null;
+    diaryId: number;       // [NEW] 다이어리 ID (개별 다이어리 스타일 적용)
 }
 
 // [추가] 일기 생성 요청 DTO (프론트엔드에서 백엔드로 보낼 때 사용)
