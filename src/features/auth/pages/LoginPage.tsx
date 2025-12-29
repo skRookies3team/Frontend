@@ -102,9 +102,13 @@ export default function LoginPage() {
     console.log("회원가입:", { signupEmail, signupPassword });
 
     // Save credentials to sessionStorage
-    sessionStorage.setItem("signup_credentials", JSON.stringify({
+    sessionStorage.setItem("signup_user_info", JSON.stringify({
       email: signupEmail,
-      password: signupPassword
+      password: signupPassword,
+      name: signupEmail.split("@")[0],
+      username: signupEmail.split("@")[0],
+      birthday: null,
+      gender: null
     }));
 
     navigate("/signup/info");
