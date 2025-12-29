@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useInView } from "react-intersection-observer";
 import { Loader2 } from "lucide-react";
 import { PostCard } from "./post-card";
-import { useFeedList, useFeedLike } from "../hooks/use-feed-query";
+import { useFeedList } from "../hooks/use-feed-query";
 import { useAuth } from "@/features/auth/context/auth-context";
 import { FeedDto } from "../types/feed";
 
@@ -26,8 +26,6 @@ export function FeedList({ filter, onPostClick }: FeedListProps) {
     hasNextPage,
     isFetchingNextPage
   } = useFeedList(currentUserId, filter);
-
-  const { mutate: toggleLike } = useFeedLike(currentUserId);
 
   useEffect(() => {
     if (inView && hasNextPage) {
@@ -79,7 +77,6 @@ export function FeedList({ filter, onPostClick }: FeedListProps) {
                 <PostCard
                     key={post.feedId}
                     post={post}
-                    onLikeToggle={(id) => toggleLike(id)}
                     onClickPost={onPostClick}
                 />
             ))}

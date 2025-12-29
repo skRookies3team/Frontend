@@ -148,7 +148,7 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
       setLikeCount(prevLiked ? prevCount - 1 : prevCount + 1);
       return { prevLiked, prevCount };
     },
-    onError: (err, vars, context) => {
+    onError: (_err, _vars, context) => {
       // 실패 시 롤백
       if (context) {
         setIsLiked(context.prevLiked);
