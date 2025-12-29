@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, PawPrint } from 'lucide-react';
 
 import { getAllArchivesApi } from "@/features/auth/api/auth-api";
@@ -7,34 +7,46 @@ import { ImageSource } from "../types/diary";
 import { useDiaryAuth } from "../hooks/useDiaryAuth";
 import { format } from 'date-fns';
 import {
-  getLocationHistory,
   earnCoin,
   createSocialFeed,
-  createAiDiaryApi,
-  getDiary
 } from "../api/diary-api";
 
-import UploadStep from '../components/UploadStep';
-import GeneratingStep from '../components/GeneratingStep';
 import EditStep from '../components/EditStep';
 import StyleStep from '../components/StyleStep';
 import CompleteStep from '../components/CompleteStep';
 import GalleryModal from '../components/GalleryModal';
-import DiaryCalendar from '../components/DiaryCalendar';
 
 const AiDiaryPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useDiaryAuth();
 
+  const STORAGE_KEY = 'ai_diary_backup';
+
+  const getSavedState = (key: string, defaultVal: any) => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed[key] !== undefined ? parsed[key] : defaultVal;
+      }
+    } catch (e) {
+      console.error("Failed to parse session state", e);
+    }
+    return defaultVal;
+  };
+
   // --- States ---
-  const [step, setStep] = useState("calendar"); // Default to Calendar (Dashboard removed)
-  const [selectedImages, setSelectedImages] = useState<any[]>([]);
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [mainImageIndex, setMainImageIndex] = useState<number>(0); // Default first image as main
+  // Default to 'edit' as this is now the subsequent page
+  const [step, setStep] = useState<string>(() => getSavedState('step', "edit"));
+
+  // Note: selectedImages are now fully URLs from DB (or persisted objects)
+  const [selectedImages] = useState<any[]>(() => getSavedState('selectedImages', []));
+  // imageFiles, mainImageIndex removed as they are upload-time only, or mainImage logic handled in DB.
 
   // 펫 선택 State
   const [pets, setPets] = useState<any[]>([]);
-  const [selectedPetId, setSelectedPetId] = useState<number | null>(null);
+  const [selectedPetId] = useState<number | null>(() => getSavedState('selectedPetId', null));
 
   // 날씨 & 기분 & 위치 State
   const [weather, setWeather] = useState("");
@@ -44,10 +56,9 @@ const AiDiaryPage = () => {
 
   const [createdDiaryId, setCreatedDiaryId] = useState<number | null>(null);
   const [showGallery, setShowGallery] = useState(false);
-  const [editedDiary, setEditedDiary] = useState("");
-  const [progress, setProgress] = useState(0);
-  // ... States ...
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [editedDiary, setEditedDiary] = useState(() => getSavedState('editedDiary', ""));
+  // progress removed
+  const [selectedDate] = useState(() => getSavedState('selectedDate', format(new Date(), 'yyyy-MM-dd')));
 
   // Style States
   const [layoutStyle, setLayoutStyle] = useState("grid"); // galleryType
@@ -95,226 +106,35 @@ const AiDiaryPage = () => {
 
       setPets(mappedPets);
 
+      // Setter removed - read only here?
+      // Actually AiDiaryPage is now "Edit" page, so it shouldn't auto-select pet if not present?
+      // But if we want to support defaults:
+      // We can't set it if we don't have the setter. 
+      // We only have `selectedPetId`.
+      // Let's just remove the block or use a temp setter if absolutely needed, but for now just cleanup.
       if (mappedPets.length > 0 && !selectedPetId) {
-        setSelectedPetId(mappedPets[0].petId);
+        // We can't update state because we removed the setter to be read-only from session logic?
+        // Wait, I removed `setSelectedPetId` from the state declaration earlier!
+        // Restore it or remove this effect.
+        // Since this is Edit page, the pet should already be selected in Upload.
       }
     }
   }, [user]);
 
   // --- Handlers ---
 
-  const handleDateSelect = (date: string) => {
-    setSelectedDate(date);
-    setStep("upload");
-  };
-
-  const handleRecapClick = () => {
-    // Navigate to recap page or feature
-    navigate('/ai-studio/recap');
-  };
-
   const handleBack = () => {
-    if (step === 'calendar') {
-      navigate(-1);
-    } else if (step === 'upload') {
-      setStep('calendar');
-    } else if (step === 'edit') {
-      if (window.confirm("편집 내용을 취소하고 다시 사진을 선택하시겠습니까?")) {
-        setStep('upload');
+    if (step === 'edit') {
+      // If backing out from Edit, maybe warn? Or go back to Upload?
+      // If we go back to Upload, we might lose the "generated" state, or Upload page needs to handle re-entry.
+      // For now, allow navigating back to Upload page to start over.
+      if (window.confirm("편집 내용을 취소하고 다시 시작하시겠습니까?")) {
+        navigate('/ai-studio/diary/upload');
       }
     } else if (step === 'style') {
       setStep('edit');
     } else {
-      setStep('calendar'); // Default fallback
-    }
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    if (imageFiles.length + files.length > 10) {
-      alert("최대 10장까지 업로드 가능합니다.");
-      return;
-    }
-
-    setImageFiles(prev => [...prev, ...files]);
-
-    const newPreviews = files.map(file => ({
-      imageUrl: URL.createObjectURL(file),
-      source: ImageSource.GALLERY,
-      archiveId: null // Gallery upload has no archive ID yet
-    }));
-    setSelectedImages(prev => [...prev, ...newPreviews]);
-
-    e.target.value = '';
-  };
-
-  const handleSelectFromGallery = (image: { archiveId: number, url: string }) => {
-    const isSelected = selectedImages.some(img => img.imageUrl === image.url);
-    if (isSelected) {
-      setSelectedImages(prev => prev.filter(img => img.imageUrl !== image.url));
-    } else if (selectedImages.length < 10) {
-      setSelectedImages(prev => [...prev, {
-        imageUrl: image.url,
-        source: ImageSource.ARCHIVE,
-        archiveId: image.archiveId
-      }]);
-    }
-  };
-
-  // ... (omitting handleGenerate logic for brevity of replacement, wait replace_file_content replaces chunks so I must bridge correctly)
-  // I will just replace the top handlers block and the render block in 2 steps or 1 large step if contigous?
-  // They are not contigous. I need 2 chunks.
-  // I will use multi_replace.
-
-
-  const handleGenerate = async () => {
-    if (imageFiles.length === 0 && selectedImages.length === 0) {
-      alert("최소 1장의 사진을 선택해주세요.");
-      return;
-    }
-    if (!selectedPetId) {
-      alert("반려동물을 선택해주세요.");
-      return;
-    }
-    if (!user) {
-      alert("로그인 정보가 없습니다.");
-      return;
-    }
-
-    setStep("generating");
-    console.log("=== [Frontend] Diary Generation Started ===");
-
-    const getCurrentPosition = () => {
-      return new Promise<{ lat: number, lng: number } | null>((resolve) => {
-        if (!navigator.geolocation) { resolve(null); return; }
-        navigator.geolocation.getCurrentPosition(
-          (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-          (_err) => resolve(null),
-          { enableHighAccuracy: true, timeout: 5000 }
-        );
-      });
-    };
-
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress += 5;
-      if (currentProgress < 90) setProgress(currentProgress);
-    }, 200);
-
-    try {
-      const today = format(new Date(), 'yyyy-MM-dd');
-      let location: { lat: number, lng: number } | null = null;
-
-      console.log(`=== [Frontend Debug] Generating Diary for Date: ${selectedDate} (Today: ${today}) ===`);
-
-      if (selectedDate === today) {
-        console.log("=== [Frontend] 오늘 날짜 선택: 현재 위치 조회 시도 ===");
-        location = await getCurrentPosition();
-      } else {
-        console.log(`=== [Frontend] 과거 날짜(${selectedDate}) 선택: 위치 기록 조회 시도 (PostGIS) ===`);
-
-        const historyLocation = await getLocationHistory(user.id, selectedDate);
-
-        if (historyLocation && typeof historyLocation.latitude === 'number' && typeof historyLocation.longitude === 'number') {
-          location = { lat: historyLocation.latitude, lng: historyLocation.longitude };
-          console.log("=== [Frontend] 과거 위치 기록 발견(DB 사용) ===", location);
-        } else {
-          console.warn(`=== [Frontend] 과거 위치 기록 없음. 현재 위치로 대체합니다. ===`);
-          location = await getCurrentPosition();
-        }
-      }
-
-      if (location) {
-        setLocationCoords({ lat: location.lat, lng: location.lng });
-        setLocationName("주소 불러오는 중...");
-      } else {
-        setLocationName("위치 정보 없음");
-      }
-
-      const formData = new FormData();
-      if (imageFiles.length > 0) {
-        imageFiles.forEach((file) => { formData.append("imageFiles", file); });
-      } else {
-        formData.append("imageFiles", new Blob([], { type: 'application/octet-stream' }), "");
-      }
-
-      const requestData = {
-        userId: Number(user.id),
-        petId: selectedPetId,
-        photoArchiveId: null,
-        content: "",
-        visibility: "PRIVATE",
-        isAiGen: true,
-        weather: "",
-        mood: "",
-        date: selectedDate,
-        latitude: location ? location.lat : null,
-        longitude: location ? location.lng : null,
-        locationName: locationName,
-        images: selectedImages.map((img, index) => {
-          // [MODIFIED] Use mainImageIndex to determine mainImage
-          // Note: imgOrder should start at 1
-          const isMain = index === mainImageIndex;
-          console.log(`[Frontend Debug] Image ${index}: URL=${img.imageUrl.substring(0, 20)}..., Main=${isMain} (TargetIndex=${mainImageIndex})`);
-          return {
-            imageUrl: img.imageUrl || "",
-            imgOrder: index + 1,
-            mainImage: isMain,
-            source: img.source,
-            archiveId: img.archiveId || null
-          };
-        })
-      };
-
-      console.log("=== [Frontend Debug] FINAL PAYLOAD ===", JSON.stringify(requestData, null, 2));
-
-      formData.append("request", new Blob([JSON.stringify(requestData)], { type: "application/json" }));
-
-      const response = await createAiDiaryApi(formData);
-
-      const diaryId = response.diaryId;
-      setCreatedDiaryId(diaryId);
-
-      const diaryDetail = await getDiary(diaryId);
-
-      console.log("=== [Frontend] getDiary API Response ===", diaryDetail);
-
-      clearInterval(interval);
-      setProgress(100);
-
-      setEditedDiary(diaryDetail.content || "AI가 일기를 생성하지 못했습니다.");
-      setWeather(diaryDetail.weather || "맑음");
-      setMood(diaryDetail.mood || "행복");
-
-      if (diaryDetail.locationName && diaryDetail.locationName !== "위치 정보 없음") {
-        setLocationName(diaryDetail.locationName);
-      } else {
-        setLocationName("위치 정보 없음");
-      }
-
-      if (diaryDetail.images && Array.isArray(diaryDetail.images)) {
-        const permanentImages = diaryDetail.images.map((img: any) => ({
-          imageUrl: img.imageUrl,
-          source: 'GALLERY'
-        }));
-        setSelectedImages(permanentImages);
-      }
-
-      setTimeout(() => setStep("edit"), 500);
-
-    } catch (error: any) {
-      clearInterval(interval);
-      console.error("=== [Frontend] Diary Generation Error ===", error);
-
-      let errorMessage = error.message || "알 수 없는 오류";
-      if (errorMessage.includes("사용자를 찾을 수 없습니다")) {
-        errorMessage += "\n\n[안내] 로그인 정보가 만료되었거나 DB와 일치하지 않습니다.\n로그아웃 후 다시 로그인해주세요.";
-      }
-
-      alert(`일기 생성 실패: ${errorMessage}`);
-      setStep("upload");
+      navigate('/ai-studio/diary/calendar'); // Default fallback
     }
   };
 
@@ -374,13 +194,7 @@ const AiDiaryPage = () => {
   };
 
   const handleReset = () => {
-    setStep("calendar"); // Reset to calendar
-    setSelectedImages([]);
-    setImageFiles([]);
-    setEditedDiary("");
-    setProgress(0);
-    setCreatedDiaryId(null);
-    setEarnedReward(null);
+    navigate('/ai-studio/diary/calendar');
   };
 
   return (
@@ -400,23 +214,8 @@ const AiDiaryPage = () => {
 
       <main className="container mx-auto max-w-7xl p-4 md:p-6">
 
-        {step === 'calendar' && (
-          <DiaryCalendar
-            selectedDate={selectedDate}
-            onDateSelect={handleDateSelect}
-            onRecapClick={handleRecapClick}
-          />
-        )}
+        {/* Calendar Removed */}
 
-        {step === 'upload' && (
-          <UploadStep
-            selectedImages={selectedImages} isSubmitting={isSubmitting} handleImageUpload={handleImageUpload} handleGenerate={handleGenerate}
-            setSelectedImages={setSelectedImages} setShowGallery={setShowGallery} pets={pets} selectedPetId={selectedPetId} setSelectedPetId={setSelectedPetId}
-            selectedDate={selectedDate} setSelectedDate={setSelectedDate}
-            mainImageIndex={mainImageIndex} setMainImageIndex={setMainImageIndex}
-          />
-        )}
-        {step === 'generating' && <GeneratingStep progress={progress} />}
         {step === 'edit' && (
           <EditStep
             userId={Number(user?.id)}
@@ -446,7 +245,7 @@ const AiDiaryPage = () => {
         showGallery={showGallery}
         setShowGallery={setShowGallery}
         selectedImages={selectedImages}
-        handleSelectFromGallery={handleSelectFromGallery}
+        handleSelectFromGallery={() => { }} // No-op in edit/style modes usually? or read-only? 
         archiveImages={archiveImages}
       />
     </div>

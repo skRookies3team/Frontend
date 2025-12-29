@@ -1,8 +1,8 @@
 import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Outlet,
+    BrowserRouter as Router,
+    Routes,
+    Route,
+    Outlet,
 } from "react-router-dom";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -45,7 +45,10 @@ import PetEditPage from "@/features/healthcare/pages/PetEditPage"
 import RegisterPetPage from "@/features/healthcare/pages/RegisterPetPage"
 
 // Feature: Diary
-import AiDiaryPage from "@/features/diary/pages/AiDiaryPage"
+import DiaryCalendarPage from "@/features/diary/pages/DiaryCalendarPage"
+import DiaryUploadPage from "@/features/diary/pages/DiaryUploadPage"
+import DiaryEditPage from "@/features/diary/pages/DiaryEditPage"
+import DiaryStylePage from "@/features/diary/pages/DiaryStylePage"
 import AiStudioPage from "@/features/diary/pages/AiStudioPage"
 import AiRecapPage from "@/features/diary/pages/AiRecapPage"
 import AiBiographyPage from "@/features/diary/pages/AiBiographyPage"
@@ -75,15 +78,15 @@ import LocationTracker from "@/features/diary/components/LocationTracker"
 const queryClient = new QueryClient();
 
 const AppLayout = () => {
-  return (
-    <>
-      <Header />
-      <main className="bg-background text-foreground">
-        <Outlet />
-      </main>
-      <FloatingChatbotWidget />
-    </>
-  );
+    return (
+        <>
+            <Header />
+            <main className="bg-background text-foreground">
+                <Outlet />
+            </main>
+            <FloatingChatbotWidget />
+        </>
+    );
 };
 
 function App() {
@@ -102,10 +105,13 @@ function App() {
                                         <Route path="feed" element={<FeedPage />} />
                                         <Route path="feed/ai-recommend" element={<FeedAiRecommendPage />} />
                                         {/* feed/create 라우트 삭제 */}
-                                        <Route path="create" element={<CreatePage />} />
-                                        <Route path="ai-diary" element={<AiDiaryPage />} />
                                         <Route path="ai-studio" element={<AiStudioPage />} />
-                                        <Route path="ai-studio/diary" element={<AiDiaryPage />} />
+                                        <Route path="create" element={<CreatePage />} />
+                                        {/* <Route path="ai-diary" element={<AiDiaryPage />} /> Removed legacy */}
+                                        <Route path="ai-studio/diary/calendar" element={<DiaryCalendarPage />} />
+                                        <Route path="ai-studio/diary/upload" element={<DiaryUploadPage />} />
+                                        <Route path="ai-studio/diary/edit" element={<DiaryEditPage />} />
+                                        <Route path="ai-studio/diary/style-edit" element={<DiaryStylePage />} />
                                         <Route path="ai-studio/recap" element={<AiRecapPage />} />
                                         <Route
                                             path="ai-studio/biography"
