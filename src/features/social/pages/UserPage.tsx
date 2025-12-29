@@ -6,8 +6,8 @@ import { Button } from "@/shared/ui/button"
 import { Card, CardContent } from "@/shared/ui/card"
 import { Input } from "@/shared/ui/input"
 import { 
-  MoreHorizontal, Heart, MessageCircle, Grid, BookOpen, 
-  Ban, AlertTriangle, Loader2, Home, Search, TrendingUp, PlusSquare, User, X
+  MoreHorizontal, Heart, MessageCircle, Grid, 
+  Ban, AlertTriangle, Loader2, Home, Search, TrendingUp, PlusSquare, User, X, Plus 
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu"
 import { useAuth } from "@/features/auth/context/auth-context"
@@ -28,7 +28,6 @@ export default function UserPage() {
   const currentUserId = currentUser ? Number(currentUser.id) : 0;
 
   // --- State ---
-  const [activeTab, setActiveTab] = useState<"posts" | "diary">("posts")
   const [selectedPost, setSelectedPost] = useState<FeedDto | null>(null)
   
   // 사이드바 상태
@@ -155,9 +154,10 @@ export default function UserPage() {
   const posts = userFeeds?.content || [];
 
   return (
-    <div className="flex w-full min-h-screen bg-[#FDFBFD] text-slate-900 font-sans selection:bg-[#FF69B4] selection:text-white pt-10">
+    // [수정] pt-0으로 변경하여 상단 여백 제거 (헤더와 바로 연결되도록)
+    <div className="flex w-full min-h-screen bg-[#FDFBFD] text-slate-900 font-sans selection:bg-[#FF69B4] selection:text-white pt-5">
       
-      {/* [1. 왼쪽 사이드바 - 아이콘형 고정 (변경 없음)] */}
+      {/* [1. 왼쪽 사이드바 - 아이콘형 고정] */}
       <aside className="hidden md:block fixed left-4 top-20 bottom-4 z-50">
         <div className="relative h-full flex w-[80px]">
           
@@ -222,14 +222,31 @@ export default function UserPage() {
       </aside>
 
       {/* [2. 중앙 메인 컨텐츠] */}
-      {/* w-full, justify-center: 화면 가로 중앙 정렬 유지 */}
-      <main className="flex-1 w-full flex justify-center px-4 pb-20 pt-8" onClick={() => isSearchOpen && setIsSearchOpen(false)}>
+      {/* [수정] pt-0으로 변경 (위쪽 여백 제거) */}
+      <main className="flex-1 w-full flex justify-center px-4 pb-20 pt-0" onClick={() => isSearchOpen && setIsSearchOpen(false)}>
         <div className="w-full max-w-[935px]"> 
           
           <div className="p-4 md:p-6 bg-white rounded-[2.5rem] shadow-sm border border-gray-100 min-h-[80vh]">
             
+            {/* 웹(Desktop) 헤더: 소셜 ID 중앙 표시 */}
+            <div className="hidden md:flex w-full justify-center items-center pb-6 border-b border-gray-100 mb-8">
+               <span className="font-bold text-xl text-gray-900">@{targetUser.social}</span>
+            </div>
+
+            {/* 모바일 헤더 */}
+            <div className="md:hidden w-full fixed top-0 left-0 bg-white/95 backdrop-blur-md z-50 flex items-center justify-between px-5 py-3 border-b border-gray-100 shadow-sm">
+                <div className="flex-shrink-0">
+                    <span className="font-black text-xl italic text-[#FF69B4] tracking-tighter">Petlog</span>
+                </div>
+                <div className="absolute left-1/2 transform -translate-x-1/2">
+                    <span className="font-bold text-lg text-gray-900">@{targetUser.social}</span>
+                </div>
+                <div className="flex-shrink-0 flex gap-4">
+                    <Heart className="h-6 w-6 text-gray-800" />
+                </div>
+            </div>
+
             {/* [프로필 헤더] */}
-            {/* md:pl-[60px]: 이 부분만 오른쪽으로 60px 밀어서 검색창과 겹침 방지 */}
             <div className="mb-6 md:pl-[90px] transition-all duration-300">
               <div className="mb-6 flex items-start gap-4 md:gap-8">
                 <Avatar className="h-20 w-20 border-4 border-border md:h-32 md:w-32">
@@ -337,100 +354,86 @@ export default function UserPage() {
                     )}
                 </div>
               </div>
-
-              {targetUser.pets && targetUser.pets.length > 0 && (
-                <Card className="border-0 shadow-md mt-6 md:mx-6">
-                  <CardContent className="p-4">
-                    <p className="mb-3 text-sm font-semibold text-foreground">반려동물</p>
-                    <div className="flex gap-4 overflow-x-auto pb-2">
-                      {targetUser.pets.map((pet: any) => (
-                        <div key={pet.petId} className="flex items-center gap-2 min-w-fit">
-                          <Avatar className="h-10 w-10 border-2 border-pink-400">
-                            <AvatarImage src={pet.profileImage || "/placeholder.svg"} alt={pet.petName} />
-                            <AvatarFallback>{pet.petName[0]}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="text-sm font-semibold text-foreground">{pet.petName}</p>
-                            <p className="text-xs text-muted-foreground">{pet.breed}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
             </div>
 
-            {/* [탭 & 그리드] */}
-            {/* 여기는 여백 추가 없음 (중앙 정렬 유지) */}
-            <div className="mb-4 border-t border-border">
-              <div className="flex">
-                <button
-                  onClick={() => setActiveTab("posts")}
-                  className={`flex flex-1 items-center justify-center gap-2 border-t-2 py-3 transition-colors ${activeTab === "posts"
-                    ? "border-foreground text-foreground"
-                    : "border-transparent text-muted-foreground"
-                    }`}
-                >
-                  <Grid className="h-5 w-5" />
-                  <span className="text-sm font-semibold">게시물</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab("diary")}
-                  className={`flex flex-1 items-center justify-center gap-2 border-t-2 py-3 transition-colors ${activeTab === "diary"
-                    ? "border-foreground text-foreground"
-                    : "border-transparent text-muted-foreground"
-                    }`}
-                >
-                  <BookOpen className="h-5 w-5" />
-                  <span className="text-sm font-semibold">AI 다이어리 보관함</span>
-                </button>
-              </div>
-            </div>
-
-            {activeTab === "posts" && (
-                isFeedsLoading ? (
-                    <div className="flex justify-center py-20"><Loader2 className="animate-spin text-gray-300" /></div>
-                ) : posts.length > 0 ? (
-                    <div className="grid grid-cols-3 gap-1 md:gap-3">
-                        {posts.map((post) => (
-                        <div key={post.feedId} className="group relative aspect-square overflow-hidden rounded-lg cursor-pointer" onClick={() => setSelectedPost(post)}>
-                            {post.imageUrls && post.imageUrls.length > 0 ? (
-                                <img src={post.imageUrls[0]} alt="Post" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                            ) : (
-                                <div className="h-full w-full flex items-center justify-center bg-gray-100 text-gray-400 text-xs p-2 text-center">{post.content.slice(0, 20)}</div>
-                            )}
-                            <div className="absolute inset-0 flex items-center justify-center gap-4 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                                <div className="flex items-center gap-1 text-white">
-                                    <Heart className="h-5 w-5 fill-white" />
-                                    <span className="font-semibold">{post.likeCount}</span>
-                                </div>
-                                <div className="flex items-center gap-1 text-white">
-                                    <MessageCircle className="h-5 w-5 fill-white" />
-                                    <span className="font-semibold">{post.commentCount}</span>
-                                </div>
+            {/* 반려동물 섹션 */}
+            {targetUser.pets && targetUser.pets.length > 0 && (
+                <div className="mb-8 mt-6 md:pl-[90px] transition-all duration-300">
+                    <Card className="border-0 shadow-md">
+                      <CardContent className="p-4">
+                        <p className="mb-3 text-sm font-semibold text-foreground">반려동물</p>
+                        <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
+                          {targetUser.pets.map((pet: any) => (
+                            <div key={pet.petId} className="flex items-center gap-2 min-w-fit">
+                              <Avatar className="h-10 w-10 border-2 border-pink-400">
+                                <AvatarImage src={pet.profileImage || "/placeholder.svg"} alt={pet.petName} />
+                                <AvatarFallback>{pet.petName[0]}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="text-sm font-semibold text-foreground">{pet.petName}</p>
+                                <p className="text-xs text-muted-foreground">{pet.breed}</p>
+                              </div>
                             </div>
+                          ))}
                         </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="py-20 text-center text-gray-500">게시물이 없습니다.</div>
-                )
+                      </CardContent>
+                    </Card>
+                </div>
             )}
 
-            {activeTab === "diary" && (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <BookOpen className="mb-4 h-16 w-16 text-muted-foreground" />
-                <h3 className="mb-2 text-lg font-semibold text-foreground">AI 다이어리는 본인만 볼 수 있어요</h3>
-                <p className="text-sm text-muted-foreground">{targetUser.username}님의 AI 다이어리는 비공개로 설정되어 있습니다</p>
+            {/* 탭 메뉴 */}
+            <div className="mb-4 border-t border-border">
+              <div className="flex justify-center">
+                <div className="flex items-center justify-center gap-2 border-t-2 border-foreground py-3 text-foreground px-20">
+                  <Grid className="h-4 w-4" />
+                  <span className="text-xs font-semibold tracking-widest">게시물</span>
+                </div>
               </div>
+            </div>
+
+            {/* 게시물 목록 */}
+            {isFeedsLoading ? (
+                <div className="flex justify-center py-20"><Loader2 className="animate-spin text-gray-300" /></div>
+            ) : posts.length > 0 ? (
+                <div className="grid grid-cols-3 gap-1 md:gap-3">
+                    {posts.map((post) => (
+                    <div key={post.feedId} className="group relative aspect-square overflow-hidden rounded-lg cursor-pointer" onClick={() => setSelectedPost(post)}>
+                        {post.imageUrls && post.imageUrls.length > 0 ? (
+                            <img src={post.imageUrls[0]} alt="Post" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                        ) : (
+                            <div className="h-full w-full flex items-center justify-center bg-gray-100 text-gray-400 text-xs p-2 text-center">{post.content.slice(0, 20)}</div>
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center gap-4 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                            <div className="flex items-center gap-1 text-white">
+                                <Heart className="h-5 w-5 fill-white" />
+                                <span className="font-semibold">{post.likeCount}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-white">
+                                <MessageCircle className="h-5 w-5 fill-white" />
+                                <span className="font-semibold">{post.commentCount}</span>
+                            </div>
+                        </div>
+                    </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="py-20 text-center text-gray-500">게시물이 없습니다.</div>
             )}
           </div>
         </div>
       </main>
 
+      {/* 플로팅 피드 작성 버튼 (모바일용, 우측 하단) */}
+      <button
+        onClick={() => setIsCreateOpen(true)}
+        className="fixed bottom-24 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#FF69B4] text-white shadow-xl shadow-[#FF69B4]/40 transition-transform active:scale-90 md:hidden"
+        aria-label="피드 작성"
+      >
+        <Plus className="h-8 w-8" strokeWidth={2.5} />
+      </button>
+
       {/* Modals */}
-      <TabNavigation />
+      <div className="md:hidden"><TabNavigation /></div>
       {selectedPost && <PostDetailModal post={selectedPost} isOpen={!!selectedPost} onClose={() => setSelectedPost(null)} />}
       <FeedCreateModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} />
       <FollowListModal isOpen={showFollowers} onClose={() => setShowFollowers(false)} title="팔로워" users={followersList} isLoading={isFollowersLoading} />
