@@ -203,8 +203,8 @@ export function DiaryCarousel3D({ diaries = [], isLoading = false }: DiaryCarous
                 <div
                   key={diary.diaryId}
                   className={`diary-card absolute left-0 top-0 w-[200px] h-[300px] -ml-[100px] -mt-[150px] rounded-2xl overflow-hidden ${isPlaceholder
-                      ? 'border-2 border-dashed border-pink-200 bg-gradient-to-br from-pink-50/30 to-white/30'
-                      : 'border border-zinc-800 bg-zinc-900 cursor-pointer'
+                    ? 'border-2 border-dashed border-pink-200 bg-gradient-to-br from-pink-50/30 to-white/30'
+                    : 'border border-zinc-800 bg-zinc-900 cursor-pointer'
                     }`}
                   style={{
                     transformStyle: "preserve-3d",

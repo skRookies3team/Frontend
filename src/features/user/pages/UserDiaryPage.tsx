@@ -153,17 +153,17 @@ export default function UserDiaryPage() {
                             다이어리 쓰기
                         </Button>
                     </div>
-                    {/* [MODIFIED] Horizontal Scroll Layout */}
-                    <div className="flex gap-4 overflow-x-auto pb-6 -mx-4 px-4 scrollbar-hide">
+                    {/* [MODIFIED] Vertical Grid Layout with internal scroll after 16 items */}
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 max-h-[900px] overflow-y-auto">
                         {userDiaries.length === 0 ? (
-                            <div className="w-full py-10 text-center text-gray-400">
+                            <div className="col-span-full py-10 text-center text-gray-400">
                                 아직 작성된 AI 다이어리가 없습니다.
                             </div>
                         ) : (
                             userDiaries.map((diary) => (
                                 <div
                                     key={diary.id}
-                                    className="group relative flex-none w-[160px] md:w-[200px] aspect-square cursor-pointer overflow-hidden rounded-xl border-0 shadow-md hover:shadow-xl transition-all"
+                                    className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border-0 shadow-md hover:shadow-xl transition-all"
                                     onClick={() => setSelectedDiary(diary)}
                                 >
                                     <img
@@ -176,7 +176,7 @@ export default function UserDiaryPage() {
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
 
-                                    <div className="absolute bottom-3 left-3 right-3 text-white">
+                                    <div className="absolute bottom-2 left-2 right-2 text-white">
                                         <h3 className="text-sm font-bold truncate mb-0.5">{diary.title}</h3>
                                         <p className="text-[10px] opacity-90 font-light">{diary.date}</p>
                                     </div>
