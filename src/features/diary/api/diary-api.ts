@@ -218,6 +218,7 @@ export const getAiDiariesApi = async (userId: number): Promise<DiaryResponse[]> 
                 'X-USER-ID': userId.toString()
             }
         });
+        console.log('[getAiDiariesApi] Success:', response);
         return response; // Expecting List<DiaryResponse>
     } catch (error) {
         console.warn("[Service] AI 다이어리 조회 실패 (백엔드 오류 Fallback):", error);
@@ -226,24 +227,43 @@ export const getAiDiariesApi = async (userId: number): Promise<DiaryResponse[]> 
         return [
             {
                 diaryId: 9991,
-                title: "Mock Diary 1",
+                userId: userId,
+                petId: 1,
+                title: "공원에서의 즐거운 하루",
                 date: "2024-12-25",
-                imageUrls: ["https://placehold.co/400x400/png?text=Merry+Christmas"],
-                content: "Frontend Fallback Data due to Backend 401/Timeout",
-                weather: "SNOW",
+                imageUrls: ["https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=600&fit=crop"],
+                content: "오늘은 날씨가 너무 좋아서 공원에 다녀왔어요. 행복한 하루였습니다!",
+                weather: "SUNNY",
                 mood: "HAPPY",
-                locationName: "Safe Mode"
+                isAiGen: true,
+                createdAt: "2024-12-25T10:00:00"
             },
             {
                 diaryId: 9992,
-                title: "Mock Diary 2",
+                userId: userId,
+                petId: 1,
+                title: "새로운 친구를 만났어요",
                 date: "2024-12-26",
-                imageUrls: ["https://placehold.co/400x400/png?text=Happy+Coding"],
-                content: "Backend is disconnected, but UI is alive!",
+                imageUrls: ["https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=400&h=600&fit=crop"],
+                content: "산책하다가 새로운 친구를 만났어요. 정말 즐거웠습니다!",
+                weather: "CLOUDY",
+                mood: "EXCITED",
+                isAiGen: true,
+                createdAt: "2024-12-26T14:30:00"
+            },
+            {
+                diaryId: 9993,
+                userId: userId,
+                petId: 1,
+                title: "맛있는 간식 시간",
+                date: "2024-12-27",
+                imageUrls: ["https://images.unsplash.com/photo-1530281700549-e82e7bf110d6?w=400&h=600&fit=crop"],
+                content: "오늘은 특별한 간식을 받았어요. 너무 맛있었어요!",
                 weather: "SUNNY",
                 mood: "PROUD",
-                locationName: "Localhost"
+                isAiGen: true,
+                createdAt: "2024-12-27T16:00:00"
             }
-        ] as any[];
+        ] as DiaryResponse[];
     }
 };

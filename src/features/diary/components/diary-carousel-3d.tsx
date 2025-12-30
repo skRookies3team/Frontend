@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { Diary } from "@/features/healthcare/data/pet-data"
+import { DiaryResponse } from "@/features/diary/types/diary"
 import { gsap } from "gsap"
 import { Draggable } from "gsap/Draggable"
 
@@ -9,10 +9,13 @@ if (typeof window !== "undefined") {
 }
 
 interface DiaryCarousel3DProps {
-  diaries?: Diary[]
+  diaries?: DiaryResponse[]
+  isLoading?: boolean
 }
 
-export function DiaryCarousel3D({ diaries = [] }: DiaryCarousel3DProps) {
+export function DiaryCarousel3D({ diaries = [], isLoading = false }: DiaryCarousel3DProps) {
+  console.log('[DiaryCarousel3D] Received diaries:', diaries)
+  console.log('[DiaryCarousel3D] isLoading:', isLoading)
   const containerRef = useRef<HTMLDivElement>(null)
   const carouselRef = useRef<HTMLDivElement>(null)
   const proxyRef = useRef<HTMLDivElement>(null)
@@ -154,27 +157,46 @@ export function DiaryCarousel3D({ diaries = [] }: DiaryCarousel3DProps) {
           className="relative w-0 h-0"
           style={{ transformStyle: "preserve-3d" }}
         >
-          {diaries.map((diary) => (
-            <div
-              key={diary.id}
-              className="diary-card absolute left-0 top-0 w-[200px] h-[300px] -ml-[100px] -mt-[150px] rounded-2xl overflow-hidden cursor-pointer border border-zinc-800 bg-zinc-900"
-              style={{
-                transformStyle: "preserve-3d",
-                backfaceVisibility: "hidden" // Or visible if we want to see backs
-              }}
-            >
-              <img
-                src={diary.image || "/placeholder.svg"}
-                alt={diary.title}
-                className="w-full h-full object-cover pointer-events-none"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+          {isLoading ? (
+            <div className="diary-card absolute left-0 top-0 w-[200px] h-[300px] -ml-[100px] -mt-[150px] rounded-2xl bg-pink-100 animate-pulse border border-pink-200">
               <div className="absolute bottom-6 left-6 right-6">
-                <h3 className="text-white text-xl font-bold">{diary.title}</h3>
-                <p className="text-zinc-400 text-sm mt-1">{diary.date}</p>
+                <div className="h-6 bg-pink-200 rounded mb-2"></div>
+                <div className="h-4 bg-pink-200 rounded w-2/3"></div>
               </div>
             </div>
-          ))}
+          ) : diaries.length === 0 ? (
+            <div className="diary-card absolute left-0 top-0 w-[200px] h-[300px] -ml-[100px] -mt-[150px] rounded-2xl border border-pink-200 bg-gradient-to-br from-pink-50 to-white flex items-center justify-center">
+              <div className="text-center p-6">
+                <p className="text-pink-400 text-sm">아직 일기가 없어요</p>
+                <p className="text-pink-300 text-xs mt-2">AI와 함께<br />첫 일기를 작성해보세요</p>
+              </div>
+            </div>
+          ) : (
+            diaries.map((diary) => {
+              console.log('[DiaryCarousel3D] Rendering diary:', diary.diaryId, 'Image URL:', diary.images?.[0]?.imageUrl)
+              return (
+                <div
+                  key={diary.diaryId}
+                  className="diary-card absolute left-0 top-0 w-[200px] h-[300px] -ml-[100px] -mt-[150px] rounded-2xl overflow-hidden cursor-pointer border border-zinc-800 bg-zinc-900"
+                  style={{
+                    transformStyle: "preserve-3d",
+                    backfaceVisibility: "hidden"
+                  }}
+                >
+                  <img
+                    src={diary.images?.[0]?.imageUrl || "/placeholder.svg"}
+                    alt={diary.title || "다이어리"}
+                    className="w-full h-full object-cover pointer-events-none"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  <div className="absolute bottom-6 left-6 right-6">
+                    <h3 className="text-white text-xl font-bold">{diary.title}</h3>
+                    <p className="text-zinc-400 text-sm mt-1">{diary.date}</p>
+                  </div>
+                </div>
+              )
+            })
+          )}
         </div>
       </div>
 

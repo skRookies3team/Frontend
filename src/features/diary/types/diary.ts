@@ -93,9 +93,22 @@ export interface DiaryResponse {
     weather: string;
     mood: string;
     date: string; // LocalDate -> string
-    imageUrls: string[];
+    images: DiaryImage[]; // ✅ imageUrls 대신 images 사용
     isAiGen: boolean;
     createdAt: string;
+    visibility?: string;
+    latitude?: number;
+    longitude?: number;
+    locationName?: string;
+    updatedAt?: string;
+}
+
+// 백엔드 이미지 객체 구조
+export interface DiaryImage {
+    imageId: number;
+    imageUrl: string;
+    imgOrder: number;
+    mainImage: boolean;
 }
 
 // Mock 데이터 상수
