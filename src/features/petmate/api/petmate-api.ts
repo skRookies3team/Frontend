@@ -1,5 +1,5 @@
 // API base URL configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Types
 export interface PetMateProfile {
@@ -127,7 +127,7 @@ export const petMateApi = {
 
     // 매칭 목록 조회
     getMatches: async (userId: number): Promise<MatchResult[]> => {
-        const response = await fetch(`${API_BASE_URL}/appetmate/matches/${userId}`);
+        const response = await fetch(`${API_BASE_URL}/petmate/matches/${userId}`);
         if (!response.ok) throw new Error('Failed to fetch matches');
         return response.json();
     },

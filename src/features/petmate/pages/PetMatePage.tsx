@@ -60,7 +60,7 @@ export default function PetMatePage() {
   const [selectedCandidate, setSelectedCandidate] = useState<PetMateCandidate | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
 
-  // Use the PetMate hook
+  // Use the PetMate hook - 실제 API 사용
   const {
     candidates,
     toggleLike,
@@ -68,7 +68,6 @@ export default function PetMatePage() {
     updateFilter,
   } = usePetMate({
     userId: user?.id ? Number(user.id) : 1,
-    useMockData: true,
     initialFilter: userCoords ? {
       latitude: userCoords.latitude,
       longitude: userCoords.longitude,
