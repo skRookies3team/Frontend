@@ -10,6 +10,7 @@ interface StyleStepProps {
     locationName: string;
     locationCoords: { lat: number, lng: number } | null;
     selectedDate: string;
+    title: string; // [NEW]
 
     // Style Props
     layoutStyle: string;
@@ -38,7 +39,7 @@ const StyleStep = ({
     selectedImages, editedDiary, weather, mood, locationName, locationCoords, selectedDate,
     layoutStyle, setLayoutStyle, textAlign, setTextAlign, fontSize, setFontSize, backgroundColor, setBackgroundColor,
     sizeOption, setSizeOption, themeStyle, setThemeStyle, preset, setPreset,
-    handleShareToFeed, isSubmitting, onBack
+    handleShareToFeed, isSubmitting, onBack, title
 }: StyleStepProps) => {
 
     const backgroundColors = ["#ffffff", "#fff5f5", "#fef2f2", "#fdf4ff", "#f0f9ff"];
@@ -139,6 +140,15 @@ const StyleStep = ({
 
                 <div className={`p-8 relative z-10 ${textAlign === 'center' ? 'text-center' : textAlign === 'right' ? 'text-right' : 'text-left'}`}>
 
+                    {/* [NEW] Title Display (Moved to Top) */}
+                    <h2 className={`text-2xl font-bold mb-4
+                        ${themeStyle === 'vintage' ? 'font-serif text-amber-900 border-b-2 border-amber-900/10 pb-2' : 'text-gray-800'}
+                        ${themeStyle === 'romantic' ? 'font-serif text-pink-600' : ''}
+                        ${themeStyle === 'modern' ? 'tracking-tight' : ''}
+                    `}>
+                        {title}
+                    </h2>
+
                     {/* Header Info */}
                     <div className={`flex flex-wrap items-center justify-between gap-4 mb-8 pb-4 
                         ${themeStyle === 'vintage' ? 'border-b-2 border-dashed border-gray-400/50' : 'border-b border-gray-100'}`}
@@ -231,6 +241,8 @@ const StyleStep = ({
                             </div>
                         ))}
                     </div>
+
+
 
                     {/* Text Content */}
                     <div className={`whitespace-pre-wrap leading-loose p-4 rounded-xl
