@@ -180,7 +180,9 @@ export const createSocialFeed = async (data: any) => {
 // Note: The backend 'POST /api/diaries' now expects @RequestBody DiaryRequest.Create (JSON)
 export const createAiDiaryApi = async (data: any): Promise<number> => {
     // 'data' passed here should be the DiaryRequest object, not FormData
-    const response = await httpClient.post<number>('/diaries', data);
+    const response = await httpClient.post<number>('/diaries', data, {
+        timeout: 60000 // [FIX] Increase timeout to 60s for AI generation
+    });
     return response;
 };
 
