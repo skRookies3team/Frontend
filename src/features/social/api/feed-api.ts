@@ -83,7 +83,7 @@ export const feedApi = {
     }
   },
 
-  // [수정] 인기 피드 조회 (알고리즘 정렬 API 연결)
+  // [수정] 인기 피드 조회 (알고리즘 정렬 API 연결)11
   // httpClient가 이미 response body를 반환하므로 .data 제거
   getTrendingFeeds: async (viewerId: number, page: number = 0) => {
     const response = await httpClient.get<FeedSliceResponse>(`${FEED_BASE_URL}/popular`, {
