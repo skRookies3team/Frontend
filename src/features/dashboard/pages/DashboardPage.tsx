@@ -161,7 +161,8 @@ export default function DashboardPage() {
       try {
         const data = await getAiDiariesApi(Number(user.id))
         console.log('[Dashboard] AI 다이어리 데이터:', data)
-        setAiDiaries(data)
+        // 최근 13개만 저장 (3D 캐러셀 오버랩 방지)
+        setAiDiaries(data.slice(0, 11))
       } catch (error) {
         console.error('[Dashboard] AI 다이어리 조회 실패:', error)
         setAiDiaries([]) // 실패 시 빈 배열

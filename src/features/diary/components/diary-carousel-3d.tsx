@@ -230,9 +230,9 @@ export function DiaryCarousel3D({ diaries = [], isLoading = false }: DiaryCarous
                         className="w-full h-full object-cover pointer-events-none"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                      <div className="absolute bottom-6 left-6 right-6">
-                        <h3 className="text-white text-xl font-bold">{diary.title}</h3>
-                        <p className="text-zinc-400 text-sm mt-1">{diary.date}</p>
+                      <div className="absolute bottom-4 left-4 right-4">
+                        <h3 className="text-white text-lg font-bold mb-1">{diary.title || "무제"}</h3>
+                        <p className="text-white/80 text-xs">{diary.date || ""}</p>
                       </div>
                     </>
                   )}
