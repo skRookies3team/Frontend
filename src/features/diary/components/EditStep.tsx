@@ -18,6 +18,8 @@ interface EditStepProps {
     locationCoords: { lat: number, lng: number } | null;
     setLocationCoords: (coords: { lat: number, lng: number }) => void;
     selectedDate: string;
+    title: string; // [NEW]
+    setTitle: (title: string) => void; // [NEW]
 
     // Style props for preview only
     layoutStyle: string;
@@ -30,7 +32,7 @@ interface EditStepProps {
 
 const EditStep = ({
     userId, selectedImages, editedDiary, setEditedDiary, weather, setWeather, mood, setMood, locationName, setLocationName, locationCoords, setLocationCoords,
-    selectedDate, layoutStyle, textAlign, fontSize, backgroundColor, onNext
+    selectedDate, layoutStyle, textAlign, fontSize, backgroundColor, onNext, title, setTitle
 }: EditStepProps) => {
     const [showLocationModal, setShowLocationModal] = useState(false);
 
@@ -95,6 +97,17 @@ const EditStep = ({
             <div className="w-full lg:flex-1 bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 sticky top-24" style={{ backgroundColor }}>
                 <div className={`p-8 ${textAlign === 'center' ? 'text-center' : textAlign === 'right' ? 'text-right' : 'text-left'}`}>
                     <div className="flex flex-wrap items-center justify-between gap-4 mb-6 border-b border-gray-100 pb-4">
+                        {/* [NEW] Title Input */}
+                        <div className="w-full mb-2">
+                            <input
+                                type="text"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                placeholder="일기 제목을 입력하세요..."
+                                className="w-full text-2xl font-bold placeholder-gray-300 border-none outline-none bg-transparent"
+                            />
+                        </div>
+
                         <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
                             <Calendar className="w-4 h-4 text-pink-400" />
                             {new Date(selectedDate).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}

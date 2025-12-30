@@ -60,6 +60,7 @@ export interface DiaryRequest {
     longitude?: number | null;
     locationName?: string; // [New]
     date?: string; // [New] yyyy-MM-dd
+    title?: string; // [New]
 
     // Legacy image objects (optional if we use imageUrls/archiveIds)
     images?: DiaryImageDTO[];
@@ -71,6 +72,7 @@ export interface DiaryRequest {
 
 // [New] AI Diary Preview Response
 export interface AiDiaryResponse {
+    title: string; // [NEW]
     content: string;
     weather: string;
     mood: string;

@@ -31,6 +31,7 @@ const DiaryEditPage = () => {
 
     // Edit States
     const [editedDiary, setEditedDiary] = useState(() => getSavedState('editedDiary', ""));
+    const [title, setTitle] = useState(() => getSavedState('title', "")); // [NEW] Title State
     const [weather, setWeather] = useState(() => getSavedState('weather', ""));
     const [mood, setMood] = useState(() => getSavedState('mood', ""));
     const [locationName, setLocationName] = useState(() => getSavedState('locationName', ""));
@@ -49,13 +50,14 @@ const DiaryEditPage = () => {
         const newState = {
             ...parsed,
             editedDiary,
+            title, // [NEW] Persist Title
             weather,
             mood,
             locationName,
             locationCoords
         };
         sessionStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
-    }, [editedDiary, weather, mood, locationName, locationCoords]);
+    }, [editedDiary, title, weather, mood, locationName, locationCoords]);
 
     const handleBack = () => {
         if (window.confirm("편집 내용을 취소하고 다시 시작하시겠습니까? (작성 내용은 사라질 수 있습니다)")) {
@@ -87,8 +89,10 @@ const DiaryEditPage = () => {
                     userId={Number(user?.id)}
                     selectedImages={selectedImages}
                     editedDiary={editedDiary} setEditedDiary={setEditedDiary}
+                    title={title} setTitle={setTitle} // [NEW]
                     weather={weather} setWeather={setWeather}
                     mood={mood} setMood={setMood}
+
                     locationName={locationName} setLocationName={setLocationName}
                     locationCoords={locationCoords} setLocationCoords={setLocationCoords}
                     selectedDate={selectedDate}
