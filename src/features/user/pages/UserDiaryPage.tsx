@@ -21,8 +21,6 @@ import { Button } from "@/shared/ui/button"
 import { Card, CardContent } from "@/shared/ui/card"
 import { Badge } from "@/shared/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/shared/ui/dialog"
-import { cn } from "@/shared/lib/utils"
 
 import { RECAPS, Recap } from "@/features/diary/data/recap-data"
 import { RecapModal } from "@/features/diary/components/recap-modal"
@@ -37,7 +35,6 @@ export default function UserDiaryPage() {
     // --- State ---
     const [photos, setPhotos] = useState<any[]>([])
     const [selectedPhoto, setSelectedPhoto] = useState<any | null>(null)
-    const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
 
     // [NEW] Real Diary State
     const [userDiaries, setUserDiaries] = useState<any[]>([])
@@ -252,10 +249,7 @@ export default function UserDiaryPage() {
                             <div
                                 key={photo.id}
                                 className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg"
-                                onClick={() => {
-                                    setSelectedPhoto(photo)
-                                    setCurrentPhotoIndex(0)
-                                }}
+                                onClick={() => setSelectedPhoto(photo)}
                             >
                                 <img
                                     src={photo.url}
@@ -397,10 +391,7 @@ export default function UserDiaryPage() {
             {selectedPhoto && (
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
-                    onClick={() => {
-                        setSelectedPhoto(null)
-                        setCurrentPhotoIndex(0)
-                    }}
+                    onClick={() => setSelectedPhoto(null)}
                 >
                     <div
                         className="relative w-full max-w-4xl"
@@ -408,10 +399,7 @@ export default function UserDiaryPage() {
                     >
                         <button
                             className="absolute right-4 top-4 z-30 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition-colors"
-                            onClick={() => {
-                                setSelectedPhoto(null)
-                                setCurrentPhotoIndex(0)
-                            }}
+                            onClick={() => setSelectedPhoto(null)}
                         >
                             <X className="h-6 w-6" />
                         </button>

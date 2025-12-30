@@ -231,7 +231,12 @@ export const getAiDiariesApi = async (userId: number): Promise<DiaryResponse[]> 
                 petId: 1,
                 title: "공원에서의 즐거운 하루",
                 date: "2024-12-25",
-                imageUrls: ["https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=600&fit=crop"],
+                images: [{
+                    imageId: 1,
+                    imageUrl: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=600&fit=crop",
+                    imgOrder: 0,
+                    mainImage: true
+                }],
                 content: "오늘은 날씨가 너무 좋아서 공원에 다녀왔어요. 행복한 하루였습니다!",
                 weather: "SUNNY",
                 mood: "HAPPY",
@@ -244,7 +249,12 @@ export const getAiDiariesApi = async (userId: number): Promise<DiaryResponse[]> 
                 petId: 1,
                 title: "새로운 친구를 만났어요",
                 date: "2024-12-26",
-                imageUrls: ["https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=400&h=600&fit=crop"],
+                images: [{
+                    imageId: 2,
+                    imageUrl: "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=400&h=600&fit=crop",
+                    imgOrder: 0,
+                    mainImage: true
+                }],
                 content: "산책하다가 새로운 친구를 만났어요. 정말 즐거웠습니다!",
                 weather: "CLOUDY",
                 mood: "EXCITED",
@@ -257,7 +267,12 @@ export const getAiDiariesApi = async (userId: number): Promise<DiaryResponse[]> 
                 petId: 1,
                 title: "맛있는 간식 시간",
                 date: "2024-12-27",
-                imageUrls: ["https://images.unsplash.com/photo-1530281700549-e82e7bf110d6?w=400&h=600&fit=crop"],
+                images: [{
+                    imageId: 3,
+                    imageUrl: "https://images.unsplash.com/photo-1530281700549-e82e7bf110d6?w=400&h=600&fit=crop",
+                    imgOrder: 0,
+                    mainImage: true
+                }],
                 content: "오늘은 특별한 간식을 받았어요. 너무 맛있었어요!",
                 weather: "SUNNY",
                 mood: "PROUD",
