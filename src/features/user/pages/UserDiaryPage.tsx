@@ -22,10 +22,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/shared/ui/dialog"
 import { cn } from "@/shared/lib/utils"
 
-import { AI_DIARIES } from "@/features/healthcare/data/pet-data"
 import { RECAPS, Recap } from "@/features/diary/data/recap-data"
 import { RecapModal } from "@/features/diary/components/recap-modal"
 import { getAllArchivesApi } from "@/features/auth/api/auth-api"
+import { getAiDiariesApi } from "@/features/diary/api/diary-api"
+import { useAuth } from "@/features/auth/context/auth-context"
 
 export default function UserDiaryPage() {
     const navigate = useNavigate()
@@ -35,7 +36,10 @@ export default function UserDiaryPage() {
     const [photos, setPhotos] = useState<any[]>([])
     const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null)
 
-    const [selectedDiary, setSelectedDiary] = useState<(typeof AI_DIARIES)[0] | null>(null)
+    // [NEW] Real Diary State
+    const [userDiaries, setUserDiaries] = useState<any[]>([])
+    const [selectedDiary, setSelectedDiary] = useState<any | null>(null)
+    const { user } = useAuth()
 
     const [selectedRecap, setSelectedRecap] = useState<Recap | null>(null)
 
@@ -59,7 +63,49 @@ export default function UserDiaryPage() {
 
     useEffect(() => {
         fetchArchives()
-    }, [])
+
+        // [NEW] Fetch Real AI Diaries
+        const fetchDiaries = async () => {
+            if (user?.id) {
+                const res = await getAiDiariesApi(Number(user.id));
+                // Mapping logic
+                console.log("[UserDiaryPage] Raw API Response:", res); // [DEBUG] Check API structure
+
+                if (Array.isArray(res)) {
+                    const mappedDiaries = res.map((d: any) => {
+                        // Check multiple possible fields for images
+                        let firstImage = null;
+
+                        // Case 1: imageUrls (string[])
+                        if (d.imageUrls && d.imageUrls.length > 0) {
+                            firstImage = d.imageUrls[0];
+                        }
+                        // Case 2: images (object[] with imageUrl or string[])
+                        else if (d.images && d.images.length > 0) {
+                            if (typeof d.images[0] === 'string') {
+                                firstImage = d.images[0];
+                            } else if (d.images[0].imageUrl) {
+                                firstImage = d.images[0].imageUrl;
+                            }
+                        }
+
+                        return {
+                            id: d.diaryId,
+                            title: d.title || "무제",
+                            date: d.date,
+                            // Use found image or placeholder
+                            image: firstImage || "/placeholder-diary.jpg",
+                            weather: d.weather,
+                            mood: d.mood,
+                            content: d.content
+                        };
+                    });
+                    setUserDiaries(mappedDiaries);
+                }
+            }
+        };
+        fetchDiaries();
+    }, [user])
 
     useEffect(() => {
         if (location.state?.refresh) {
@@ -107,30 +153,41 @@ export default function UserDiaryPage() {
                             다이어리 쓰기
                         </Button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-                        {AI_DIARIES.map((diary) => (
-                            <div
-                                key={diary.id}
-                                className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg"
-                                onClick={() => setSelectedDiary(diary)}
-                            >
-                                <img
-                                    src={diary.image}
-                                    alt={diary.title}
-                                    className="h-full w-full object-cover transition-transform group-hover:scale-110"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100">
-                                    <div className="absolute bottom-2 left-2 right-2 text-white">
-                                        <h3 className="text-sm font-bold truncate">{diary.title}</h3>
-                                        <p className="text-xs opacity-90">{diary.date}</p>
-                                    </div>
-                                </div>
-                                <Badge className="absolute right-1 top-1 flex items-center gap-1 bg-gradient-to-r from-purple-500 to-pink-500 text-[10px] text-white px-1.5 py-0.5">
-                                    <Sparkles className="h-2 w-2" />
-                                    AI
-                                </Badge>
+                    {/* [MODIFIED] Horizontal Scroll Layout */}
+                    <div className="flex gap-4 overflow-x-auto pb-6 -mx-4 px-4 scrollbar-hide">
+                        {userDiaries.length === 0 ? (
+                            <div className="w-full py-10 text-center text-gray-400">
+                                아직 작성된 AI 다이어리가 없습니다.
                             </div>
-                        ))}
+                        ) : (
+                            userDiaries.map((diary) => (
+                                <div
+                                    key={diary.id}
+                                    className="group relative flex-none w-[160px] md:w-[200px] aspect-square cursor-pointer overflow-hidden rounded-xl border-0 shadow-md hover:shadow-xl transition-all"
+                                    onClick={() => setSelectedDiary(diary)}
+                                >
+                                    <img
+                                        src={diary.image}
+                                        alt={diary.title}
+                                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = 'https://placehold.co/400x400/e2e8f0/94a3b8?text=No+Image';
+                                        }}
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
+
+                                    <div className="absolute bottom-3 left-3 right-3 text-white">
+                                        <h3 className="text-sm font-bold truncate mb-0.5">{diary.title}</h3>
+                                        <p className="text-[10px] opacity-90 font-light">{diary.date}</p>
+                                    </div>
+
+                                    <Badge className="absolute right-2 top-2 flex items-center gap-1 bg-white/20 backdrop-blur-md text-white border-0 text-[10px] px-2 py-0.5">
+                                        <Sparkles className="h-2 w-2" />
+                                        AI
+                                    </Badge>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </TabsContent>
 

@@ -83,6 +83,21 @@ export interface AiDiaryResponse {
     archiveIds: number[];
 }
 
+// [NEW] 백엔드 DiaryResponse (조회용)
+export interface DiaryResponse {
+    diaryId: number;
+    userId: number;
+    petId: number;
+    title: string;
+    content: string;
+    weather: string;
+    mood: string;
+    date: string; // LocalDate -> string
+    imageUrls: string[];
+    isAiGen: boolean;
+    createdAt: string;
+}
+
 // Mock 데이터 상수
 export const GALLERY_IMAGES: string[] = [
     'https://placehold.co/200x150/5B3B8D/ffffff?text=ARCHIVE+1',

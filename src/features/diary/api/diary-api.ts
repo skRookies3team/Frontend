@@ -1,4 +1,4 @@
-import { SelectedImage, ImageType, CreateDiaryResponse, AiDiaryResponse } from '../types/diary';
+import { SelectedImage, ImageType, CreateDiaryResponse, AiDiaryResponse, DiaryResponse } from '../types/diary';
 import httpClient from '@/shared/api/http-client';
 
 // Mock S3 업로드 시뮬레이션
@@ -205,6 +205,19 @@ export const getDiariesByDate = async (userId: number, date: string) => {
         return response;
     } catch (error) {
         console.warn("[Service] 날짜별 다이어리 조회 실패:", error);
+        return [];
+    }
+};
+// [NEW] AI 다이어리 전체 조회 (User provided List return)
+// Endpoint assumption: GET /diary-queries/ai/{userId} based on user provided service logic
+export const getAiDiariesApi = async (userId: number): Promise<DiaryResponse[]> => {
+    try {
+        const response = await httpClient.get<DiaryResponse[]>(`/diary-queries/ai-archive`, {
+            params: { userId }
+        });
+        return response; // Expecting List<DiaryResponse>
+    } catch (error) {
+        console.warn("[Service] AI 다이어리 조회 실패:", error);
         return [];
     }
 };
