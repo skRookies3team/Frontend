@@ -27,6 +27,9 @@ axiosInstance.interceptors.request.use(
             const token = getTokenFunction();
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
+                console.log(`[API Request] ${config.url} | Auth: Bearer ${token.substring(0, 10)}... | X-USER-ID: ${config.headers['X-USER-ID']}`);
+            } else {
+                console.warn(`[API Request] ${config.url} | No Token Available`);
             }
         }
         return config;

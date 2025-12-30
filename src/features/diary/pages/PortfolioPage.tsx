@@ -1,165 +1,191 @@
 import { useEffect, useRef, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import * as THREE from "three"
 import { X, Calendar, MapPin, Heart } from 'lucide-react'
 import { Button } from "@/shared/ui/button"
 import "@/shared/assets/styles/PortfolioPage.css"
 import "./PortfolioPage.css"
 
-const diaryPhotos = [
-  {
-    id: 1,
-    src: "/golden-retriever-playing-park.jpg",
-    title: "공원에서의 행복한 하루",
-    date: "2024년 1월 15일",
-    location: "서울숲 공원",
-    content: "오늘은 정말 완벽한 날이었어요! 공원에 도착하자마자 찰리는 기쁨을 참을 수 없었답니다. 새로운 친구들을 여럿 만났고, 잔디밭을 뛰어다니며 몇 시간을 보냈어요.",
-    likes: 142,
-    weather: "맑음 ☀️"
-  },
-  {
-    id: 2,
-    src: "/dog-running-grass.jpg",
-    title: "신나는 잔디 달리기",
-    date: "2024년 1월 18일",
-    location: "한강 공원",
-    content: "잔디밭을 마음껏 달리는 찰리의 모습이 정말 행복해 보였어요. 귀가 펄럭이고 꼬리를 흔들며 즐거워하는 모습에 저도 덩달아 기분이 좋아졌답니다.",
-    likes: 98,
-    weather: "구름 조금 ⛅"
-  },
-  {
-    id: 3,
-    src: "/corgi.jpg",
-    title: "귀여운 코기의 산책",
-    date: "2024년 1월 22일",
-    location: "동네 산책로",
-    content: "짧은 다리로 열심히 걷는 모습이 너무 사랑스러워요. 오늘은 동네를 천천히 산책하며 여유로운 시간을 보냈답니다.",
-    likes: 215,
-    weather: "맑음 ☀️"
-  },
-  {
-    id: 4,
-    src: "/golden-retriever.png",
-    title: "햇살 아래에서",
-    date: "2024년 1월 25일",
-    location: "집 앞마당",
-    content: "따뜻한 햇살을 받으며 낮잠 자는 우리 아이. 평화로운 오후의 한 순간을 카메라에 담았어요. 이런 소소한 일상이 참 행복합니다.",
-    likes: 187,
-    weather: "맑음 ☀️"
-  },
-  {
-    id: 5,
-    src: "/dachshund-dog.png",
-    title: "닥스훈트의 장난기",
-    date: "2024년 1월 28일",
-    location: "우리집 거실",
-    content: "장난감을 물고 이리저리 뛰어다니는 모습이 정말 귀여워요. 긴 몸통과 짧은 다리로 열심히 노는 모습에 웃음이 절로 나왔답니다.",
-    likes: 156,
-    weather: "흐림 ☁️"
-  },
-  {
-    id: 6,
-    src: "/tabby-cat-sunbeam.png",
-    title: "고양이의 낮잠 시간",
-    date: "2024년 2월 1일",
-    location: "집 창가",
-    content: "햇살이 드는 창가에서 평화롭게 잠든 나비. 고양이들은 정말 낮잠의 달인이에요.",
-    likes: 203,
-    weather: "맑음 ☀️"
-  },
-  {
-    id: 7,
-    src: "/cat-in-box.jpg",
-    title: "상자 속 고양이",
-    date: "2024년 2월 5일",
-    location: "우리집",
-    content: "새 상자를 발견한 나비가 기뻐하며 들어가 앉았어요. 고양이는 역시 상자를 사랑하죠!",
-    likes: 178,
-    weather: "흐림 ☁️"
-  },
-  {
-    id: 8,
-    src: "/golden-retriever-playing-park.jpg",
-    title: "물놀이하는 날",
-    date: "2024년 2월 10일",
-    location: "애견 수영장",
-    content: "처음으로 수영장에 갔는데 찰리가 물을 정말 좋아하네요. 신나게 헤엄치는 모습이 사랑스러웠어요.",
-    likes: 245,
-    weather: "맑음 ☀️"
-  },
-  {
-    id: 9,
-    src: "/dog-running-grass.jpg",
-    title: "아침 산책길",
-    date: "2024년 2월 14일",
-    location: "올림픽 공원",
-    content: "이른 아침 산책은 언제나 상쾌해요. 공기도 좋고 사람도 적어서 찰리가 더 즐거워합니다.",
-    likes: 132,
-    weather: "구름 조금 ⛅"
-  },
-  {
-    id: 10,
-    src: "/corgi.jpg",
-    title: "친구와의 만남",
-    date: "2024년 2월 18일",
-    location: "강아지 카페",
-    content: "오늘은 친구네 강아지와 함께 카페에 갔어요. 두 친구가 서로 장난치며 노는 모습이 너무 귀여웠답니다.",
-    likes: 167,
-    weather: "맑음 ☀️"
-  },
-  {
-    id: 11,
-    src: "/golden-retriever.png",
-    title: "생일 파티",
-    date: "2024년 2월 22일",
-    location: "우리집",
-    content: "찰리의 생일을 축하하며 케이크도 준비했어요. 행복한 표정으로 생일 모자를 쓴 모습이 정말 사랑스러워요.",
-    likes: 289,
-    weather: "맑음 ☀️"
-  },
-  {
-    id: 12,
-    src: "/dachshund-dog.png",
-    title: "새로운 장난감",
-    date: "2024년 2월 25일",
-    location: "우리집 거실",
-    content: "새 장난감을 선물 받고 하루종일 물고 다녔어요. 정말 마음에 들었나봐요!",
-    likes: 145,
-    weather: "비 🌧️"
-  },
-  {
-    id: 13,
-    src: "/tabby-cat-sunbeam.png",
-    title: "창밖 구경",
-    date: "2024년 3월 1일",
-    location: "집 창가",
-    content: "창밖을 바라보며 새들을 관찰하는 나비. 꼬리를 살랑살랑 흔들며 집중하는 모습이 귀여워요.",
-    likes: 198,
-    weather: "맑음 ☀️"
-  },
-  {
-    id: 14,
-    src: "/cat-in-box.jpg",
-    title: "숨바꼭질 놀이",
-    date: "2024년 3월 5일",
-    location: "우리집",
-    content: "상자 속에 숨어서 저를 놀라게 하려는 나비. 장난꾸러기 같으니라고!",
-    likes: 176,
-    weather: "구름 조금 ⛅"
-  },
-  {
-    id: 15,
-    src: "/golden-retriever-playing-park.jpg",
-    title: "봄날의 소풍",
-    date: "2024년 3월 10일",
-    location: "북한산 등산로 입구",
-    content: "날씨가 따뜻해져서 처음으로 등산로를 걸어봤어요. 찰리도 저도 행복한 하루였답니다.",
-    likes: 223,
-    weather: "맑음 ☀️"
-  },
-]
+// [REMOVED] Static diaryPhotos constant
+import { getAiDiariesApi } from "@/features/diary/api/diary-api"
+import { useAuth } from "@/features/auth/context/auth-context"
+
+interface PortfolioDiary {
+  id: number;
+  src: string;
+  title: string;
+  date: string;
+  location: string;
+  content: string;
+  likes: number;
+  weather: string;
+  isPlaceholder?: boolean; // [FIX] Re-add flag
+}
 
 export default function PortfolioPage() {
-  const [selectedPhoto, setSelectedPhoto] = useState<typeof diaryPhotos[0] | null>(null)
+  const [selectedPhoto, setSelectedPhoto] = useState<PortfolioDiary | null>(null)
+
+  // [NEW] Real Data State
+  const [diaries, setDiaries] = useState<PortfolioDiary[]>([])
+  const { user, token } = useAuth() // [FIX] Get token
+  const navigate = useNavigate();
+
+  // [NEW] Fetch Diaries and fill with placeholders
+  useEffect(() => {
+    // [NEW] Helper to generate cute puppy Data URL
+    const generatePlaceholderImage = (index: number) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 640;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return "/placeholder.svg";
+
+      // Tone-on-Tone Palettes (Light BG, Darker Outline)
+      const palettes = [
+        { bg: '#FFF0F5', icon: '#FFB6C1' }, // Pink
+        { bg: '#F0F8FF', icon: '#87CEFA' }, // Alice Blue
+        { bg: '#F5F5DC', icon: '#DAC680' }, // Beige
+        { bg: '#E0FFFF', icon: '#48D1CC' }, // Cyan
+        { bg: '#F0FFF0', icon: '#90EE90' }, // Honeydew
+        { bg: '#E6E6FA', icon: '#9370DB' }, // Lavender
+        { bg: '#FFFACD', icon: '#F4CA16' }, // Lemon
+      ];
+      const palette = palettes[index % palettes.length];
+
+      // Background
+      ctx.fillStyle = palette.bg;
+      ctx.beginPath();
+      ctx.rect(0, 0, 512, 640);
+      ctx.fill();
+
+      // Icon Style (Outline Monoline)
+      const cx = 256;
+      const cy = 320;
+      const scale = 1.3;
+
+      ctx.strokeStyle = palette.icon;
+      ctx.lineWidth = 25;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      // 1. Ears (Floppy Outline)
+      ctx.beginPath();
+      // Left Ear
+      ctx.moveTo(cx - 50 * scale, cy - 60 * scale);
+      ctx.bezierCurveTo(cx - 130 * scale, cy - 80 * scale, cx - 140 * scale, cy + 20 * scale, cx - 80 * scale, cy + 20 * scale);
+      ctx.stroke();
+
+      // Right Ear
+      ctx.beginPath();
+      ctx.moveTo(cx + 50 * scale, cy - 60 * scale);
+      ctx.bezierCurveTo(cx + 130 * scale, cy - 80 * scale, cx + 140 * scale, cy + 20 * scale, cx + 80 * scale, cy + 20 * scale);
+      ctx.stroke();
+
+      // 2. Face Outline
+      ctx.beginPath();
+      ctx.arc(cx, cy + 30 * scale, 90 * scale, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 3. Face Details
+      ctx.fillStyle = palette.icon;
+
+      // Eyes
+      ctx.beginPath();
+      ctx.arc(cx - 35 * scale, cy + 20 * scale, 12 * scale, 0, Math.PI * 2);
+      ctx.arc(cx + 35 * scale, cy + 20 * scale, 12 * scale, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Nose
+      ctx.beginPath();
+      const ny = cy + 50 * scale;
+      ctx.moveTo(cx - 15 * scale, ny);
+      ctx.quadraticCurveTo(cx, ny - 10 * scale, cx + 15 * scale, ny);
+      ctx.quadraticCurveTo(cx, ny + 20 * scale, cx - 15 * scale, ny);
+      ctx.fill();
+
+      return canvas.toDataURL('image/png');
+    }
+
+    const fetchDiaries = async () => {
+      // Default placeholders
+      const PLACEHOLDER_COUNT = 15;
+      const placeholders: PortfolioDiary[] = Array.from({ length: PLACEHOLDER_COUNT }).map((_, i) => ({
+        id: -1 * (i + 1), // Negative IDs for placeholders
+        src: generatePlaceholderImage(i), // [FIX] Generate Data URL directly for src
+        title: "미래의 추억 🐾",
+        date: "Coming Soon",
+        location: "행복한 장소",
+        content: "이곳에 당신과 반려동물의 소중한 추억이 채워질 거예요!",
+        likes: 0,
+        weather: "🌈",
+        isPlaceholder: true // Mark as placeholder
+      }));
+
+      if (!user?.id || !token) { // [FIX] Wait for token
+        setDiaries(placeholders);
+        return;
+      }
+
+      try {
+        const res = await getAiDiariesApi(Number(user.id))
+        if (Array.isArray(res)) { // Allow empty array
+          const mapped: PortfolioDiary[] = res.map((d: any) => {
+            // Check multiple possible fields for images
+            let firstImage = "/placeholder-diary.jpg";
+            if (d.imageUrls && d.imageUrls.length > 0) firstImage = d.imageUrls[0];
+            else if (d.images && d.images.length > 0) {
+              if (typeof d.images[0] === 'string') firstImage = d.images[0];
+              else if (d.images[0].imageUrl) firstImage = d.images[0].imageUrl;
+            }
+
+            // [FIX] Rewrite S3 URL to use local proxy to bypass CORS
+            if (firstImage.includes('petlog-images-bucket.s3.ap-northeast-2.amazonaws.com')) {
+              firstImage = firstImage.replace('https://petlog-images-bucket.s3.ap-northeast-2.amazonaws.com', '/s3-images');
+            }
+
+            return {
+              id: d.diaryId,
+              src: firstImage,
+              title: d.title || "무제",
+              date: d.date,
+              location: d.locationName || "어딘가",
+              content: d.content,
+              likes: 0,
+              weather: d.weather || "맑음 ☀️",
+              isPlaceholder: false
+            }
+          })
+
+          // Merge: Real data first, then fill remaining slots with placeholders
+          const displayedDiaries = [...mapped];
+          if (displayedDiaries.length < PLACEHOLDER_COUNT) {
+            const startIdx = displayedDiaries.length;
+            const remaining = PLACEHOLDER_COUNT - displayedDiaries.length;
+            const newPlaceholders = Array.from({ length: remaining }).map((_, i) => ({
+              ...placeholders[0], // Copy base structure
+              id: -1 * (startIdx + i + 1),
+              src: generatePlaceholderImage(startIdx + i), // Unique color per index
+              isPlaceholder: true
+            }));
+            displayedDiaries.push(...newPlaceholders);
+          }
+
+          setDiaries(displayedDiaries)
+        } else {
+          setDiaries(placeholders);
+        }
+      } catch (e: any) {
+        console.error("Portfolio fetch failed", e)
+        // [FIX] Handle 401 specifically
+        if (e.response && e.response.status === 401) {
+          // Token expired or invalid
+          navigate('/login');
+        }
+        setDiaries(placeholders);
+      }
+    }
+    fetchDiaries()
+  }, [user, token]) // [FIX] Depend on token
   const containerRef = useRef<HTMLDivElement>(null)
   const starsRef = useRef<HTMLDivElement>(null)
 
@@ -258,22 +284,27 @@ export default function PortfolioPage() {
     const radius = 8
     const sphereMeshes: THREE.Mesh[] = []
     const textureLoader = new THREE.TextureLoader()
+    textureLoader.crossOrigin = 'anonymous'; // [FIX] Allow CORS for S3 images
 
-    diaryPhotos.forEach((photo, index) => {
-      const phi = Math.acos(1 - (2 * (index + 0.5)) / diaryPhotos.length)
+    // [MODIFIED] Use dynamic 'diaries' instead of static 'diaryPhotos'
+    // If empty, maybe show nothing or wait? For now if empty, it just renders nothing but scene setup works.
+    diaries.forEach((photo, index) => {
+      const phi = Math.acos(1 - (2 * (index + 0.5)) / diaries.length)
       const theta = Math.PI * (1 + Math.sqrt(5)) * index
 
       const x = radius * Math.sin(phi) * Math.cos(theta)
       const y = radius * Math.sin(phi) * Math.sin(theta)
       const z = radius * Math.cos(phi)
 
-      const texture = textureLoader.load(photo.src || "/placeholder.svg")
+      // [FIX] Load standard texture (Data URL works here too)
+      const texture = textureLoader.load(photo.src || "/placeholder.svg");
+
       const geometry = new THREE.PlaneGeometry(2, 2.5)
       const material = new THREE.MeshBasicMaterial({
-        map: texture,
+        map: texture || undefined, // Fallback
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 1,
+        opacity: photo.isPlaceholder ? 0.95 : 1.0, // More solid for card look
       })
 
       const mesh = new THREE.Mesh(geometry, material)
@@ -303,7 +334,8 @@ export default function PortfolioPage() {
         const angle = rotationRef.current.y
         const angleX = rotationRef.current.x
 
-        const phi = Math.acos(1 - (2 * (i + 0.5)) / diaryPhotos.length)
+
+        const phi = Math.acos(1 - (2 * (i + 0.5)) / diaries.length)
         const theta = Math.PI * (1 + Math.sqrt(5)) * i
 
         let x = radius * Math.sin(phi) * Math.cos(theta + angle)
@@ -434,7 +466,7 @@ export default function PortfolioPage() {
         containerRef.current.removeChild(canvas)
       }
     }
-  }, [])
+  }, [diaries])
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
@@ -471,7 +503,7 @@ export default function PortfolioPage() {
       {/* 카운터 */}
       <div className="absolute top-8 right-8 z-10 backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl px-6 py-3 shadow-2xl pointer-events-none">
         <p className="text-white/80 text-sm font-medium">
-          <span className="text-2xl font-bold text-cyan-300">{diaryPhotos.length}</span>
+          <span className="text-2xl font-bold text-cyan-300">{diaries.length}</span>
           <span className="ml-2">AI 다이어리</span>
         </p>
       </div>
