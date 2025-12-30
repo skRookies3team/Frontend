@@ -1,19 +1,17 @@
 import { Link, useLocation } from "react-router-dom";
 import { Logo } from "@/shared/components/logo";
 import { Button } from "@/shared/ui/button";
-import { Menu, X, MessageSquare, Search } from "lucide-react";
+import { Menu, X, MessageSquare } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/shared/lib/utils";
 import { useAuth } from "@/features/auth/context/auth-context";
 import { Badge } from "@/shared/ui/badge";
 import { NotificationsDropdown } from "@/features/social/components/notifications-dropdown";
-import { UserSearchModal } from "@/features/social/components/user-search-modal";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function Header() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchModalOpen, setSearchModalOpen] = useState(false);
   const { user } = useAuth();
 
   const [currentPetIndex, setCurrentPetIndex] = useState(0);
@@ -117,9 +115,6 @@ export function Header() {
         <div className="hidden items-center gap-4 md:flex">
           {user ? (
             <>
-              <Button variant="ghost" size="icon" onClick={() => setSearchModalOpen(true)}>
-                <Search className="h-5 w-5" />
-              </Button>
               <NotificationsDropdown />
               <Link to="/messages">
                 <Button variant="ghost" size="icon" className="relative">
@@ -155,9 +150,6 @@ export function Header() {
         <div className="flex items-center gap-2 md:hidden">
           {user && (
             <>
-              <Button variant="ghost" size="icon" onClick={() => setSearchModalOpen(true)} className="h-9 w-9">
-                <Search className="h-5 w-5" />
-              </Button>
               <NotificationsDropdown />
               <Link to="/messages">
                 <Button variant="ghost" size="icon" className="relative h-9 w-9">
@@ -237,7 +229,6 @@ export function Header() {
         </div>
       )}
 
-      <UserSearchModal open={searchModalOpen} onClose={() => setSearchModalOpen(false)} />
     </header>
   );
 }

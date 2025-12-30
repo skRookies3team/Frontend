@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom"
 import { TabNavigation } from "@/shared/components/tab-navigation"
 import { FeedList } from "@/features/social/components/feed-list"
