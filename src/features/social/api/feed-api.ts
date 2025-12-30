@@ -6,8 +6,16 @@ import {
   FeedDto, 
   CommentDto, 
   CreateCommentRequest,
-  SearchResponse
+  SearchResponse,
+  SearchUserDto
 } from '../types/feed';
+
+// [추가] 해시태그 검색 결과 타입 정의
+export interface SearchHashtagDto {
+  hashtagId: number;
+  name: string;
+  count: number;
+}
 
 export interface FollowStatResponse {
   followerCount: number;
@@ -54,9 +62,26 @@ export const feedApi = {
     return await httpClient.get<FeedSliceResponse>(`${FEED_BASE_URL}/user/${targetUserId}/viewer/${viewerId}?${params.toString()}`);
   },
 
+  // 통합 검색 (피드 검색)
   search: async (query: string, viewerId: number) => {
     const params = new URLSearchParams({ query, viewerId: String(viewerId) });
     return await httpClient.get<SearchResponse>(`/search?${params.toString()}`);
+  },
+
+  // [추가] 해시태그 목록 검색 API 연동
+  searchHashtags: async (query: string): Promise<SearchHashtagDto[]> => {
+    try {
+      const cleanQuery = query.replace(/^#/, '');
+      if (!cleanQuery) return [];
+      
+      const params = new URLSearchParams({ query: cleanQuery });
+      // httpClient.get은 response.data를 반환하므로 바로 return
+      const response = await httpClient.get<SearchHashtagDto[]>(`/search/hashtags?${params.toString()}`);
+      return response || []; 
+    } catch (e) {
+      console.error("Hashtag Search API Error:", e);
+      return [];
+    }
   },
 
   getTrendingFeeds: async (viewerId: number) => {
@@ -91,26 +116,17 @@ export const feedApi = {
     return await httpClient.delete<void>(`/comments/${commentId}?userId=${userId}`);
   },
 
-  // [수정 완료] httpClient 사용하도록 변경
   toggleLike: async (feedId: number, userId: number) => {
-    // POST /api/feeds/{feedId}/likes?userId={userId}
-    // Body(data)는 null로, Query Param(params)으로 userId 전달
     const params = new URLSearchParams({ userId: String(userId) });
-    
-    // httpClient.post(url, body) 형태라면 url에 쿼리 스트링을 붙여서 호출
     return await httpClient.post<string>(
         `${FEED_BASE_URL}/${feedId}/likes?${params.toString()}`, 
         null
     );
   },
 
-  // [수정 완료] httpClient 사용하도록 변경
   getLikers: async (feedId: number) => {
-    // GET /api/feeds/{feedId}/likes
     return await httpClient.get<LikerDto[]>(`${FEED_BASE_URL}/${feedId}/likes`);
   },
-
-  // --- 팔로우 API ---
 
   getFollowStats: async (userId: number) => {
     return await httpClient.get<FollowStatResponse>(`/follows/${userId}/stats`);
@@ -143,8 +159,9 @@ export const feedApi = {
     return await httpClient.get<FollowListResponse[]>(`/follows/${userId}/followings`);
   },
 
-  searchUsers: async (query: string, viewerId: number = 0) => {
+  searchUsers: async (query: string, viewerId: number = 0): Promise<SearchUserDto[]> => {
     try {
+      if (query.startsWith('#')) return [];
       const response = await feedApi.search(query, viewerId); 
       return response?.users || []; 
     } catch (e) {
