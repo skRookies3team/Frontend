@@ -68,19 +68,38 @@ export const signupApi = async (
     const formData = new FormData();
 
     // Add user profile if provided
+    // console.log("signupApi start");
+    // console.log(userProfile);
     if (userProfile) {
+        // console.log("userProfile append");
         formData.append('userProfile', userProfile);
     }
 
     // Add pet profile if provided
+    // console.log(petProfile);
     if (petProfile) {
+        // console.log("petProfile append");
         formData.append('petProfile', petProfile);
     }
+
+    // console.log(request);
+    
+    // console.log("///////////////////////////");
 
     // Add request DTO as JSON blob
     formData.append('request', new Blob([JSON.stringify(request)], {
         type: 'application/json'
     }));
+
+    // console.log("=== FormData entries ===");
+    // for (const [key, value] of formData.entries()) {
+    //     console.log(key, value);
+    // }
+
+    
+    // console.log(formData)
+    // alert(formData);
+
 
     const response = await httpClient.post<SignupResponse>('/users/signup', formData, {
         skipAuth: true,

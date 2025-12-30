@@ -10,7 +10,7 @@ import {
   SearchUserDto
 } from '../types/feed';
 
-// [추가] 해시태그 검색 결과 타입 정의
+// 해시태그 검색 결과 타입 정의
 export interface SearchHashtagDto {
   hashtagId: number;
   name: string;
@@ -68,14 +68,13 @@ export const feedApi = {
     return await httpClient.get<SearchResponse>(`/search?${params.toString()}`);
   },
 
-  // [추가] 해시태그 목록 검색 API 연동
+  // 해시태그 목록 검색 API 연동 (자동완성용)
   searchHashtags: async (query: string): Promise<SearchHashtagDto[]> => {
     try {
       const cleanQuery = query.replace(/^#/, '');
       if (!cleanQuery) return [];
       
       const params = new URLSearchParams({ query: cleanQuery });
-      // httpClient.get은 response.data를 반환하므로 바로 return
       const response = await httpClient.get<SearchHashtagDto[]>(`/search/hashtags?${params.toString()}`);
       return response || []; 
     } catch (e) {
@@ -84,8 +83,24 @@ export const feedApi = {
     }
   },
 
-  getTrendingFeeds: async (viewerId: number) => {
-    return await httpClient.get<FeedSliceResponse>(`/search/trending?viewerId=${viewerId}`);
+  // [수정] 인기 피드 조회 (알고리즘 정렬 API 연결)11
+  // httpClient가 이미 response body를 반환하므로 .data 제거
+  getTrendingFeeds: async (viewerId: number, page: number = 0) => {
+    const response = await httpClient.get<FeedSliceResponse>(`${FEED_BASE_URL}/popular`, {
+      params: { page, size: 20 },
+      headers: { "X-User-Id": viewerId.toString() } 
+    });
+    return response; 
+  },
+
+  // [추가] 해시태그 피드 검색 (알고리즘 정렬)
+  // httpClient가 이미 response body를 반환하므로 .data 제거
+  searchFeedsByHashtag: async (tag: string, userId: number, page: number = 0): Promise<FeedSliceResponse> => {
+    const response = await httpClient.get<FeedSliceResponse>(`${FEED_BASE_URL}/search/hashtag`, {
+      params: { tag, page, size: 20 },
+      headers: { "X-User-Id": userId.toString() }
+    });
+    return response;
   },
 
   getFeedDetail: async (feedId: number, userId: number) => {

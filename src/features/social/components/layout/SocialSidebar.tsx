@@ -108,7 +108,7 @@ export function SocialSidebar({ activePage, onSearchToggle, onCreateClick }: Soc
           <div className={`absolute top-0 left-[90px] h-full bg-white z-20 rounded-[2.5rem] shadow-xl transition-all duration-300 ease-in-out overflow-hidden border border-[#FF69B4]/10 ${isSearchOpen ? "w-[300px] opacity-100 translate-x-0" : "w-0 opacity-0 -translate-x-4 pointer-events-none"}`}>
             <div className="p-5 h-full flex flex-col w-[300px]">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-black text-[#FF69B4] tracking-tight">통합 검색</h2>
+                <h2 className="text-xl font-black text-[#FF69B4] tracking-tight">검색</h2>
                 <button onClick={handleSearchToggle} className="p-1.5 hover:bg-gray-100 rounded-full">
                   <X className="h-5 w-5 text-gray-400" />
                 </button>
@@ -116,7 +116,7 @@ export function SocialSidebar({ activePage, onSearchToggle, onCreateClick }: Soc
 
               <div className="relative mb-4">
                 <Input
-                  placeholder="이름, 아이디, #해시태그 검색"
+                  placeholder="아이디, #해시태그 검색"
                   className="bg-[#FFF0F5] border-none h-11 pl-4 pr-10 rounded-2xl text-sm transition-all focus-visible:ring-2 focus-visible:ring-[#FF69B4] text-gray-800 font-medium"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
