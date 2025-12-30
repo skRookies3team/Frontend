@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom"; // [수정] Link import 추가
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { Heart, MessageCircle, MoreHorizontal, MapPin, ChevronLeft, ChevronRight, Edit, Trash, AlertTriangle, Ban } from "lucide-react";
@@ -11,14 +12,13 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { useAuth } from "@/features/auth/context/auth-context";
-import { useDeleteFeed, useLikers, useFeedLike } from "../hooks/use-feed-query"; // [중요] useFeedLike 추가
+import { useDeleteFeed, useLikers, useFeedLike } from "../hooks/use-feed-query";
 import { FollowListModal } from "./FollowListModal";
 import { FeedCreateModal } from "./FeedCreateModal"; 
 import { feedApi } from "../api/feed-api";
 
 interface PostCardProps {
   post: FeedDto;
-  // onLikeToggle 제거 (내부에서 처리)
   onClickPost?: (post: FeedDto) => void;
 }
 
@@ -26,23 +26,19 @@ export function PostCard({ post, onClickPost }: PostCardProps) {
   const { user } = useAuth();
   const currentUserId = Number(user?.id);
 
-  // [수정] 여기서 직접 좋아요 훅 사용
   const { mutate: toggleLike } = useFeedLike(currentUserId);
   const deleteFeedMutation = useDeleteFeed();
   
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // 좋아요 목록 모달 상태
   const [showLikers, setShowLikers] = useState(false);
   const { data: likers, isLoading: isLikersLoading } = useLikers(post.feedId, showLikers);
 
-  // 수정 모달 상태
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const images = post.imageUrls || [];
   const hasMultipleImages = images.length > 1;
   
-  // 작성자 본인 확인
   const isOwner = user && Number(user.id) === post.writerId;
 
   const handlePrevClick = (e: React.MouseEvent) => {
@@ -55,7 +51,6 @@ export function PostCard({ post, onClickPost }: PostCardProps) {
     setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
   };
 
-  // [추가] 좋아요 핸들러
   const handleLikeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     toggleLike(post.feedId);
@@ -93,7 +88,6 @@ export function PostCard({ post, onClickPost }: PostCardProps) {
     }
   };
 
-  // 내용과 이미지가 모두 없으면 렌더링 안 함
   if (images.length === 0 && !post.content) return null;
 
   return (
@@ -102,16 +96,21 @@ export function PostCard({ post, onClickPost }: PostCardProps) {
         {/* 1. 헤더 */}
         <div className="flex items-center justify-between p-3">
           <div className="flex items-center gap-3">
-            <Avatar className="w-10 h-10 border border-gray-100 shadow-sm cursor-pointer">
-              <AvatarImage src={post.writerProfileImage || undefined} />
-              <AvatarFallback className="bg-[#FF69B4]/10 text-[#FF69B4] font-bold">
-                {post.writerNickname.substring(0, 1)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col cursor-pointer">
-              <span className="text-[15px] font-bold text-gray-900 leading-none mb-1">
+            {/* [수정] 아바타에 링크 적용 (writerId 사용) */}
+            <Link to={`/user/${post.writerId}`}>
+                <Avatar className="w-10 h-10 border border-gray-100 shadow-sm cursor-pointer hover:opacity-90 transition-opacity">
+                <AvatarImage src={post.writerProfileImage || undefined} />
+                <AvatarFallback className="bg-[#FF69B4]/10 text-[#FF69B4] font-bold">
+                    {post.writerNickname.substring(0, 1)}
+                </AvatarFallback>
+                </Avatar>
+            </Link>
+            
+            <div className="flex flex-col">
+              {/* [수정] 닉네임에 링크 적용 (writerId 사용) */}
+              <Link to={`/user/${post.writerId}`} className="text-[15px] font-bold text-gray-900 leading-none mb-1 hover:text-[#FF69B4] transition-colors">
                 {post.writerNickname}
-              </span>
+              </Link>
               {post.location && (
                 <div className="flex items-center text-xs font-medium text-gray-500">
                   <MapPin className="w-3 h-3 mr-0.5 text-gray-400" />
@@ -189,11 +188,10 @@ export function PostCard({ post, onClickPost }: PostCardProps) {
               onClick={handleLikeClick}
               className="flex items-center gap-1.5 group transition-transform active:scale-90 focus:outline-none"
             >
-              {/* [수정] 하트 색상: 빨강(red-600) */}
               <Heart
                 className={`w-7 h-7 transition-all duration-300 ${post.isLiked
-                  ? "fill-red-600 text-red-600 drop-shadow-sm scale-105" // 좋아요 상태
-                  : "text-gray-700 group-hover:text-red-600" // 기본 상태
+                  ? "fill-red-600 text-red-600 drop-shadow-sm scale-105" 
+                  : "text-gray-700 group-hover:text-red-600"
                 }`}
                 strokeWidth={post.isLiked ? 0 : 1.5}
               />
@@ -219,7 +217,10 @@ export function PostCard({ post, onClickPost }: PostCardProps) {
         {/* 4. 본문 내용 */}
         <div className="px-4 pb-4">
           <div className="text-[15px] leading-relaxed text-gray-900 line-clamp-3">
-            <span className="font-bold mr-2">{post.writerNickname}</span>
+            {/* [수정] 본문 내 작성자 이름에도 링크 적용 */}
+            <Link to={`/user/${post.writerId}`} className="font-bold mr-2 hover:text-[#FF69B4] transition-colors">
+                {post.writerNickname}
+            </Link>
             {post.content}
           </div>
           {post.commentCount > 0 && (

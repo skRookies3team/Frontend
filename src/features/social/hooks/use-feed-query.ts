@@ -5,9 +5,20 @@ import {
   useQueryClient, 
   InfiniteData 
 } from '@tanstack/react-query';
-import { feedApi } from '../api/feed-api';
+import { feedApi, SearchHashtagDto } from '../api/feed-api'; // SearchHashtagDto import 추가
 import { FeedSliceResponse, FeedDto, FollowStatResponse, LikerDto } from '../types/feed';
 import { useToast } from '@/shared/hooks/use-toast';
+import { useState, useEffect } from 'react';
+
+// [추가] 디바운스 훅 (파일 내에 포함 요청 반영)
+export function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => { setDebouncedValue(value); }, delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+}
 
 // 쿼리 키 관리
 export const FEED_KEYS = {
@@ -17,13 +28,21 @@ export const FEED_KEYS = {
   // 그리드 뷰용 키 (프로필 페이지 등)
   grid: (userId: number) => [...FEED_KEYS.all, 'grid', userId] as const,
   // 인기 게시물 키
-  trending: ['feeds', 'trending'] as const,
+  trending: (userId: number) => [...FEED_KEYS.all, 'trending', userId] as const,
+  // 해시태그 검색 키
+  hashtag: (tag: string, userId: number) => [...FEED_KEYS.all, 'hashtag', tag, userId] as const,
   // 상세, 좋아요, 팔로우 등
   detail: (feedId: number) => [...FEED_KEYS.all, 'detail', feedId] as const,
   likes: (feedId: number) => ['feeds', 'likes', feedId] as const,
   followStats: (userId: number) => ['follows', 'stats', userId] as const,
   followers: (userId: number) => ['follows', 'followers', userId] as const,
   followings: (userId: number) => ['follows', 'followings', userId] as const,
+};
+
+// [추가] 검색용 쿼리 키
+export const SEARCH_KEYS = {
+  users: (keyword: string) => ['search', 'users', keyword] as const,
+  hashtags: (keyword: string) => ['search', 'hashtags', keyword] as const,
 };
 
 /**
@@ -58,38 +77,69 @@ export const useFeedList = (userId: number, filter: string = 'all') => {
 };
 
 /**
- * [인기 게시물] 인기 탭용
+ * [인기 게시물] 인기 탭용 (알고리즘 정렬)
  */
 export const useTrendingFeeds = (viewerId: number = 0) => {
   return useQuery<FeedSliceResponse>({
-    queryKey: FEED_KEYS.trending,
-    queryFn: () => feedApi.getTrendingFeeds(viewerId),
-    staleTime: 1000 * 60 * 10,
+    queryKey: FEED_KEYS.trending(viewerId),
+    queryFn: () => feedApi.getTrendingFeeds(viewerId, 0), // 0번 페이지 조회
+    staleTime: 1000 * 60 * 5, // 5분 캐싱
   });
 };
 
 /**
- * [좋아요 토글] 낙관적 업데이트 적용 (화면 깜빡임 방지)
- * - 메인 피드, 그리드, 인기 피드, 상세 모달 모두 동시에 업데이트합니다.
+ * [해시태그 피드 검색] (알고리즘 정렬)
+ */
+export const useFeedsByHashtag = (tag: string, userId: number) => {
+  return useQuery<FeedSliceResponse>({
+    queryKey: FEED_KEYS.hashtag(tag, userId),
+    queryFn: () => feedApi.searchFeedsByHashtag(tag, userId, 0),
+    enabled: !!tag,
+  });
+};
+
+// [추가] 사용자 검색 Hook
+export const useUserSearch = (keyword: string, viewerId: number = 0) => {
+  const debouncedKeyword = useDebounce(keyword, 300);
+
+  return useQuery({
+    queryKey: SEARCH_KEYS.users(debouncedKeyword),
+    queryFn: () => feedApi.searchUsers(debouncedKeyword, viewerId),
+    // '#'으로 시작하지 않고 검색어가 있을 때만 실행
+    enabled: !!debouncedKeyword && debouncedKeyword.trim().length > 0 && !debouncedKeyword.startsWith('#'),
+    initialData: [], 
+  });
+};
+
+// [추가] 해시태그 검색 Hook (자동완성용)
+export const useHashtagSearch = (keyword: string) => {
+  const debouncedKeyword = useDebounce(keyword, 300);
+
+  return useQuery<SearchHashtagDto[]>({
+    queryKey: SEARCH_KEYS.hashtags(debouncedKeyword),
+    queryFn: () => feedApi.searchHashtags(debouncedKeyword),
+    // 검색어가 있을 때만 실행
+    enabled: !!debouncedKeyword && debouncedKeyword.trim().length > 0,
+    initialData: [],
+  });
+};
+
+/**
+ * [좋아요 토글] 낙관적 업데이트 적용
  */
 export const useFeedLike = (userId: number) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // [수정됨] isLiked 상태를 인자로 받을 필요 없음. API가 알아서 토글함.
     mutationFn: (feedId: number) => feedApi.toggleLike(feedId, userId),
     
     onMutate: async (feedId) => {
-      // 1. 쿼리 취소
       await queryClient.cancelQueries({ queryKey: FEED_KEYS.all });
 
-      // 2. 스냅샷 저장
       const previousFeeds = queryClient.getQueriesData<InfiniteData<FeedSliceResponse>>({ queryKey: FEED_KEYS.all });
       const previousGrid = queryClient.getQueryData<FeedDto[]>(FEED_KEYS.grid(userId));
-      const previousTrending = queryClient.getQueryData<FeedSliceResponse>(FEED_KEYS.trending);
       const previousDetail = queryClient.getQueryData<FeedDto>(FEED_KEYS.detail(feedId));
 
-      // 3. 캐시 업데이트 함수 (UI상에서만 미리 뒤집기)
       const updateFeedLike = (feed: FeedDto) => {
         if (feed.feedId === feedId) {
           const newIsLiked = !feed.isLiked;
@@ -102,7 +152,7 @@ export const useFeedLike = (userId: number) => {
         return feed;
       };
 
-      // 4. 각 쿼리 데이터 업데이트
+      // Infinite Query 데이터 업데이트
       queryClient.setQueriesData<InfiniteData<FeedSliceResponse>>(
         { queryKey: FEED_KEYS.all }, 
         (oldData) => {
@@ -117,17 +167,11 @@ export const useFeedLike = (userId: number) => {
         }
       );
 
+      // Grid 데이터 업데이트
       if (previousGrid) {
         queryClient.setQueryData<FeedDto[]>(
           FEED_KEYS.grid(userId),
           (old) => old?.map(updateFeedLike)
-        );
-      }
-
-      if (previousTrending) {
-        queryClient.setQueryData<FeedSliceResponse>(
-          FEED_KEYS.trending,
-          (old) => old ? { ...old, content: old.content.map(updateFeedLike) } : old
         );
       }
 
@@ -138,28 +182,22 @@ export const useFeedLike = (userId: number) => {
         );
       }
 
-      return { previousFeeds, previousGrid, previousTrending, previousDetail };
+      return { previousFeeds, previousGrid, previousDetail };
     },
     
     onError: (_err, feedId, context) => {
-      // 에러 시 롤백
       if (context?.previousFeeds) {
         context.previousFeeds.forEach(([key, data]) => queryClient.setQueryData(key, data));
       }
       if (context?.previousGrid) {
         queryClient.setQueryData(FEED_KEYS.grid(userId), context.previousGrid);
       }
-      if (context?.previousTrending) {
-        queryClient.setQueryData(FEED_KEYS.trending, context.previousTrending);
-      }
       if (context?.previousDetail) {
         queryClient.setQueryData(FEED_KEYS.detail(feedId), context.previousDetail);
       }
-      // alert("좋아요 처리에 실패했습니다."); // 필요 시 주석 해제
     },
 
     onSuccess: (_, feedId) => {
-      // 서버 데이터와 동기화
       queryClient.invalidateQueries({ queryKey: FEED_KEYS.all });
       queryClient.invalidateQueries({ queryKey: FEED_KEYS.detail(feedId) });
     }
