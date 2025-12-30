@@ -62,8 +62,6 @@ import MessagesPage from "@/features/petmate/pages/MessagesPage"
 
 // Feature: Social
 import FeedPage from "@/features/social/pages/FeedPage"
-import FeedAiRecommendPage from "@/features/social/pages/FeedAiRecommendPage"
-import CreatePage from "@/features/social/pages/CreatePage"
 import UserPage from "@/features/social/pages/UserPage"
 import ProfilePage from "@/features/social/pages/ProfilePage"
 
@@ -103,10 +101,7 @@ function App() {
                                         <Route index element={<HomePage />} />
                                         <Route path="dashboard" element={<DashboardPage />} />
                                         <Route path="feed" element={<FeedPage />} />
-                                        <Route path="feed/ai-recommend" element={<FeedAiRecommendPage />} />
-                                        {/* feed/create 라우트 삭제 */}
                                         <Route path="ai-studio" element={<AiStudioPage />} />
-                                        <Route path="create" element={<CreatePage />} />
                                         {/* <Route path="ai-diary" element={<AiDiaryPage />} /> Removed legacy */}
                                         <Route path="ai-studio/diary/calendar" element={<DiaryCalendarPage />} />
                                         <Route path="ai-studio/diary/upload" element={<DiaryUploadPage />} />
