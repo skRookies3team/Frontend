@@ -1,5 +1,4 @@
-// API base URL configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+import { httpClient } from '@/shared/api/http-client';
 
 // Types
 export interface PetMateProfile {
@@ -33,7 +32,7 @@ export interface PetMateCandidate {
     petGender: string;
     petPhoto: string;
     bio: string;
-    bioIcon?: string;  // SVG icon path for bio
+    bioIcon?: string;
     activityLevel: number;
     distance: number;
     location: string;
@@ -72,91 +71,75 @@ export interface LikeRequest {
     toUserId: number;
 }
 
-// API Functions
+// 주소 정보 인터페이스
+export interface AddressInfo {
+    fullAddress: string;
+    roadAddress?: string;
+    region1: string;
+    region2: string;
+    region3: string;
+    zoneNo?: string;
+    buildingName?: string;
+}
+
+// 주소 검색 결과 인터페이스
+export interface SearchAddressResult {
+    addressName: string;
+    roadAddress?: string;
+    latitude: number;
+    longitude: number;
+    region1?: string;
+    region2?: string;
+    region3?: string;
+    zoneNo?: string;
+    buildingName?: string;
+}
+
+// API Functions - httpClient 사용으로 JWT 토큰 자동 포함
 export const petMateApi = {
     // 프로필 생성/수정
     createOrUpdateProfile: async (profile: PetMateProfile): Promise<PetMateCandidate> => {
-        const response = await fetch(`${API_BASE_URL}/petmate/profile`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(profile),
-        });
-        if (!response.ok) throw new Error('Failed to update profile');
-        return response.json();
+        return httpClient.post<PetMateCandidate>('/petmate/profile', profile);
     },
 
     // 후보자 목록 조회
     getCandidates: async (userId: number, filter?: PetMateFilter): Promise<PetMateCandidate[]> => {
-        const response = await fetch(`${API_BASE_URL}/petmate/candidates/${userId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(filter || {}),
-        });
-        if (!response.ok) throw new Error('Failed to fetch candidates');
-        return response.json();
+        return httpClient.post<PetMateCandidate[]>(`/petmate/candidates/${userId}`, filter || {});
     },
 
     // 좋아요 보내기
     like: async (request: LikeRequest): Promise<MatchResult> => {
-        const response = await fetch(`${API_BASE_URL}/petmate/like`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(request),
-        });
-        if (!response.ok) throw new Error('Failed to send like');
-        return response.json();
+        return httpClient.post<MatchResult>('/petmate/like', request);
     },
 
     // 좋아요 취소하기
     unlike: async (request: LikeRequest): Promise<boolean> => {
-        const response = await fetch(`${API_BASE_URL}/petmate/like`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(request),
-        });
-        if (!response.ok) throw new Error('Failed to cancel like');
-        return response.json();
+        return httpClient.delete<boolean>('/petmate/like', { data: request });
     },
 
     // 좋아요 보낸 사용자 ID 목록 조회
     getLikedUserIds: async (userId: number): Promise<number[]> => {
-        const response = await fetch(`${API_BASE_URL}/petmate/liked/${userId}`);
-        if (!response.ok) throw new Error('Failed to fetch liked users');
-        return response.json();
+        return httpClient.get<number[]>(`/petmate/liked/${userId}`);
     },
 
     // 매칭 목록 조회
     getMatches: async (userId: number): Promise<MatchResult[]> => {
-        const response = await fetch(`${API_BASE_URL}/petmate/matches/${userId}`);
-        if (!response.ok) throw new Error('Failed to fetch matches');
-        return response.json();
+        return httpClient.get<MatchResult[]>(`/petmate/matches/${userId}`);
     },
 
     // 온라인 상태 업데이트
     updateOnlineStatus: async (userId: number, isOnline: boolean): Promise<void> => {
-        const response = await fetch(
-            `${API_BASE_URL}/petmate/status/${userId}?isOnline=${isOnline}`,
-            { method: 'PUT' }
-        );
-        if (!response.ok) throw new Error('Failed to update status');
+        await httpClient.put<void>(`/petmate/status/${userId}?isOnline=${isOnline}`);
     },
 
     // GPS 좌표 → 주소 변환 (Kakao Maps API)
     getAddressFromCoords: async (longitude: number, latitude: number): Promise<AddressInfo> => {
-        const response = await fetch(
-            `${API_BASE_URL}/geocoding/reverse?x=${longitude}&y=${latitude}`
-        );
-        if (!response.ok) throw new Error('Failed to get address from coordinates');
-        return response.json();
+        return httpClient.get<AddressInfo>(`/geocoding/reverse?x=${longitude}&y=${latitude}`);
     },
 
     // 주소 검색 → 좌표 변환 (Kakao Maps API)
     searchAddress: async (query: string): Promise<SearchAddressResult[]> => {
-        const response = await fetch(
-            `${API_BASE_URL}/geocoding/search?query=${encodeURIComponent(query)}`
-        );
-        if (!response.ok) throw new Error('Failed to search address');
-        return response.json();
+        return httpClient.get<SearchAddressResult[]>(`/geocoding/search?query=${encodeURIComponent(query)}`);
     },
 
     // 사용자 위치 업데이트 (DB 저장)
@@ -168,46 +151,18 @@ export const petMateApi = {
         if (location) {
             params.append('location', location);
         }
-        const response = await fetch(
-            `${API_BASE_URL}/petmate/location/${userId}?${params.toString()}`,
-            { method: 'PUT' }
-        );
-        if (!response.ok) throw new Error('Failed to update location');
-        return response.json();
+        return httpClient.put<boolean>(`/petmate/location/${userId}?${params.toString()}`);
     },
 
     // 사용자 저장된 위치 조회
     getSavedLocation: async (userId: number): Promise<{ latitude: number; longitude: number; location: string } | null> => {
-        const response = await fetch(`${API_BASE_URL}/petmate/location/${userId}`);
-        if (response.status === 404) return null;
-        if (!response.ok) throw new Error('Failed to get saved location');
-        return response.json();
+        try {
+            return await httpClient.get<{ latitude: number; longitude: number; location: string }>(`/petmate/location/${userId}`);
+        } catch {
+            return null;
+        }
     },
 };
-
-// 주소 정보 인터페이스
-export interface AddressInfo {
-    fullAddress: string;      // 전체 주소 (지번)
-    roadAddress?: string;     // 도로명 주소
-    region1: string;          // 시/도
-    region2: string;          // 구/군
-    region3: string;          // 동/읍/면
-    zoneNo?: string;          // 우편번호
-    buildingName?: string;    // 건물명
-}
-
-// 주소 검색 결과 인터페이스
-export interface SearchAddressResult {
-    addressName: string;      // 전체 주소
-    roadAddress?: string;     // 도로명 주소
-    latitude: number;         // 위도
-    longitude: number;        // 경도
-    region1?: string;         // 시/도
-    region2?: string;         // 구/군
-    region3?: string;         // 동/읍/면
-    zoneNo?: string;          // 우편번호
-    buildingName?: string;    // 건물명
-}
 
 // GPS 좌표 가져오기 유틸리티
 export const getCurrentPosition = (): Promise<GeolocationPosition> => {
@@ -230,4 +185,3 @@ export const getAddressFromGPS = async (): Promise<AddressInfo> => {
     const { longitude, latitude } = position.coords;
     return petMateApi.getAddressFromCoords(longitude, latitude);
 };
-
