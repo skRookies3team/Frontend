@@ -206,9 +206,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         pet: petDto
       };
 
-      console.log(signupUserFile);
-      console.log(petFile);
-      console.log(requestDto);
+      // console.log(signupUserFile);
+      // console.log(petFile);
+      // console.log(requestDto);
 
       // Call the updated signupApi with separate file parameters
       await signupApi(signupUserFile, petFile, requestDto);
