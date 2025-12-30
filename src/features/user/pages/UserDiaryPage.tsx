@@ -296,7 +296,7 @@ export default function UserDiaryPage() {
                     }}
                 >
                     <div
-                        className="relative w-full max-w-2xl overflow-hidden rounded-lg bg-background shadow-xl"
+                        className="relative w-full max-w-4xl overflow-hidden rounded-lg bg-background shadow-xl"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <button
@@ -308,12 +308,12 @@ export default function UserDiaryPage() {
                         >
                             <X className="h-5 w-5" />
                         </button>
-                        <div className="relative h-64 overflow-hidden">
+                        <div className="relative min-h-[400px] max-h-[70vh] bg-gray-100 overflow-hidden flex items-center justify-center">
                             {/* Image Carousel */}
                             <img
                                 src={selectedDiary.images?.[currentImageIndex]?.imageUrl || selectedDiary.image}
                                 alt={selectedDiary.title}
-                                className="h-full w-full object-cover"
+                                className="w-full h-full object-contain"
                             />
 
                             {/* Debug: Log images array */}
@@ -360,31 +360,31 @@ export default function UserDiaryPage() {
                                 </>
                             )}
 
-                            <Badge className="absolute left-4 top-4 flex items-center gap-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white z-10">
-                                <Sparkles className="h-3 w-3" />
+                            <Badge className="absolute left-4 top-4 flex items-center gap-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white z-10 text-sm px-3 py-1.5">
+                                <Sparkles className="h-4 w-4" />
                                 AI 다이어리
                             </Badge>
-                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-white">
-                                <h2 className="mb-2 text-2xl font-bold">{selectedDiary.title}</h2>
-                                <div className="flex gap-2">
-                                    <Badge variant="secondary" className="text-xs">
+                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-8 text-white">
+                                <h2 className="mb-3 text-4xl font-bold">{selectedDiary.title}</h2>
+                                <div className="flex gap-3">
+                                    <Badge variant="secondary" className="text-base px-3 py-1">
                                         {selectedDiary.weather}
                                     </Badge>
-                                    <Badge variant="secondary" className="text-xs">
+                                    <Badge variant="secondary" className="text-base px-3 py-1">
                                         {selectedDiary.mood}
                                     </Badge>
                                 </div>
                             </div>
                         </div>
-                        <div className="p-6">
-                            <p className="mb-6 text-muted-foreground leading-relaxed">{selectedDiary.content}</p>
-                            <div className="flex gap-2">
-                                <Button className="flex-1">
-                                    <Download className="mr-2 h-4 w-4" />
+                        <div className="p-8">
+                            <p className="mb-8 text-muted-foreground leading-relaxed text-lg">{selectedDiary.content}</p>
+                            <div className="flex gap-3">
+                                <Button className="flex-1 text-base h-12">
+                                    <Download className="mr-2 h-5 w-5" />
                                     다운로드
                                 </Button>
-                                <Button variant="outline" className="flex-1">
-                                    <Share2 className="mr-2 h-4 w-4" />
+                                <Button variant="outline" className="flex-1 text-base h-12">
+                                    <Share2 className="mr-2 h-5 w-5" />
                                     공유하기
                                 </Button>
                             </div>
