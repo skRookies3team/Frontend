@@ -12,7 +12,9 @@ import {
     MessageCircle,
     X,
     Download,
-    Share2
+    Share2,
+    ChevronLeft,
+    ChevronRight
 } from "lucide-react"
 
 import { Button } from "@/shared/ui/button"
@@ -34,11 +36,13 @@ export default function UserDiaryPage() {
 
     // --- State ---
     const [photos, setPhotos] = useState<any[]>([])
-    const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null)
+    const [selectedPhoto, setSelectedPhoto] = useState<any | null>(null)
+    const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
 
     // [NEW] Real Diary State
     const [userDiaries, setUserDiaries] = useState<any[]>([])
     const [selectedDiary, setSelectedDiary] = useState<any | null>(null)
+    const [currentImageIndex, setCurrentImageIndex] = useState(0)
     const { user } = useAuth()
 
     const [selectedRecap, setSelectedRecap] = useState<Recap | null>(null)
@@ -95,6 +99,7 @@ export default function UserDiaryPage() {
                             date: d.date,
                             // Use found image or placeholder
                             image: firstImage || "/placeholder-diary.jpg",
+                            images: d.images || [], // ✅ 이미지 배열 추가
                             weather: d.weather,
                             mood: d.mood,
                             content: d.content
@@ -247,7 +252,10 @@ export default function UserDiaryPage() {
                             <div
                                 key={photo.id}
                                 className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg"
-                                onClick={() => setSelectedPhoto(photo.url)}
+                                onClick={() => {
+                                    setSelectedPhoto(photo)
+                                    setCurrentPhotoIndex(0)
+                                }}
                             >
                                 <img
                                     src={photo.url}
@@ -282,7 +290,10 @@ export default function UserDiaryPage() {
             {selectedDiary && (
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center bg-white/95 backdrop-blur-sm p-4"
-                    onClick={() => setSelectedDiary(null)}
+                    onClick={() => {
+                        setSelectedDiary(null)
+                        setCurrentImageIndex(0)
+                    }}
                 >
                     <div
                         className="relative w-full max-w-2xl overflow-hidden rounded-lg bg-background shadow-xl"
@@ -290,13 +301,66 @@ export default function UserDiaryPage() {
                     >
                         <button
                             className="absolute right-4 top-4 z-10 rounded-full bg-white/80 p-2 text-gray-700 hover:bg-white"
-                            onClick={() => setSelectedDiary(null)}
+                            onClick={() => {
+                                setSelectedDiary(null)
+                                setCurrentImageIndex(0)
+                            }}
                         >
                             <X className="h-5 w-5" />
                         </button>
                         <div className="relative h-64 overflow-hidden">
-                            <img src={selectedDiary.image} alt={selectedDiary.title} className="h-full w-full object-cover" />
-                            <Badge className="absolute left-4 top-4 flex items-center gap-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                            {/* Image Carousel */}
+                            <img
+                                src={selectedDiary.images?.[currentImageIndex]?.imageUrl || selectedDiary.image}
+                                alt={selectedDiary.title}
+                                className="h-full w-full object-cover"
+                            />
+
+                            {/* Debug: Log images array */}
+                            {console.log('[Diary Modal] Images:', selectedDiary.images, 'Length:', selectedDiary.images?.length, 'Show carousel?', selectedDiary.images?.length > 1)}
+
+                            {/* Navigation Arrows - only show if multiple images */}
+                            {selectedDiary.images && selectedDiary.images.length > 1 && (
+                                <>
+                                    <button
+                                        className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-20"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setCurrentImageIndex((prev) => (prev - 1 + selectedDiary.images.length) % selectedDiary.images.length)
+                                        }}
+                                    >
+                                        <ChevronLeft className="h-5 w-5" />
+                                    </button>
+                                    <button
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-20"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setCurrentImageIndex((prev) => (prev + 1) % selectedDiary.images.length)
+                                        }}
+                                    >
+                                        <ChevronRight className="h-5 w-5" />
+                                    </button>
+
+                                    {/* Dot Indicators */}
+                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                                        {selectedDiary.images.map((_: any, index: number) => (
+                                            <button
+                                                key={index}
+                                                className={`h-2 w-2 rounded-full transition-all ${index === currentImageIndex
+                                                    ? 'bg-white w-6'
+                                                    : 'bg-white/50 hover:bg-white/80'
+                                                    }`}
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    setCurrentImageIndex(index)
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+
+                            <Badge className="absolute left-4 top-4 flex items-center gap-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white z-10">
                                 <Sparkles className="h-3 w-3" />
                                 AI 다이어리
                             </Badge>
@@ -323,6 +387,59 @@ export default function UserDiaryPage() {
                                     <Share2 className="mr-2 h-4 w-4" />
                                     공유하기
                                 </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Photo Gallery Modal */}
+            {selectedPhoto && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+                    onClick={() => {
+                        setSelectedPhoto(null)
+                        setCurrentPhotoIndex(0)
+                    }}
+                >
+                    <div
+                        className="relative w-full max-w-4xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            className="absolute right-4 top-4 z-30 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition-colors"
+                            onClick={() => {
+                                setSelectedPhoto(null)
+                                setCurrentPhotoIndex(0)
+                            }}
+                        >
+                            <X className="h-6 w-6" />
+                        </button>
+
+                        <div className="relative w-full aspect-square max-h-[80vh] overflow-hidden rounded-lg">
+                            <img
+                                src={selectedPhoto.url}
+                                alt={`Photo ${selectedPhoto.id}`}
+                                className="w-full h-full object-contain"
+                            />
+
+                            {/* 향후 여러 이미지 지원을 위한 준비 */}
+                            {/* Navigation arrows would go here when photos have multiple images */}
+
+                            <div className="absolute bottom-4 left-4 right-4 bg-black/50 backdrop-blur-sm rounded-lg p-4 text-white">
+                                <div className="flex items-center justify-between text-sm mb-2">
+                                    <span className="flex items-center gap-2">
+                                        <Heart className="h-4 w-4" />
+                                        {selectedPhoto.likes}
+                                    </span>
+                                    <span className="flex items-center gap-2">
+                                        <MessageCircle className="h-4 w-4" />
+                                        {selectedPhoto.comments}
+                                    </span>
+                                </div>
+                                <div className="text-xs text-white/80">
+                                    {selectedPhoto.date} · {selectedPhoto.category}
+                                </div>
                             </div>
                         </div>
                     </div>

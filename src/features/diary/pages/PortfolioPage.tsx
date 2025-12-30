@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import * as THREE from "three"
-import { X, Calendar, MapPin, Heart } from 'lucide-react'
+import { X, Calendar, MapPin, Heart, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from "@/shared/ui/button"
 import "@/shared/assets/styles/PortfolioPage.css"
 import "./PortfolioPage.css"
@@ -19,11 +19,13 @@ interface PortfolioDiary {
   content: string;
   likes: number;
   weather: string;
+  images?: any[]; // [NEW] Images array for carousel
   isPlaceholder?: boolean; // [FIX] Re-add flag
 }
 
 export default function PortfolioPage() {
   const [selectedPhoto, setSelectedPhoto] = useState<PortfolioDiary | null>(null)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
   // [NEW] Real Data State
   const [diaries, setDiaries] = useState<PortfolioDiary[]>([])
@@ -152,6 +154,7 @@ export default function PortfolioPage() {
               content: d.content,
               likes: 0,
               weather: d.weather || "맑음 ☀️",
+              images: d.images || [], // [NEW] Include images array
               isPlaceholder: false
             }
           })
@@ -399,6 +402,7 @@ export default function PortfolioPage() {
       if (intersects.length > 0) {
         const clickedMesh = intersects[0].object as THREE.Mesh
         setSelectedPhoto(clickedMesh.userData.photo)
+        setCurrentImageIndex(0) // [NEW] Reset image index
       }
     }
 
@@ -521,7 +525,10 @@ export default function PortfolioPage() {
         selectedPhoto && (
           <div
             className="fixed inset-0 bg-black/95 backdrop-blur-2xl z-50 flex items-center justify-center p-4"
-            onClick={() => setSelectedPhoto(null)}
+            onClick={() => {
+              setSelectedPhoto(null)
+              setCurrentImageIndex(0)
+            }}
           >
             <div
               className="relative max-w-5xl w-full"
@@ -531,7 +538,10 @@ export default function PortfolioPage() {
                 variant="ghost"
                 size="icon"
                 className="absolute -top-14 right-0 text-white hover:bg-white/10 rounded-full w-12 h-12 backdrop-blur-xl border border-white/20"
-                onClick={() => setSelectedPhoto(null)}
+                onClick={() => {
+                  setSelectedPhoto(null)
+                  setCurrentImageIndex(0)
+                }}
               >
                 <X className="h-6 w-6" />
               </Button>
@@ -541,10 +551,53 @@ export default function PortfolioPage() {
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 via-purple-500/30 to-cyan-500/30 blur-3xl" style={{ zIndex: -10 }} />
 
                   <img
-                    src={selectedPhoto.src || "/placeholder.svg"}
+                    src={selectedPhoto.images && selectedPhoto.images.length > 0
+                      ? selectedPhoto.images[currentImageIndex]?.imageUrl || selectedPhoto.src
+                      : selectedPhoto.src || "/placeholder.svg"}
                     alt={selectedPhoto.title}
                     className="w-full h-auto max-h-[50vh] object-contain"
                   />
+
+                  {/* Image Carousel Navigation */}
+                  {selectedPhoto.images && selectedPhoto.images.length > 1 && (
+                    <>
+                      <button
+                        className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-3 text-white hover:bg-black/70 transition-colors z-20"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setCurrentImageIndex((prev) => (prev - 1 + selectedPhoto.images!.length) % selectedPhoto.images!.length)
+                        }}
+                      >
+                        <ChevronLeft className="h-6 w-6" />
+                      </button>
+                      <button
+                        className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-3 text-white hover:bg-black/70 transition-colors z-20"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setCurrentImageIndex((prev) => (prev + 1) % selectedPhoto.images!.length)
+                        }}
+                      >
+                        <ChevronRight className="h-6 w-6" />
+                      </button>
+
+                      {/* Dot Indicators */}
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                        {selectedPhoto.images.map((_: any, index: number) => (
+                          <button
+                            key={index}
+                            className={`h-2.5 w-2.5 rounded-full transition-all ${index === currentImageIndex
+                                ? 'bg-white w-8'
+                                : 'bg-white/50 hover:bg-white/80'
+                              }`}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCurrentImageIndex(index)
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="p-8 bg-gradient-to-b from-transparent to-black/30 space-y-4">
