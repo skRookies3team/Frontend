@@ -1,11 +1,17 @@
 // 일기 생성 단계
-export type DiaryStep = 'upload' | 'generating' | 'edit' | 'complete';
+export type DiaryStep = 'upload' | 'generating' | 'edit' | 'style' | 'complete';
 
 // 레이아웃 스타일
 export type LayoutStyle = 'grid' | 'masonry' | 'slide' | 'classic';
 
 // 텍스트 정렬
 export type TextAlign = 'left' | 'center' | 'right';
+
+// 이미지 크기 옵션
+export type SizeOption = 'small' | 'medium' | 'large';
+
+// 테마 스타일
+export type ThemeStyle = 'basic' | 'romantic' | 'modern';
 
 // 선택된 이미지 객체
 export interface SelectedImage {
@@ -27,6 +33,20 @@ export interface CreateDiaryResponse {
     message: string;
 }
 
+// [추가] 다이어리 스타일 요청 DTO
+export interface DiaryStyleRequest {
+    galleryType: string;   // grid, masonry, slider, classic
+    textAlignment: string; // left, center, right
+    fontSize: number;
+    sizeOption: string;    // small, medium, large
+    backgroundColor: string;
+    preset: string | null;
+    themeStyle: string;    // basic, romantic, modern
+    petId: number | null;
+    diaryId: number;       // [NEW] 다이어리 ID (개별 다이어리 스타일 적용)
+}
+
+// [추가] 일기 생성 요청 DTO (프론트엔드에서 백엔드로 보낼 때 사용)
 // [추가] 일기 생성 요청 DTO (프론트엔드에서 백엔드로 보낼 때 사용)
 export interface DiaryRequest {
     userId: number;
@@ -38,8 +58,27 @@ export interface DiaryRequest {
     mood: string | null;
     latitude?: number | null;
     longitude?: number | null;
-    // images는 별도 FormData로 처리되거나, 백엔드 로직에 따라 다름
-    images?: DiaryImageDTO[]; 
+    locationName?: string; // [New]
+    date?: string; // [New] yyyy-MM-dd
+
+    // Legacy image objects (optional if we use imageUrls/archiveIds)
+    images?: DiaryImageDTO[];
+
+    // [New] Preview result based IDs (for final save)
+    imageUrls?: string[];
+    archiveIds?: number[];
+}
+
+// [New] AI Diary Preview Response
+export interface AiDiaryResponse {
+    content: string;
+    weather: string;
+    mood: string;
+    locationName: string;
+    latitude: number;
+    longitude: number;
+    imageUrls: string[];
+    archiveIds: number[];
 }
 
 // Mock 데이터 상수
@@ -55,7 +94,12 @@ export const GALLERY_IMAGES: string[] = [
 ];
 
 // 이미지 출처 타입
+export enum ImageSource {
+    GALLERY = 'GALLERY', // 외부 갤러리 (새로 업로드) -> 외부 서비스 전송 O
+    ARCHIVE = 'ARCHIVE'  // 내부 보관함 (기존 사진 선택) -> 외부 서비스 전송 X
+}
+
 export const ImageType = {
-    GALLERY: 'GALLERY', // 로컬 PC에서 새로 업로드
-    ARCHIVE: 'ARCHIVE', // 웹사이트 내부 보관함에서 선택
+    GALLERY: ImageSource.GALLERY,
+    ARCHIVE: ImageSource.ARCHIVE,
 } as const;

@@ -30,9 +30,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Debug VITE_API_URL
+        run: |
+          echo "===== DEBUG ENV ====="
+          echo "VITE_API_URL=$VITE_API_URL"
+          echo "====================="
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
       # React(Vite) 빌드
       - name: Build project
         run: pnpm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_KAKAO_API_KEY: ${{ secrets.VITE_KAKAO_API_KEY }}
 
       # AWS 인증 (GitHub Secrets 사용)
       - name: Configure AWS Credentials
@@ -47,9 +58,9 @@ jobs:
         run: |
           aws s3 sync dist/ s3://petlog-frontend-bucket --delete
 
-      # CloudFront 캐시 무효화
-      - name: Invalidate CloudFront Cache
-        run: |
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ secrets.AWS_CLOUDFRONT_ID }} \
-            --paths "/*"
+      # # CloudFront 캐시 무효화
+      # - name: Invalidate CloudFront Cache
+      #   run: |
+      #     aws cloudfront create-invalidation \
+      #       --distribution-id ${{ secrets.AWS_CLOUDFRONT_ID }} \
+      #       --paths "/*"
