@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { Diary } from "@/features/healthcare/data/pet-data"
+import { DiaryResponse } from "@/features/diary/types/diary"
 import { gsap } from "gsap"
 import { Draggable } from "gsap/Draggable"
 
@@ -9,10 +9,38 @@ if (typeof window !== "undefined") {
 }
 
 interface DiaryCarousel3DProps {
-  diaries?: Diary[]
+  diaries?: DiaryResponse[]
+  isLoading?: boolean
 }
 
-export function DiaryCarousel3D({ diaries = [] }: DiaryCarousel3DProps) {
+export function DiaryCarousel3D({ diaries = [], isLoading = false }: DiaryCarousel3DProps) {
+  console.log('[DiaryCarousel3D] Received diaries:', diaries)
+  console.log('[DiaryCarousel3D] isLoading:', isLoading)
+
+  // 최소 8개의 카드를 유지하기 위해 임시 카드 추가
+  const MIN_CARDS = 8
+  const displayCards = [...diaries]
+
+  if (!isLoading && diaries.length < MIN_CARDS) {
+    const placeholderCount = MIN_CARDS - diaries.length
+    for (let i = 0; i < placeholderCount; i++) {
+      displayCards.push({
+        diaryId: -1 - i, // 음수 ID로 placeholder 구분
+        userId: 0,
+        petId: 0,
+        title: '',
+        content: '',
+        weather: '',
+        mood: '',
+        date: '',
+        images: [],
+        isAiGen: false,
+        createdAt: '',
+        isPlaceholder: true // placeholder 플래그
+      } as any)
+    }
+  }
+
   const containerRef = useRef<HTMLDivElement>(null)
   const carouselRef = useRef<HTMLDivElement>(null)
   const proxyRef = useRef<HTMLDivElement>(null)
@@ -138,7 +166,7 @@ export function DiaryCarousel3D({ diaries = [] }: DiaryCarousel3DProps) {
     return () => {
       Draggable.get(proxy)?.kill()
     }
-  }, [isReady, diaries])
+  }, [isReady, displayCards])
 
   return (
     <div className="w-full h-[350px] bg-gradient-to-b from-pink-50/50 to-white flex items-center justify-center overflow-hidden relative">
@@ -154,27 +182,64 @@ export function DiaryCarousel3D({ diaries = [] }: DiaryCarousel3DProps) {
           className="relative w-0 h-0"
           style={{ transformStyle: "preserve-3d" }}
         >
-          {diaries.map((diary) => (
-            <div
-              key={diary.id}
-              className="diary-card absolute left-0 top-0 w-[200px] h-[300px] -ml-[100px] -mt-[150px] rounded-2xl overflow-hidden cursor-pointer border border-zinc-800 bg-zinc-900"
-              style={{
-                transformStyle: "preserve-3d",
-                backfaceVisibility: "hidden" // Or visible if we want to see backs
-              }}
-            >
-              <img
-                src={diary.image || "/placeholder.svg"}
-                alt={diary.title}
-                className="w-full h-full object-cover pointer-events-none"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+          {isLoading ? (
+            <div className="diary-card absolute left-0 top-0 w-[200px] h-[300px] -ml-[100px] -mt-[150px] rounded-2xl bg-pink-100 animate-pulse border border-pink-200">
               <div className="absolute bottom-6 left-6 right-6">
-                <h3 className="text-white text-xl font-bold">{diary.title}</h3>
-                <p className="text-zinc-400 text-sm mt-1">{diary.date}</p>
+                <div className="h-6 bg-pink-200 rounded mb-2"></div>
+                <div className="h-4 bg-pink-200 rounded w-2/3"></div>
               </div>
             </div>
-          ))}
+          ) : displayCards.length === 0 ? (
+            <div className="diary-card absolute left-0 top-0 w-[200px] h-[300px] -ml-[100px] -mt-[150px] rounded-2xl border border-pink-200 bg-gradient-to-br from-pink-50 to-white flex items-center justify-center">
+              <div className="text-center p-6">
+                <p className="text-pink-400 text-sm">아직 일기가 없어요</p>
+                <p className="text-pink-300 text-xs mt-2">AI와 함께<br />첫 일기를 작성해보세요</p>
+              </div>
+            </div>
+          ) : (
+            displayCards.map((diary: any) => {
+              const isPlaceholder = diary.isPlaceholder
+              return (
+                <div
+                  key={diary.diaryId}
+                  className={`diary-card absolute left-0 top-0 w-[200px] h-[300px] -ml-[100px] -mt-[150px] rounded-2xl overflow-hidden ${isPlaceholder
+                    ? 'border-2 border-dashed border-pink-200 bg-gradient-to-br from-pink-50/30 to-white/30'
+                    : 'border border-zinc-800 bg-zinc-900 cursor-pointer'
+                    }`}
+                  style={{
+                    transformStyle: "preserve-3d",
+                    backfaceVisibility: "hidden"
+                  }}
+                >
+                  {isPlaceholder ? (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="text-center p-6">
+                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-pink-100 flex items-center justify-center">
+                          <svg className="w-8 h-8 text-pink-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                        </div>
+                        <p className="text-pink-300 text-xs">더 많은 추억을<br />기록해보세요</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <img
+                        src={diary.images?.[0]?.imageUrl || "/placeholder.svg"}
+                        alt={diary.title || "다이어리"}
+                        className="w-full h-full object-cover pointer-events-none"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                      <div className="absolute bottom-4 left-4 right-4">
+                        <h3 className="text-white text-lg font-bold mb-1">{diary.title || "무제"}</h3>
+                        <p className="text-white/80 text-xs">{diary.date || ""}</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )
+            })
+          )}
         </div>
       </div>
 
