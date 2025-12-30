@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { setTokenGetter, setTokenRemover } from "@/shared/api/http-client";
-import { loginApi, signupApi } from "@/features/auth/api/auth-api";
+import { loginApi, signupApi, getUserCoinApi } from "@/features/auth/api/auth-api";
 import { createPetApi } from "@/features/healthcare/api/pet-api";
 
 interface User {
@@ -55,6 +55,7 @@ interface AuthContextType {
   hasToken: () => boolean;
   connectWithapet: () => void;
   addPetCoin: (amount: number) => void;
+  refreshPetCoin: () => Promise<void>;
   updateUser: (updates: Partial<User>) => void;
   addPet: (petDto: any, file: File | null) => Promise<void>;
   updatePet: (petId: string, updates: Partial<User['pets'][0]>) => void;
@@ -75,30 +76,7 @@ const mockUser: User = {
   petCoin: 1250,
   withapetConnected: false,
   profileCompleted: true,
-  pets: [
-    {
-      id: "1",
-      name: "몽치",
-      species: "강아지",
-      breed: "골든 리트리버",
-      age: 3,
-      photo: "/golden-retriever.png",
-      gender: "남아",
-      neutered: true,
-      birthday: "2022-03-15",
-    },
-    {
-      id: "2",
-      name: "코코",
-      species: "고양이",
-      breed: "스코티시 폴드",
-      age: 2,
-      photo: "/cat-portrait.png",
-      gender: "여아",
-      neutered: true,
-      birthday: "2023-05-20",
-    },
-  ],
+  pets: [],
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -177,6 +155,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // 토큰 저장 (메모리)
       setToken(response.token);
 
+      // 코인 정보 가져오기
+      const coinDto = await getUserCoinApi(response.userId);
+
       // 사용자 정보 저장
       // username -> Name, social -> Username (handle)
       const userData: User = {
@@ -185,6 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: response.username,
         username: response.social,
         email: response.email,
+        petCoin: coinDto.petCoin, // 실시간 코인 정보 반영
         profileCompleted: true
       };
 
@@ -248,6 +230,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const updatedUser = { ...user, petCoin: user.petCoin + amount };
       setUser(updatedUser);
       localStorage.setItem("petlog_user", JSON.stringify(updatedUser));
+    }
+  };
+
+  const refreshPetCoin = async () => {
+    if (user) {
+      try {
+        const coinDto = await getUserCoinApi(parseInt(user.id));
+        const updatedUser = { ...user, petCoin: coinDto.petCoin };
+        setUser(updatedUser);
+        localStorage.setItem("petlog_user", JSON.stringify(updatedUser));
+      } catch (error) {
+        console.error("Failed to refresh pet coin:", error);
+      }
     }
   };
 
@@ -347,6 +342,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hasToken,
       connectWithapet,
       addPetCoin,
+      refreshPetCoin,
       updateUser,
       addPet,
       updatePet,

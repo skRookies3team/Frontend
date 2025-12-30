@@ -83,7 +83,7 @@ export const signupApi = async (
     }
 
     // console.log(request);
-    
+
     // console.log("///////////////////////////");
 
     // Add request DTO as JSON blob
@@ -96,7 +96,7 @@ export const signupApi = async (
     //     console.log(key, value);
     // }
 
-    
+
     // console.log(formData)
     // alert(formData);
 
@@ -115,11 +115,6 @@ export const logoutApi = async (): Promise<void> => {
     await httpClient.post('/users/logout');
 };
 
-// 현재 사용자 정보 조회 (토큰 필요)
-export const getCurrentUserApi = async () => {
-    const response = await httpClient.get('/users/me');
-    return response;
-};
 
 // 사용자 정보 조회 (ID로 조회)
 export const getUserApi = async (userId: number): Promise<GetUserDto> => {
@@ -165,6 +160,18 @@ export const updateProfileApi = async (request: UpdateProfileRequestDto, userPro
             "Content-Type": "multipart/form-data"
         }
     });
+    return response;
+};
+
+// 코인 정보 DTO
+export interface UserCoinDto {
+    userId: number;
+    petCoin: number;
+}
+
+// 코인 수량 조회 API
+export const getUserCoinApi = async (userId: number): Promise<UserCoinDto> => {
+    const response = await httpClient.get<UserCoinDto>(`/users/${userId}/coin`);
     return response;
 };
 
