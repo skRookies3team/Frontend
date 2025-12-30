@@ -222,6 +222,10 @@ export default function PetInfoPage() {
 
     // Call signup
     try {
+      // console.log("petinfo page: signup start")
+      // console.log(createUserDto);
+      // console.log(createPetDto);
+      // console.log(petFile);
       await signup(createUserDto, createPetDto, petFile);
       // Clean up sessionStorage
       sessionStorage.removeItem("signup_user_info")
