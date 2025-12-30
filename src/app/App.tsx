@@ -63,7 +63,7 @@ import MessagesPage from "@/features/petmate/pages/MessagesPage"
 // Feature: Social
 import FeedPage from "@/features/social/pages/FeedPage"
 import UserPage from "@/features/social/pages/UserPage"
-import ProfilePage from "@/features/social/pages/ProfilePage"
+import ProfilePage from "@/features/user/pages/ProfilePage"
 
 // Feature: Chatbot
 import { FloatingChatbotWidget } from "@/features/chatbot/components/floating-chatbot-widget"
