@@ -9,7 +9,7 @@ import { Heart, MessageCircle, MoreHorizontal, X, ChevronLeft, ChevronRight, Cor
 import { FeedDto, CommentDto } from "../types/feed";
 import { useAuth } from "@/features/auth/context/auth-context";
 import { useComments, useCreateComment, useDeleteComment } from "../hooks/use-comment-query";
-import { FEED_KEYS } from "../hooks/use-feed-query"; // [중요] 키 동기화를 위해 추가
+import { FEED_KEYS } from "../hooks/use-feed-query"; 
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { feedApi } from "../api/feed-api";
@@ -51,7 +51,8 @@ function CommentItem({
     <div className={`flex gap-3 group items-start ${isReply ? "ml-12 mt-2" : "mt-4"}`}>
         {isReply && <CornerDownRight className="w-4 h-4 text-gray-300 mt-2 shrink-0" />}
 
-        <Link to={`/user/${comment.writerNickname}`} className="shrink-0">
+        {/* [수정] 닉네임 -> writerId로 링크 변경 */}
+        <Link to={`/user/${comment.writerId}`} className="shrink-0">
             <Avatar className="h-8 w-8 mt-1">
                 <AvatarImage src={comment.writerProfileImage || "/placeholder-user.jpg"} />
                 <AvatarFallback className="bg-gray-50 text-gray-500 text-xs">{comment.writerNickname[0]}</AvatarFallback>
@@ -59,7 +60,8 @@ function CommentItem({
         </Link>
         <div className="flex-1">
             <div className="text-[14px] leading-relaxed">
-                <Link to={`/user/${comment.writerNickname}`} className="font-bold mr-2 text-gray-900 hover:text-[#FF69B4] transition-colors">
+                {/* [수정] 닉네임 -> writerId로 링크 변경 */}
+                <Link to={`/user/${comment.writerId}`} className="font-bold mr-2 text-gray-900 hover:text-[#FF69B4] transition-colors">
                     {comment.writerNickname}
                 </Link>
                 
@@ -114,8 +116,6 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
 
   const [replyTarget, setReplyTarget] = useState<{ id: number; nickname: string } | null>(null);
 
-  // [핵심 수정 1] 쿼리 키를 use-feed-query.ts와 동일하게 FEED_KEYS.detail 사용
-  // 이렇게 해야 useFeedLike에서 invalidateQueries 했을 때 이 데이터가 갱신됨
   const { data: post } = useQuery({
     queryKey: FEED_KEYS.detail(initialPost.feedId), 
     queryFn: () => feedApi.getFeedDetail(initialPost.feedId, currentUserId),
@@ -123,11 +123,9 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
     enabled: isOpen && !!currentUserId,
   });
 
-  // 로컬 상태 (즉각 반응용)
   const [isLiked, setIsLiked] = useState(post.isLiked);
   const [likeCount, setLikeCount] = useState(post.likeCount);
 
-  // 서버 데이터가 갱신되면 로컬 상태도 동기화 (외부에서 좋아요 누른 것 반영)
   useEffect(() => {
     setIsLiked(post.isLiked);
     setLikeCount(post.likeCount);
@@ -137,11 +135,9 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
   const createCommentMutation = useCreateComment(post.feedId);
   const deleteCommentMutation = useDeleteComment(post.feedId);
 
-  // [핵심 수정 2] 모달 내부 좋아요 로직
   const likeMutation = useMutation({
     mutationFn: () => feedApi.toggleLike(post.feedId, currentUserId),
     onMutate: async () => {
-      // 즉시 UI 업데이트 (Optimistic Update)
       const prevLiked = isLiked;
       const prevCount = likeCount;
       setIsLiked(!prevLiked);
@@ -149,16 +145,14 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
       return { prevLiked, prevCount };
     },
     onError: (_err, _vars, context) => {
-      // 실패 시 롤백
       if (context) {
         setIsLiked(context.prevLiked);
         setLikeCount(context.prevCount);
       }
     },
     onSuccess: () => {
-      // 성공 시 모든 관련 쿼리 갱신 (리스트, 상세 등)
-      queryClient.invalidateQueries({ queryKey: FEED_KEYS.all }); // 피드 목록 갱신
-      queryClient.invalidateQueries({ queryKey: FEED_KEYS.detail(post.feedId) }); // 현재 모달 데이터 갱신
+      queryClient.invalidateQueries({ queryKey: FEED_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: FEED_KEYS.detail(post.feedId) });
     }
   });
 
@@ -233,10 +227,12 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
         </DialogClose>
 
         {/* 왼쪽: 이미지 영역 */}
-        <div className="relative bg-gray-100 flex items-center justify-center w-full h-[45vh] md:h-full md:flex-[1.5_1_0%] overflow-hidden border-r border-[#FFF0F5] group">
+        {/* [수정] 배경색 bg-black (사진 집중 및 레터박스 효과) */}
+        <div className="relative bg-black flex items-center justify-center w-full h-[45vh] md:h-full md:flex-[1.5_1_0%] overflow-hidden border-r border-[#FFF0F5] group">
            {images.length > 0 ? (
              <>
-               <img src={images[currentImageIndex]} alt={`Post-${currentImageIndex}`} className="w-full h-full object-cover"/>
+               {/* [수정] object-contain (비율 유지, 잘림 방지) */}
+               <img src={images[currentImageIndex]} alt={`Post-${currentImageIndex}`} className="w-full h-full object-contain"/>
                {hasMultipleImages && (
                  <>
                    <button onClick={handlePrevClick} className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-white/20 text-white rounded-full hover:bg-white/40 transition-all backdrop-blur-sm z-10">
@@ -266,7 +262,8 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
           {/* 헤더 */}
           <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50 shrink-0">
              <div className="flex items-center gap-4">
-                <Link to={`/user/${post.writerNickname}`} className="flex items-center gap-3 group">
+                {/* [수정] writerId로 링크 변경 */}
+                <Link to={`/user/${post.writerId}`} className="flex items-center gap-3 group">
                     <Avatar className="h-10 w-10 ring-2 ring-transparent group-hover:ring-[#FF69B4] transition-all">
                         <AvatarImage src={post.writerProfileImage || "/placeholder-user.jpg"} />
                         <AvatarFallback className="bg-[#FFF0F5] text-[#FF69B4] font-bold">{post.writerNickname[0]}</AvatarFallback>
@@ -282,35 +279,37 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
           {/* 댓글 목록 */}
           <ScrollArea className="flex-1 p-6">
               <div className="flex gap-4 mb-8">
-                <Link to={`/user/${post.writerNickname}`} className="shrink-0">
+                {/* [수정] writerId로 링크 변경 */}
+                <Link to={`/user/${post.writerId}`} className="shrink-0">
                     <Avatar className="h-10 w-10">
                         <AvatarImage src={post.writerProfileImage || "/placeholder-user.jpg"} />
                         <AvatarFallback className="bg-[#FFF0F5] text-[#FF69B4] font-bold">{post.writerNickname[0]}</AvatarFallback>
                     </Avatar>
                 </Link>
                 <div className="flex-1 space-y-1.5">
-                   <div className="text-[15px] leading-relaxed">
-                      <Link to={`/user/${post.writerNickname}`} className="font-bold mr-2 hover:underline decoration-[#FF69B4] decoration-2 underline-offset-2 text-gray-900">{post.writerNickname}</Link>
+                    <div className="text-[15px] leading-relaxed">
+                      {/* [수정] writerId로 링크 변경 */}
+                      <Link to={`/user/${post.writerId}`} className="font-bold mr-2 hover:underline decoration-[#FF69B4] decoration-2 underline-offset-2 text-gray-900">{post.writerNickname}</Link>
                       <span className="text-gray-800 whitespace-pre-wrap">{post.content}</span>
-                   </div>
-                   <span className="text-xs text-gray-400 font-medium block mt-1">
+                    </div>
+                    <span className="text-xs text-gray-400 font-medium block mt-1">
                       {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ko })}
-                   </span>
+                    </span>
                 </div>
               </div>
 
               {isCommentsLoading ? (
                   <div className="flex justify-center items-center h-20">
                       <div className="animate-pulse flex gap-2">
-                         <div className="h-2.5 w-2.5 bg-[#FF69B4]/30 rounded-full animate-bounce"></div>
-                         <div className="h-2.5 w-2.5 bg-[#FF69B4]/30 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                         <div className="h-2.5 w-2.5 bg-[#FF69B4]/30 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                          <div className="h-2.5 w-2.5 bg-[#FF69B4]/30 rounded-full animate-bounce"></div>
+                          <div className="h-2.5 w-2.5 bg-[#FF69B4]/30 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                          <div className="h-2.5 w-2.5 bg-[#FF69B4]/30 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
                       </div>
                   </div>
               ) : (
                   <div className="space-y-4">
-                     {comments?.map((parentComment) => (
-                         <div key={parentComment.commentId}>
+                      {comments?.map((parentComment) => (
+                          <div key={parentComment.commentId}>
                              <CommentItem 
                                 comment={parentComment} 
                                 currentUserId={currentUserId}
@@ -332,8 +331,8 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
                                      ))}
                                  </div>
                              )}
-                         </div>
-                     ))}
+                          </div>
+                      ))}
                   </div>
               )}
           </ScrollArea>
@@ -342,10 +341,8 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
           <div className="p-5 border-t border-gray-50 bg-white">
               <div className="flex items-center justify-between mb-4">
                  <div className="flex gap-5">
-                    {/* [수정] 좋아요 Mutation 실행 연결 */}
                     <button onClick={() => likeMutation.mutate()} className="group transition-transform active:scale-90 focus:outline-none">
-                       {/* [수정] 하트 빨간색 */}
-                       <Heart className={`h-[28px] w-[28px] transition-colors duration-200 ${isLiked ? "fill-red-600 text-red-600" : "text-gray-800 group-hover:text-red-600"}`} />
+                        <Heart className={`h-[28px] w-[28px] transition-colors duration-200 ${isLiked ? "fill-red-600 text-red-600" : "text-gray-800 group-hover:text-red-600"}`} />
                     </button>
                     <button className="hover:opacity-60 transition-opacity"><MessageCircle className="h-[28px] w-[28px] text-gray-800 -rotate-90 group-hover:text-[#FF69B4]" /></button>
                  </div>
@@ -370,11 +367,11 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
           <form onSubmit={handlePostComment} className="shrink-0 p-5 border-t border-gray-50 bg-white flex items-center gap-3">
               <div className="flex-1 relative">
                  <Input 
-                     ref={inputRef}
-                     value={commentText}
-                     onChange={(e) => setCommentText(e.target.value)}
-                     placeholder={replyTarget ? "답글을 입력하세요..." : "댓글 달기..."}
-                     className="border-none bg-[#FAFAFA] focus-visible:ring-2 focus-visible:ring-[#FF69B4] rounded-full px-5 h-12 text-[14px] w-full placeholder:text-gray-400 text-gray-800 shadow-inner"
+                      ref={inputRef}
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      placeholder={replyTarget ? "답글을 입력하세요..." : "댓글 달기..."}
+                      className="border-none bg-[#FAFAFA] focus-visible:ring-2 focus-visible:ring-[#FF69B4] rounded-full px-5 h-12 text-[14px] w-full placeholder:text-gray-400 text-gray-800 shadow-inner"
                  />
                  <div className="absolute right-2 top-1/2 -translate-y-1/2">
                      <Button 
