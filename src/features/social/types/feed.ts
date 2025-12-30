@@ -28,10 +28,10 @@ export interface FeedSliceResponse {
 // 2. 요청 DTO
 export interface CreateFeedRequest {
   userId: number;
+  // petId: number | null;  <-- 삭제
   content: string;
-  location?: string;
-  petId: number;
-  imageUrls: string[]; 
+  imageUrls: string[];
+  location: string;
 }
 
 export interface UpdateFeedRequest {
