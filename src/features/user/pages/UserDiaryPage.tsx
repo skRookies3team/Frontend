@@ -14,7 +14,8 @@ import {
     Download,
     Share2,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Trash2
 } from "lucide-react"
 
 import { Button } from "@/shared/ui/button"
@@ -25,7 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs"
 import { RECAPS, Recap } from "@/features/diary/data/recap-data"
 import { RecapModal } from "@/features/diary/components/recap-modal"
 import { getAllArchivesApi } from "@/features/auth/api/auth-api"
-import { getAiDiariesApi } from "@/features/diary/api/diary-api"
+import { getAiDiariesApi, deleteDiary } from "@/features/diary/api/diary-api"
 import { useAuth } from "@/features/auth/context/auth-context"
 
 export default function UserDiaryPage() {
@@ -62,51 +63,51 @@ export default function UserDiaryPage() {
         }
     }
 
+    // [NEW] Fetch AI Diaries Function (moved outside useEffect for reusability)
+    const fetchDiaries = async () => {
+        if (user?.id) {
+            const res = await getAiDiariesApi(Number(user.id));
+            // Mapping logic
+            console.log("[UserDiaryPage] Raw API Response:", res); // [DEBUG] Check API structure
+
+            if (Array.isArray(res)) {
+                const mappedDiaries = res.map((d: any) => {
+                    // Check multiple possible fields for images
+                    let firstImage = null;
+
+                    // Case 1: imageUrls (string[])
+                    if (d.imageUrls && d.imageUrls.length > 0) {
+                        firstImage = d.imageUrls[0];
+                    }
+                    // Case 2: images (object[] with imageUrl or string[])
+                    else if (d.images && d.images.length > 0) {
+                        if (typeof d.images[0] === 'string') {
+                            firstImage = d.images[0];
+                        } else if (d.images[0].imageUrl) {
+                            firstImage = d.images[0].imageUrl;
+                        }
+                    }
+
+                    return {
+                        id: d.diaryId,
+                        title: d.title || "무제",
+                        date: d.date,
+                        // Use found image or placeholder
+                        image: firstImage || "/placeholder-diary.jpg",
+                        images: d.images || [], // ✅ 이미지 배열 추가
+                        weather: d.weather,
+                        mood: d.mood,
+                        content: d.content
+                    };
+                });
+                setUserDiaries(mappedDiaries);
+            }
+        }
+    };
+
     useEffect(() => {
         fetchArchives()
-
-        // [NEW] Fetch Real AI Diaries
-        const fetchDiaries = async () => {
-            if (user?.id) {
-                const res = await getAiDiariesApi(Number(user.id));
-                // Mapping logic
-                console.log("[UserDiaryPage] Raw API Response:", res); // [DEBUG] Check API structure
-
-                if (Array.isArray(res)) {
-                    const mappedDiaries = res.map((d: any) => {
-                        // Check multiple possible fields for images
-                        let firstImage = null;
-
-                        // Case 1: imageUrls (string[])
-                        if (d.imageUrls && d.imageUrls.length > 0) {
-                            firstImage = d.imageUrls[0];
-                        }
-                        // Case 2: images (object[] with imageUrl or string[])
-                        else if (d.images && d.images.length > 0) {
-                            if (typeof d.images[0] === 'string') {
-                                firstImage = d.images[0];
-                            } else if (d.images[0].imageUrl) {
-                                firstImage = d.images[0].imageUrl;
-                            }
-                        }
-
-                        return {
-                            id: d.diaryId,
-                            title: d.title || "무제",
-                            date: d.date,
-                            // Use found image or placeholder
-                            image: firstImage || "/placeholder-diary.jpg",
-                            images: d.images || [], // ✅ 이미지 배열 추가
-                            weather: d.weather,
-                            mood: d.mood,
-                            content: d.content
-                        };
-                    });
-                    setUserDiaries(mappedDiaries);
-                }
-            }
-        };
-        fetchDiaries();
+        fetchDiaries()
     }, [user])
 
     useEffect(() => {
@@ -115,6 +116,24 @@ export default function UserDiaryPage() {
             navigate(location.pathname, { replace: true, state: {} })
         }
     }, [location.state, navigate, location.pathname])
+
+    // [NEW] 다이어리 삭제 핸들러
+    const handleDeleteDiary = async (diaryId: number) => {
+        if (!window.confirm('이 다이어리를 정말 삭제하시겠습니까?\n삭제된 다이어리는 복구할 수 없습니다.')) {
+            return
+        }
+
+        try {
+            await deleteDiary(diaryId, user?.id ? Number(user.id) : undefined)
+            alert('다이어리가 삭제되었습니다.')
+            setSelectedDiary(null)
+            // 목록 새로고침
+            fetchDiaries()
+        } catch (error) {
+            console.error('삭제 실패:', error)
+            alert('다이어리 삭제 중 오류가 발생했습니다.')
+        }
+    }
 
 
     // --- Helpers ---
@@ -373,6 +392,14 @@ export default function UserDiaryPage() {
                         <div className="p-8">
                             <p className="mb-8 text-muted-foreground leading-relaxed text-lg">{selectedDiary.content}</p>
                             <div className="flex gap-3">
+                                <Button
+                                    variant="destructive"
+                                    className="text-base h-12"
+                                    onClick={() => handleDeleteDiary(selectedDiary.id)}
+                                >
+                                    <Trash2 className="mr-2 h-5 w-5" />
+                                    삭제
+                                </Button>
                                 <Button className="flex-1 text-base h-12">
                                     <Download className="mr-2 h-5 w-5" />
                                     다운로드
