@@ -24,7 +24,7 @@ import { useAuth } from "@/features/auth/context/auth-context"
 
 
 
-import { Link, useNavigate, Outlet, useLocation } from "react-router-dom"
+import { Link, useNavigate, Outlet } from "react-router-dom"
 import { useState, useRef, type ChangeEvent, useEffect } from "react"
 import { getUserApi, updateProfileApi, type GetUserDto } from "@/features/auth/api/auth-api"
 
@@ -32,10 +32,10 @@ import UserDiaryPage from "./UserDiaryPage"
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const location = useLocation()
+
   const { user, logout, updateUser, addPet, updatePet, deletePet } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null)
+
 
   // API state
   const [apiUserData, setApiUserData] = useState<GetUserDto | null>(null)
@@ -64,11 +64,7 @@ export default function ProfilePage() {
     fetchUserData()
   }, [])
 
-  useEffect(() => {
-    if (selectedPhoto) {
-      console.log("Selected photo:", selectedPhoto)
-    }
-  }, [selectedPhoto])
+
 
 
 
