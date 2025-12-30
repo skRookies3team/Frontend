@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-// [추가] DialogDescription 추가
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
 import { Textarea } from "@/shared/ui/textarea";
 import { Input } from "@/shared/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
-import { ImagePlus, MapPin, X, ChevronLeft, ChevronRight, Loader2, PawPrint } from "lucide-react";
+import { Badge } from "@/shared/ui/badge";
+import { ImagePlus, MapPin, X, ChevronLeft, ChevronRight, Loader2, Hash } from "lucide-react";
 import { useAuth } from "@/features/auth/context/auth-context";
 import { feedApi } from "../api/feed-api";
 import { FeedDto } from "../types/feed";
@@ -28,8 +28,9 @@ export function FeedCreateModal({ isOpen, onClose, mode = "create", initialData 
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>(initialData?.imageUrls || []);
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
-  const [selectedPetId, setSelectedPetId] = useState<number | null>(initialData?.petId || null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [extractedTags, setExtractedTags] = useState<string[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -40,9 +41,16 @@ export function FeedCreateModal({ isOpen, onClose, mode = "create", initialData 
       setSelectedImages([]);
       setPreviewUrls([]);
       setCurrentImageIdx(0);
-      setSelectedPetId(null);
+      setExtractedTags([]);
+      // selectedPetId 초기화 로직 삭제됨
     }
   }, [isOpen, mode]);
+
+  useEffect(() => {
+    const tags = content.match(/#[^\s#]+/g) || [];
+    const uniqueTags = Array.from(new Set(tags));
+    setExtractedTags(uniqueTags);
+  }, [content]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -72,11 +80,12 @@ export function FeedCreateModal({ isOpen, onClose, mode = "create", initialData 
       }
 
       if (mode === 'create') {
+        // [수정] petId 필드 아예 삭제 (types/feed.ts에서도 삭제 필요)
+        // 백엔드는 petId가 없으면 null로 처리합니다.
         await feedApi.createFeed({
           userId: Number(user?.id),
           content,
           location,
-          petId: selectedPetId || 0,
           imageUrls: finalImageUrls,
         });
       } else if (mode === 'edit' && initialData) {
@@ -108,22 +117,21 @@ export function FeedCreateModal({ isOpen, onClose, mode = "create", initialData 
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-full md:max-w-[1200px] w-full p-0 gap-0 bg-white rounded-none sm:rounded-[2.5rem] overflow-hidden h-full md:h-[90vh] flex flex-col md:flex-row border-none shadow-2xl transition-all">
         <DialogTitle className="sr-only">새 게시물 만들기</DialogTitle>
-        {/* [추가] 스크린 리더용 설명 - 콘솔 경고 해결 */}
         <DialogDescription className="sr-only">
           사진을 업로드하고 내용을 작성하여 새로운 게시물을 등록하는 팝업창입니다.
         </DialogDescription>
         
         {/* 왼쪽 이미지 영역 */}
-        <div className="relative w-full md:flex-[1.5] h-[45vh] md:h-full bg-slate-50 flex flex-col items-center justify-center border-r border-gray-100 group">
+        <div className="relative w-full md:flex-[1.5] h-[45vh] md:h-full bg-black flex flex-col items-center justify-center border-r border-gray-100 group">
           {previewUrls.length > 0 ? (
             <>
-              <img src={previewUrls[currentImageIdx]} alt="Preview" className="w-full h-full object-cover" />
+              <img src={previewUrls[currentImageIdx]} alt="Preview" className="w-full h-full object-contain" />
               {previewUrls.length > 1 && (
                 <>
-                  <button onClick={() => setCurrentImageIdx(prev => prev === 0 ? previewUrls.length - 1 : prev - 1)} className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/20 text-white rounded-full flex items-center justify-center hover:bg-black/40 transition-all backdrop-blur-sm z-10">
+                  <button onClick={() => setCurrentImageIdx(prev => prev === 0 ? previewUrls.length - 1 : prev - 1)} className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center hover:bg-white/40 transition-all backdrop-blur-sm z-10">
                     <ChevronLeft className="w-6 h-6" />
                   </button>
-                  <button onClick={() => setCurrentImageIdx(prev => prev === previewUrls.length - 1 ? 0 : prev + 1)} className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/20 text-white rounded-full flex items-center justify-center hover:bg-black/40 transition-all backdrop-blur-sm z-10">
+                  <button onClick={() => setCurrentImageIdx(prev => prev === previewUrls.length - 1 ? 0 : prev + 1)} className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center hover:bg-white/40 transition-all backdrop-blur-sm z-10">
                     <ChevronRight className="w-6 h-6" />
                   </button>
                   <div className="absolute bottom-6 flex gap-1.5 z-10 p-2 rounded-full bg-black/20 backdrop-blur-sm">
@@ -138,7 +146,7 @@ export function FeedCreateModal({ isOpen, onClose, mode = "create", initialData 
               </button>
             </>
           ) : (
-            <div className="text-center p-10">
+            <div className="text-center p-10 bg-slate-50 w-full h-full flex flex-col items-center justify-center">
               <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-gray-100">
                 <ImagePlus className="w-10 h-10 text-gray-300" />
               </div>
@@ -166,24 +174,47 @@ export function FeedCreateModal({ isOpen, onClose, mode = "create", initialData 
             </Avatar>
             <span className="font-bold text-base text-gray-900">{user?.username}</span>
           </div>
-          <div className="flex-1 px-6 py-2">
-            <Textarea placeholder="문구를 입력하세요..." className="w-full h-full resize-none border-none p-0 text-[16px] focus-visible:ring-0 placeholder:text-gray-400 leading-relaxed custom-scrollbar" value={content} onChange={(e) => setContent(e.target.value)} />
+          
+          <div className="flex-1 px-6 py-2 flex flex-col">
+            <Textarea 
+              placeholder="문구를 입력하세요... (#태그입력)" 
+              className="w-full flex-1 resize-none border-none p-0 text-[16px] focus-visible:ring-0 placeholder:text-gray-400 leading-relaxed custom-scrollbar" 
+              value={content} 
+              onChange={(e) => setContent(e.target.value)} 
+            />
+            
+            {extractedTags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2 mb-2">
+                {extractedTags.map((tag, idx) => (
+                  <Badge 
+                    key={idx} 
+                    variant="secondary" 
+                    className="bg-[#FFF0F5] text-[#FF69B4] hover:bg-[#FFE4E1] text-xs px-2 py-1 font-medium"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
+
           <div className="px-6 pb-4 text-right shrink-0 border-b border-gray-50">
-             <span className="text-xs text-gray-400 font-medium">{content.length}/2,200</span>
+              <span className="text-xs text-gray-400 font-medium">{content.length}/2,200</span>
           </div>
+          
           <div className="mt-auto shrink-0">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center group cursor-pointer hover:bg-gray-50 transition-colors">
+            {/* 해시태그 안내 문구 */}
+            <div className="px-6 py-3 border-b border-gray-100 flex items-center text-sm text-gray-400">
+               <Hash className="w-4 h-4 mr-2" />
+               <span className="text-xs">내용에 #태그를 입력하면 자동으로 추가됩니다.</span>
+            </div>
+
+            <div className="px-6 py-4 flex items-center group cursor-pointer hover:bg-gray-50 transition-colors">
               <MapPin className="w-6 h-6 text-gray-400 mr-4 group-hover:text-[#FF69B4] transition-colors" />
               <Input placeholder="위치 추가" className="flex-1 border-none p-0 h-auto focus-visible:ring-0 text-base bg-transparent placeholder:text-gray-500" value={location} onChange={(e) => setLocation(e.target.value)} />
             </div>
-            <div className="px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors group">
-              <div className="flex items-center text-gray-600 text-base">
-                <PawPrint className="w-6 h-6 text-gray-400 mr-4 group-hover:text-[#FF69B4] transition-colors" />
-                <span className="font-medium">반려동물 태그</span>
-              </div>
-              <span className="text-sm text-gray-400 font-medium">선택 안 함</span>
-            </div>
+            
+            {/* [삭제됨] 반려동물 태그 선택 UI가 완전히 제거되었습니다. */}
           </div>
         </div>
       </DialogContent>
