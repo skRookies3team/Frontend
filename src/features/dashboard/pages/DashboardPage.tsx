@@ -29,7 +29,8 @@ import { useState, useEffect } from "react"
 import { DiaryCarousel3D } from "@/features/diary/components/diary-carousel-3d"
 import { EventBannerCarousel } from "@/shared/components/event-banner-carousel"
 import { Input } from "@/shared/ui/input"
-import { AI_DIARIES } from "@/features/healthcare/data/pet-data"
+import { getAiDiariesApi } from "@/features/diary/api/diary-api"
+import { DiaryResponse } from "@/features/diary/types/diary"
 
 type TodoItem = {
   id: string
@@ -131,6 +132,8 @@ export default function DashboardPage() {
   const [todos, setTodos] = useState<TodoItem[]>(initialTodos)
   const [newTodoText, setNewTodoText] = useState("")
   const [isAddingTodo, setIsAddingTodo] = useState(false)
+  const [aiDiaries, setAiDiaries] = useState<DiaryResponse[]>([])
+  const [isDiariesLoading, setIsDiariesLoading] = useState(true)
   const petsPerPage = 4
 
   useEffect(() => {
@@ -149,6 +152,26 @@ export default function DashboardPage() {
   useEffect(() => {
     localStorage.setItem("petTodos", JSON.stringify(todos))
   }, [todos])
+
+  // AI 다이어리 보관함 데이터 페칭
+  useEffect(() => {
+    const fetchAiDiaries = async () => {
+      if (!user?.id) return
+      setIsDiariesLoading(true)
+      try {
+        const data = await getAiDiariesApi(Number(user.id))
+        console.log('[Dashboard] AI 다이어리 데이터:', data)
+        // 최근 13개만 저장 (3D 캐러셀 오버랩 방지)
+        setAiDiaries(data.slice(0, 11))
+      } catch (error) {
+        console.error('[Dashboard] AI 다이어리 조회 실패:', error)
+        setAiDiaries([]) // 실패 시 빈 배열
+      } finally {
+        setIsDiariesLoading(false)
+      }
+    }
+    fetchAiDiaries()
+  }, [user?.id])
 
   if (!user) {
     return (
@@ -392,7 +415,8 @@ export default function DashboardPage() {
 
           <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
             <main className="space-y-6">
-              <DiaryCarousel3D diaries={AI_DIARIES} />
+              {/* AI 다이어리 3D 캐러셀 */}
+              <DiaryCarousel3D diaries={aiDiaries} isLoading={isDiariesLoading} />
 
               <EventBannerCarousel />
 

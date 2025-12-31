@@ -36,14 +36,12 @@ export default function UserPage() {
     queryKey: ['searchUser', cleanId],
     queryFn: async () => {
       if (!cleanId) return null;
-      // 숫자로만 구성된 경우 ID로 직접 조회 시도
       if (/^\d+$/.test(cleanId)) {
         try {
           const directUser = await getUserApi(Number(cleanId));
           if (directUser) return { ...directUser, userId: Number(cleanId) };
         } catch (e) { console.warn("Fallback to search"); }
       }
-      // 아니면 검색으로 조회
       const users = await feedApi.searchUsers(cleanId, currentUserId);
       return users.find(u => u.social === cleanId || u.username === cleanId) || users[0] || null;
     },
@@ -73,7 +71,7 @@ export default function UserPage() {
     enabled: !!targetUserId
   });
 
-  // --- 4. 팔로워/팔로잉 목록 조회 (모달 오픈 시 실행) ---
+  // --- 4. 팔로워/팔로잉 목록 조회 ---
   const { data: rawFollowers, isLoading: isFollowersLoading } = useQuery({
     queryKey: ['followers', targetUserId],
     queryFn: () => feedApi.getFollowers(targetUserId!),
@@ -86,20 +84,31 @@ export default function UserPage() {
     enabled: !!targetUserId && showFollowings
   });
 
-  // API 데이터 -> 모달 props 규격(SimpleUserDto)으로 변환
-  const followersList = rawFollowers?.map((u: any) => ({
-    userId: u.userId,
-    nickname: u.nickname || u.username, // API 필드명 대응
-    profileImageUrl: u.profileImageUrl || u.profileImage || u.avatar // API 필드명 대응
-  }));
+  // [수정] 데이터 매핑 로직 개선 & 디버깅 로그 추가
+  const followersList = rawFollowers?.map((u: any, index: number) => {
+    // 🔥 [디버깅] 첫 번째 유저의 원본 데이터를 콘솔에 출력해서 필드명을 확인하세요!
+    if (index === 0) console.log("🔍 팔로워 원본 데이터:", u);
+    
+    return {
+      userId: u.userId,
+      nickname: u.nickname || u.username || "알 수 없음",
+      // 이미지 필드를 여기서 미리 처리해서 넘겨줍니다.
+      // (imgUrl, imageUrl 등 혹시 모를 변수명도 다 체크)
+      profileImageUrl: u.profileImageUrl || u.profileImage || u.avatar || u.imgUrl || u.imageUrl || "/placeholder-user.jpg"
+    };
+  });
 
-  const followingsList = rawFollowings?.map((u: any) => ({
-    userId: u.userId,
-    nickname: u.nickname || u.username,
-    profileImageUrl: u.profileImageUrl || u.profileImage || u.avatar
-  }));
+  const followingsList = rawFollowings?.map((u: any, index: number) => {
+    if (index === 0) console.log("🔍 팔로잉 원본 데이터:", u);
 
-  // --- Mutations (팔로우/언팔로우/차단/신고) ---
+    return {
+      userId: u.userId,
+      nickname: u.nickname || u.username || "알 수 없음",
+      profileImageUrl: u.profileImageUrl || u.profileImage || u.avatar || u.imgUrl || u.imageUrl || "/placeholder-user.jpg"
+    };
+  });
+
+  // --- Mutations ---
   const invalidateFollowQueries = () => {
     queryClient.invalidateQueries({ queryKey: ['isFollowing'] });
     queryClient.invalidateQueries({ queryKey: ['followStats'] });
@@ -133,7 +142,6 @@ export default function UserPage() {
     }
   };
 
-  // --- Render ---
   if (isUserLoading) return <div className="flex justify-center items-center min-h-screen"><Loader2 className="h-8 w-8 animate-spin text-[#FF69B4]" /></div>;
   if (!targetUser) return <div className="flex justify-center items-center min-h-screen text-gray-500">사용자를 찾을 수 없습니다.</div>;
   const posts = userFeeds?.content || [];
@@ -203,7 +211,7 @@ export default function UserPage() {
                     </div>
                   </div>
                   
-                  {/* 통계 (클릭 시 모달 오픈) */}
+                  {/* 통계 */}
                   <div className="mb-4 flex gap-8">
                     <div>
                         <span className="text-lg font-bold">{posts.length}</span> <span className="text-sm text-muted-foreground">게시물</span>
@@ -229,11 +237,11 @@ export default function UserPage() {
                    <button onClick={() => setShowFollowings(true)} className="text-center"><p className="text-lg font-bold">{followStats?.followingCount || 0}</p><p className="text-xs text-muted-foreground">팔로잉</p></button>
                  </div>
                  <div className="flex gap-2">
-                    {currentUserId !== targetUserId ? (
-                        <Button onClick={handleFollowToggle} variant={isFollowing ? "outline" : "default"} className={`flex-1 rounded-full ${!isFollowing && "bg-[#FF69B4] text-white"}`}>{isFollowing ? "팔로잉" : "팔로우"}</Button>
-                    ) : (
-                        <Button variant="outline" className="flex-1 rounded-full" onClick={() => navigate('/profile')}>프로필 편집</Button>
-                    )}
+                   {currentUserId !== targetUserId ? (
+                       <Button onClick={handleFollowToggle} variant={isFollowing ? "outline" : "default"} className={`flex-1 rounded-full ${!isFollowing && "bg-[#FF69B4] text-white"}`}>{isFollowing ? "팔로잉" : "팔로우"}</Button>
+                   ) : (
+                       <Button variant="outline" className="flex-1 rounded-full" onClick={() => navigate('/profile')}>프로필 편집</Button>
+                   )}
                  </div>
                </div>
             </div>
@@ -293,7 +301,6 @@ export default function UserPage() {
       
       <FeedCreateModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} />
       
-      {/* 팔로워/팔로잉 모달 (데이터 매핑하여 전달) */}
       <FollowListModal 
         isOpen={showFollowers} 
         onClose={() => setShowFollowers(false)} 

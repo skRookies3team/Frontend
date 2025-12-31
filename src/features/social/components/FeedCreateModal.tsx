@@ -42,7 +42,6 @@ export function FeedCreateModal({ isOpen, onClose, mode = "create", initialData 
       setPreviewUrls([]);
       setCurrentImageIdx(0);
       setExtractedTags([]);
-      // selectedPetId 초기화 로직 삭제됨
     }
   }, [isOpen, mode]);
 
@@ -80,8 +79,6 @@ export function FeedCreateModal({ isOpen, onClose, mode = "create", initialData 
       }
 
       if (mode === 'create') {
-        // [수정] petId 필드 아예 삭제 (types/feed.ts에서도 삭제 필요)
-        // 백엔드는 petId가 없으면 null로 처리합니다.
         await feedApi.createFeed({
           userId: Number(user?.id),
           content,
@@ -115,7 +112,10 @@ export function FeedCreateModal({ isOpen, onClose, mode = "create", initialData 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-full md:max-w-[1200px] w-full p-0 gap-0 bg-white rounded-none sm:rounded-[2.5rem] overflow-hidden h-full md:h-[90vh] flex flex-col md:flex-row border-none shadow-2xl transition-all">
+      <DialogContent 
+        className="max-w-full md:max-w-[1200px] w-full p-0 gap-0 bg-white rounded-none sm:rounded-[2.5rem] overflow-hidden h-full md:h-[90vh] flex flex-col md:flex-row border-none shadow-2xl transition-all"
+        showCloseButton={false} // [수정] 기본 닫기 버튼 숨김 (중복 방지)
+      >
         <DialogTitle className="sr-only">새 게시물 만들기</DialogTitle>
         <DialogDescription className="sr-only">
           사진을 업로드하고 내용을 작성하여 새로운 게시물을 등록하는 팝업창입니다.
@@ -163,10 +163,18 @@ export function FeedCreateModal({ isOpen, onClose, mode = "create", initialData 
         <div className="flex-1 flex flex-col h-[55vh] md:h-full bg-white relative">
           <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 shrink-0">
             <h2 className="font-bold text-lg text-gray-900">{mode === 'edit' ? '정보 수정' : '새 게시물'}</h2>
-            <Button variant="ghost" className="text-[#FF69B4] font-bold hover:text-[#FF1493] hover:bg-transparent p-0 h-auto text-base" onClick={handleSubmit} disabled={isSubmitting || (previewUrls.length === 0 && !content)}>
-              {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : '공유하기'}
-            </Button>
+            
+            <div className="flex items-center gap-3">
+                <Button variant="ghost" className="text-[#FF69B4] font-bold hover:text-[#FF1493] hover:bg-transparent p-0 h-auto text-base" onClick={handleSubmit} disabled={isSubmitting || (previewUrls.length === 0 && !content)}>
+                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : '공유하기'}
+                </Button>
+                {/* 닫기 버튼 */}
+                <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 hover:bg-gray-100 rounded-full text-gray-400">
+                    <X className="h-5 w-5" />
+                </Button>
+            </div>
           </div>
+          
           <div className="px-6 py-4 flex items-center gap-3 shrink-0">
             <Avatar className="w-10 h-10 ring-2 ring-transparent">
               <AvatarImage src={user?.avatar || "/placeholder-user.jpg"} />
@@ -213,8 +221,6 @@ export function FeedCreateModal({ isOpen, onClose, mode = "create", initialData 
               <MapPin className="w-6 h-6 text-gray-400 mr-4 group-hover:text-[#FF69B4] transition-colors" />
               <Input placeholder="위치 추가" className="flex-1 border-none p-0 h-auto focus-visible:ring-0 text-base bg-transparent placeholder:text-gray-500" value={location} onChange={(e) => setLocation(e.target.value)} />
             </div>
-            
-            {/* [삭제됨] 반려동물 태그 선택 UI가 완전히 제거되었습니다. */}
           </div>
         </div>
       </DialogContent>

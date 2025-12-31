@@ -43,8 +43,10 @@ const DiaryStylePage = () => {
     const [editedDiary] = useState(() => getSavedState('editedDiary', ""));
     const [weather] = useState(() => getSavedState('weather', ""));
     const [mood] = useState(() => getSavedState('mood', ""));
+
     const [locationName] = useState(() => getSavedState('locationName', ""));
     const [locationCoords] = useState<{ lat: number, lng: number } | null>(() => getSavedState('locationCoords', null));
+    const [title] = useState(() => getSavedState('title', "")); // [NEW] Read-only title for style page
 
     // Style States
     const [layoutStyle, setLayoutStyle] = useState("grid");
@@ -90,6 +92,7 @@ const DiaryStylePage = () => {
                     userId: Number(user.id),
                     petId: selectedPetId,
                     photoArchiveId: null,
+                    title: title, // [NEW]
                     content: editedDiary,
                     visibility: "PRIVATE",
                     isAiGen: true,
@@ -215,6 +218,7 @@ const DiaryStylePage = () => {
                         preset={preset} setPreset={setPreset}
                         handleShareToFeed={handleShareToFeed} isSubmitting={isSubmitting}
                         onBack={handleBack}
+                        title={title} // [NEW]
                     />
                 )}
                 {step === 'complete' && <CompleteStep onHome={handleReset} earnedAmount={earnedReward} onShare={handleSocialShare} />}

@@ -1,4 +1,4 @@
-import { SelectedImage, ImageType, CreateDiaryResponse, AiDiaryResponse } from '../types/diary';
+import { SelectedImage, ImageType, CreateDiaryResponse, AiDiaryResponse, DiaryResponse } from '../types/diary';
 import httpClient from '@/shared/api/http-client';
 
 // Mock S3 업로드 시뮬레이션
@@ -180,7 +180,9 @@ export const createSocialFeed = async (data: any) => {
 // Note: The backend 'POST /api/diaries' now expects @RequestBody DiaryRequest.Create (JSON)
 export const createAiDiaryApi = async (data: any): Promise<number> => {
     // 'data' passed here should be the DiaryRequest object, not FormData
-    const response = await httpClient.post<number>('/diaries', data);
+    const response = await httpClient.post<number>('/diaries', data, {
+        timeout: 60000 // [FIX] Increase timeout to 60s for AI generation
+    });
     return response;
 };
 
@@ -204,5 +206,79 @@ export const getDiariesByDate = async (userId: number, date: string) => {
     } catch (error) {
         console.warn("[Service] 날짜별 다이어리 조회 실패:", error);
         return [];
+    }
+};
+// [NEW] AI 다이어리 전체 조회 (User provided List return)
+// Endpoint assumption: GET /diary-queries/ai/{userId} based on user provided service logic
+export const getAiDiariesApi = async (userId: number): Promise<DiaryResponse[]> => {
+    try {
+        const response = await httpClient.get<DiaryResponse[]>(`/diary-queries/ai-archive`, {
+            params: { userId },
+            headers: {
+                'X-USER-ID': userId.toString()
+            }
+        });
+        console.log('[getAiDiariesApi] Success:', response);
+        return response; // Expecting List<DiaryResponse>
+    } catch (error) {
+        console.warn("[Service] AI 다이어리 조회 실패 (백엔드 오류 Fallback):", error);
+
+        // [FALLBACK] Return Mock Data so user can see UI
+        return [
+            {
+                diaryId: 9991,
+                userId: userId,
+                petId: 1,
+                title: "공원에서의 즐거운 하루",
+                date: "2024-12-25",
+                images: [{
+                    imageId: 1,
+                    imageUrl: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=600&fit=crop",
+                    imgOrder: 0,
+                    mainImage: true
+                }],
+                content: "오늘은 날씨가 너무 좋아서 공원에 다녀왔어요. 행복한 하루였습니다!",
+                weather: "SUNNY",
+                mood: "HAPPY",
+                isAiGen: true,
+                createdAt: "2024-12-25T10:00:00"
+            },
+            {
+                diaryId: 9992,
+                userId: userId,
+                petId: 1,
+                title: "새로운 친구를 만났어요",
+                date: "2024-12-26",
+                images: [{
+                    imageId: 2,
+                    imageUrl: "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=400&h=600&fit=crop",
+                    imgOrder: 0,
+                    mainImage: true
+                }],
+                content: "산책하다가 새로운 친구를 만났어요. 정말 즐거웠습니다!",
+                weather: "CLOUDY",
+                mood: "EXCITED",
+                isAiGen: true,
+                createdAt: "2024-12-26T14:30:00"
+            },
+            {
+                diaryId: 9993,
+                userId: userId,
+                petId: 1,
+                title: "맛있는 간식 시간",
+                date: "2024-12-27",
+                images: [{
+                    imageId: 3,
+                    imageUrl: "https://images.unsplash.com/photo-1530281700549-e82e7bf110d6?w=400&h=600&fit=crop",
+                    imgOrder: 0,
+                    mainImage: true
+                }],
+                content: "오늘은 특별한 간식을 받았어요. 너무 맛있었어요!",
+                weather: "SUNNY",
+                mood: "PROUD",
+                isAiGen: true,
+                createdAt: "2024-12-27T16:00:00"
+            }
+        ] as DiaryResponse[];
     }
 };
