@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { usePetMate } from "@/features/petmate/hooks/use-petmate"
 import { PetMateCandidate, petMateApi, SearchAddressResult } from "@/features/petmate/api/petmate-api"
 import { SmoothScrollList } from "@/features/petmate/components/SmoothScrollList"
+import { RequestsModal } from "@/features/petmate/components/RequestsModal"
 import { Button } from "@/shared/ui/button"
 import { Card } from "@/shared/ui/card"
 import {
@@ -18,6 +19,7 @@ import {
   X,
   Navigation,
   Search,
+  Bell,
 } from "lucide-react"
 import { useAuth } from "@/features/auth/context/auth-context"
 import { useNavigate, Link } from "react-router-dom"
@@ -66,6 +68,11 @@ export default function PetMatePage() {
     toggleLike,
     isUserLiked,
     updateFilter,
+    pendingRequests,
+    pendingCount,
+    acceptRequest,
+    rejectRequest,
+    updateOnlineStatus,
   } = usePetMate({
     userId: user?.id ? Number(user.id) : 1,
     initialFilter: userCoords ? {
@@ -78,6 +85,7 @@ export default function PetMatePage() {
   })
 
   const [chatRoomIdFromMatch, setChatRoomIdFromMatch] = useState<number | null>(null)
+  const [requestsModalOpen, setRequestsModalOpen] = useState(false)
 
   const hasNoCandidates = candidates.length === 0
 
@@ -308,6 +316,19 @@ export default function PetMatePage() {
     toast.success('필터가 적용되었습니다')
   }
 
+  // 매칭 상태 토글 핸들러
+  const handleOnlineToggle = async () => {
+    const newStatus = !isOnline
+    setIsOnline(newStatus)
+    await updateOnlineStatus(newStatus)
+    if (newStatus) {
+      toast.success('온라인 상태로 전환되었습니다')
+      handleRefresh() // 온라인 전환 시 목록 새로고침
+    } else {
+      toast.info('오프라인 상태로 전환되었습니다')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-orange-50 pt-8 pb-12">
       {/* 제목 - 항상 중앙 */}
@@ -327,7 +348,7 @@ export default function PetMatePage() {
               ? "bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300"
               : "bg-white border-2 border-gray-200"
               }`}
-            onClick={() => setIsOnline(!isOnline)}
+            onClick={handleOnlineToggle}
           >
             <div className="flex items-center gap-3">
               <div className={`p-2 rounded-full ${isOnline ? "bg-green-500" : "bg-gray-300"}`}>
@@ -390,6 +411,27 @@ export default function PetMatePage() {
               </div>
             </div>
           </Card>
+
+          {/* 요청 알림함 */}
+          <Card
+            className="p-4 bg-white border-2 border-orange-200 cursor-pointer transition-all hover:shadow-lg hover:border-orange-400 relative"
+            onClick={() => setRequestsModalOpen(true)}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-gradient-to-r from-orange-500 to-pink-500">
+                <Bell className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900">받은 요청</p>
+                <p className="text-xs text-gray-500">클릭하여 확인</p>
+              </div>
+              {pendingCount > 0 && (
+                <div className="absolute -top-2 -right-2 h-6 w-6 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full flex items-center justify-center text-white text-xs font-bold animate-pulse">
+                  {pendingCount}
+                </div>
+              )}
+            </div>
+          </Card>
         </div>
       </div>
 
@@ -404,7 +446,7 @@ export default function PetMatePage() {
                 ? "bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300"
                 : "bg-white border-2 border-gray-200"
                 }`}
-              onClick={() => setIsOnline(!isOnline)}
+              onClick={handleOnlineToggle}
             >
               <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-full ${isOnline ? "bg-green-500" : "bg-gray-300"}`}>
@@ -467,12 +509,54 @@ export default function PetMatePage() {
                 </div>
               </div>
             </Card>
+
+            {/* 요청 알림함 */}
+            <Card
+              className="p-4 bg-white border-2 border-orange-200 cursor-pointer transition-all hover:shadow-lg hover:border-orange-400 relative"
+              onClick={() => setRequestsModalOpen(true)}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-gradient-to-r from-orange-500 to-pink-500">
+                  <Bell className="h-5 w-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900">받은 요청</p>
+                  <p className="text-xs text-gray-500">클릭하여 확인</p>
+                </div>
+                {pendingCount > 0 && (
+                  <div className="absolute -top-2 -right-2 h-6 w-6 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full flex items-center justify-center text-white text-xs font-bold animate-pulse">
+                    {pendingCount}
+                  </div>
+                )}
+              </div>
+            </Card>
           </div>
         </div>
 
         {/* 메인 콘텐츠 - 제목과 중앙 정렬 */}
         <div className="w-full max-w-2xl mx-auto">
-          {hasNoCandidates ? (
+          {!isOnline ? (
+            /* 오프라인 상태일 때 */
+            <Card className="p-12 text-center shadow-2xl border-2 border-gray-200 bg-gray-50 h-full flex flex-col items-center justify-center min-h-[600px]">
+              <div className="mb-6 mx-auto w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center shadow-lg">
+                <Power className="h-12 w-12 text-gray-400" />
+              </div>
+              <h2 className="mb-4 text-3xl font-bold text-gray-600">
+                현재 오프라인 상태입니다
+              </h2>
+              <p className="mb-8 text-gray-500 text-lg leading-relaxed">
+                새로운 펫메이트를 만나려면<br />온라인으로 상태를 변경해주세요!
+              </p>
+              <Button
+                size="lg"
+                onClick={handleOnlineToggle}
+                className="h-12 px-8 text-base font-bold bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg transition-all hover:scale-105"
+              >
+                <Power className="mr-2 h-5 w-5" />
+                온라인으로 전환하기
+              </Button>
+            </Card>
+          ) : hasNoCandidates ? (
             /* 조건에 맞는 펫메이트가 없을 때 */
             <Card className="p-12 text-center shadow-2xl border-2 border-pink-200 bg-white h-full flex flex-col items-center justify-center min-h-[600px]">
               <div className="mb-6 mx-auto w-24 h-24 rounded-full bg-gradient-to-br from-pink-100 via-rose-100 to-orange-100 flex items-center justify-center shadow-lg">
@@ -582,7 +666,7 @@ export default function PetMatePage() {
               <div className="p-6 space-y-5">
                 {/* 사용자 정보 */}
                 <Link
-                  to={`/user/${selectedCandidate.id}`}
+                  to={`/user/${selectedCandidate.userId}`}
                   className="flex items-center gap-4 p-4 rounded-xl bg-pink-50 hover:bg-pink-100 transition-colors"
                   onClick={() => setIsDetailOpen(false)}
                 >
@@ -855,6 +939,41 @@ export default function PetMatePage() {
           </Button>
         </DialogContent>
       </Dialog>
+      {/* 요청 알림함 모달 */}
+      <RequestsModal
+        isOpen={requestsModalOpen}
+        onClose={() => setRequestsModalOpen(false)}
+        requests={pendingRequests}
+        onAccept={acceptRequest}
+        onReject={rejectRequest}
+        onMatchSuccess={(result, request) => {
+          setMatchedUser({
+            id: request.matchId,
+            userId: request.fromUserId,
+            userName: request.fromUserName,
+            userAvatar: request.fromUserAvatar,
+            userGender: '',
+            petName: request.petName,
+            petBreed: request.petBreed,
+            petAge: request.petAge || 0,
+            petGender: '',
+            petPhoto: request.petPhoto,
+            bio: '',
+            activityLevel: 0,
+            distance: 0,
+            location: request.location || '',
+            commonInterests: [],
+            matchScore: 0,
+            isOnline: true,
+          });
+          if (result.chatRoomId) {
+            setChatRoomIdFromMatch(result.chatRoomId);
+          }
+          setRequestsModalOpen(false);
+          setMatchModalOpen(true);
+          toast.success(`${request.fromUserName}님과 매칭되었어요! 🎉`);
+        }}
+      />
     </div>
   )
 }
