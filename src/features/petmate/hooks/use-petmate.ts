@@ -16,6 +16,7 @@ export function usePetMate({ userId, initialFilter }: UsePetMateOptions) {
     const [matches, setMatches] = useState<MatchResult[]>([]);
     const [likedUserIds, setLikedUserIds] = useState<Set<number>>(new Set());
     const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([]);
+    const [sentRequests, setSentRequests] = useState<PendingRequest[]>([]);
     const [pendingCount, setPendingCount] = useState<number>(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -172,12 +173,40 @@ export function usePetMate({ userId, initialFilter }: UsePetMateOptions) {
         }
     }, [userId, fetchPendingRequests]);
 
+    // Fetch sent requests (PENDING likes I sent)
+    const fetchSentRequests = useCallback(async () => {
+        try {
+            const data = await petMateApi.getSentRequests(userId);
+            setSentRequests(data);
+        } catch (err) {
+            console.error('Failed to fetch sent requests:', err);
+            setSentRequests([]);
+        }
+    }, [userId]);
+
+    // Unfriend (delete match)
+    const unfriend = useCallback(async (matchedUserId: number): Promise<boolean> => {
+        try {
+            const success = await petMateApi.unfriend(userId, matchedUserId);
+            if (success) {
+                // Refresh matches after unfriending
+                await fetchMatches();
+            }
+            return success;
+        } catch (err) {
+            console.error('Failed to unfriend:', err);
+            setError('친구 끊기에 실패했습니다.');
+            return false;
+        }
+    }, [userId, fetchMatches]);
+
     // Initial fetch
     useEffect(() => {
         fetchCandidates(currentFilter);
         fetchMatches();
         fetchLikedUsers();
         fetchPendingRequests();
+        fetchSentRequests();
     }, []);  // Only run once on mount
 
     // Refetch when initialFilter changes from parent
@@ -207,5 +236,8 @@ export function usePetMate({ userId, initialFilter }: UsePetMateOptions) {
         fetchPendingRequests,
         acceptRequest,
         rejectRequest,
+        sentRequests,
+        fetchSentRequests,
+        unfriend,
     };
 }
