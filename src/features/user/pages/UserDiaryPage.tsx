@@ -12,10 +12,7 @@ import {
     MessageCircle,
     X,
     Download,
-    Share2,
-    ChevronLeft,
-    ChevronRight,
-    Trash2
+    Share2
 } from "lucide-react"
 
 import { Button } from "@/shared/ui/button"
@@ -26,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs"
 import { RECAPS, Recap } from "@/features/diary/data/recap-data"
 import { RecapModal } from "@/features/diary/components/recap-modal"
 import { getAllArchivesApi } from "@/features/auth/api/auth-api"
-import { getAiDiariesApi, deleteDiary } from "@/features/diary/api/diary-api"
+import { getAiDiariesApi } from "@/features/diary/api/diary-api"
 import { useAuth } from "@/features/auth/context/auth-context"
 
 export default function UserDiaryPage() {
@@ -39,8 +36,6 @@ export default function UserDiaryPage() {
 
     // [NEW] Real Diary State
     const [userDiaries, setUserDiaries] = useState<any[]>([])
-    const [selectedDiary, setSelectedDiary] = useState<any | null>(null)
-    const [currentImageIndex, setCurrentImageIndex] = useState(0)
     const { user } = useAuth()
 
     const [selectedRecap, setSelectedRecap] = useState<Recap | null>(null)
@@ -117,23 +112,7 @@ export default function UserDiaryPage() {
         }
     }, [location.state, navigate, location.pathname])
 
-    // [NEW] 다이어리 삭제 핸들러
-    const handleDeleteDiary = async (diaryId: number) => {
-        if (!window.confirm('이 다이어리를 정말 삭제하시겠습니까?\n삭제된 다이어리는 복구할 수 없습니다.')) {
-            return
-        }
 
-        try {
-            await deleteDiary(diaryId, user?.id ? Number(user.id) : undefined)
-            alert('다이어리가 삭제되었습니다.')
-            setSelectedDiary(null)
-            // 목록 새로고침
-            fetchDiaries()
-        } catch (error) {
-            console.error('삭제 실패:', error)
-            alert('다이어리 삭제 중 오류가 발생했습니다.')
-        }
-    }
 
 
     // --- Helpers ---
@@ -185,7 +164,7 @@ export default function UserDiaryPage() {
                                 <div
                                     key={diary.id}
                                     className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border-0 shadow-md hover:shadow-xl transition-all"
-                                    onClick={() => setSelectedDiary(diary)}
+                                    onClick={() => navigate(`/diary/${diary.id}`)}
                                 >
                                     <img
                                         src={diary.image}
@@ -299,120 +278,6 @@ export default function UserDiaryPage() {
                 </TabsContent>
             </Tabs>
 
-            {/* Diary Modal */}
-            {selectedDiary && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-white/95 backdrop-blur-sm p-4"
-                    onClick={() => {
-                        setSelectedDiary(null)
-                        setCurrentImageIndex(0)
-                    }}
-                >
-                    <div
-                        className="relative w-full max-w-4xl overflow-hidden rounded-lg bg-background shadow-xl"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <button
-                            className="absolute right-4 top-4 z-10 rounded-full bg-white/80 p-2 text-gray-700 hover:bg-white"
-                            onClick={() => {
-                                setSelectedDiary(null)
-                                setCurrentImageIndex(0)
-                            }}
-                        >
-                            <X className="h-5 w-5" />
-                        </button>
-                        <div className="relative min-h-[400px] max-h-[70vh] bg-gray-100 overflow-hidden flex items-center justify-center">
-                            {/* Image Carousel */}
-                            <img
-                                src={selectedDiary.images?.[currentImageIndex]?.imageUrl || selectedDiary.image}
-                                alt={selectedDiary.title}
-                                className="w-full h-full object-contain"
-                            />
-
-                            {/* Debug: Log images array */}
-                            {console.log('[Diary Modal] Images:', selectedDiary.images, 'Length:', selectedDiary.images?.length, 'Show carousel?', selectedDiary.images?.length > 1)}
-
-                            {/* Navigation Arrows - only show if multiple images */}
-                            {selectedDiary.images && selectedDiary.images.length > 1 && (
-                                <>
-                                    <button
-                                        className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-20"
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            setCurrentImageIndex((prev) => (prev - 1 + selectedDiary.images.length) % selectedDiary.images.length)
-                                        }}
-                                    >
-                                        <ChevronLeft className="h-5 w-5" />
-                                    </button>
-                                    <button
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-20"
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            setCurrentImageIndex((prev) => (prev + 1) % selectedDiary.images.length)
-                                        }}
-                                    >
-                                        <ChevronRight className="h-5 w-5" />
-                                    </button>
-
-                                    {/* Dot Indicators */}
-                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-                                        {selectedDiary.images.map((_: any, index: number) => (
-                                            <button
-                                                key={index}
-                                                className={`h-2 w-2 rounded-full transition-all ${index === currentImageIndex
-                                                    ? 'bg-white w-6'
-                                                    : 'bg-white/50 hover:bg-white/80'
-                                                    }`}
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    setCurrentImageIndex(index)
-                                                }}
-                                            />
-                                        ))}
-                                    </div>
-                                </>
-                            )}
-
-                            <Badge className="absolute left-4 top-4 flex items-center gap-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white z-10 text-sm px-3 py-1.5">
-                                <Sparkles className="h-4 w-4" />
-                                AI 다이어리
-                            </Badge>
-                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-8 text-white">
-                                <h2 className="mb-3 text-4xl font-bold">{selectedDiary.title}</h2>
-                                <div className="flex gap-3">
-                                    <Badge variant="secondary" className="text-base px-3 py-1">
-                                        {selectedDiary.weather}
-                                    </Badge>
-                                    <Badge variant="secondary" className="text-base px-3 py-1">
-                                        {selectedDiary.mood}
-                                    </Badge>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="p-8">
-                            <p className="mb-8 text-muted-foreground leading-relaxed text-lg">{selectedDiary.content}</p>
-                            <div className="flex gap-3">
-                                <Button
-                                    variant="destructive"
-                                    className="text-base h-12"
-                                    onClick={() => handleDeleteDiary(selectedDiary.id)}
-                                >
-                                    <Trash2 className="mr-2 h-5 w-5" />
-                                    삭제
-                                </Button>
-                                <Button className="flex-1 text-base h-12">
-                                    <Download className="mr-2 h-5 w-5" />
-                                    다운로드
-                                </Button>
-                                <Button variant="outline" className="flex-1 text-base h-12">
-                                    <Share2 className="mr-2 h-5 w-5" />
-                                    공유하기
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Photo Gallery Modal */}
             {selectedPhoto && (
