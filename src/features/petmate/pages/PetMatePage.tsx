@@ -72,6 +72,7 @@ export default function PetMatePage() {
     pendingCount,
     acceptRequest,
     rejectRequest,
+    updateOnlineStatus,
   } = usePetMate({
     userId: user?.id ? Number(user.id) : 1,
     initialFilter: userCoords ? {
