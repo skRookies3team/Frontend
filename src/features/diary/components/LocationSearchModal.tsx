@@ -39,13 +39,15 @@ const LocationSearchModal = ({ isOpen, onClose, onSelectLocation }: LocationSear
 
     const handleSelect = (place: SearchAddressResult) => {
         const displayName = place.buildingName || place.roadAddress || place.addressName;
+        console.log('🗺️ [LocationModal Debug] Place selected:', { displayName, lat: place.latitude, lng: place.longitude });
         onSelectLocation(displayName, place.latitude, place.longitude);
+        console.log('🗺️ [LocationModal Debug] onSelectLocation callback called');
         onClose();
     };
 
     const handleCurrentLocation = async () => {
         setLoading(true);
-        console.log("[LocationSearch] Getting current location directly...");
+        console.log("🗺️ [LocationModal Debug] Getting current location directly...");
         try {
             const position = await new Promise<GeolocationPosition>((resolve, reject) => {
                 if (!navigator.geolocation) {
@@ -60,16 +62,17 @@ const LocationSearchModal = ({ isOpen, onClose, onSelectLocation }: LocationSear
             });
 
             const { latitude, longitude } = position.coords;
-            console.log(`[LocationSearch] GPS: ${latitude}, ${longitude}`);
+            console.log(`🗺️ [LocationModal Debug] GPS: ${latitude}, ${longitude}`);
 
             const addr = await petMateApi.getAddressFromCoords(longitude, latitude);
             const name = addr.buildingName || addr.fullAddress;
-            console.log("[LocationSearch] Address found:", name);
+            console.log("🗺️ [LocationModal Debug] Address found:", name);
 
+            console.log('🗺️ [LocationModal Debug] Calling onSelectLocation with:', { name, latitude, longitude });
             onSelectLocation(name, latitude, longitude);
             onClose();
         } catch (error) {
-            console.error("[LocationSearch] Failed to get current location:", error);
+            console.error("🗺️ [LocationModal Debug] Failed to get current location:", error);
             // Optionally show error toast
         } finally {
             setLoading(false);
