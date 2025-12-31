@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { usePetMate } from "@/features/petmate/hooks/use-petmate"
 import { PetMateCandidate, petMateApi, SearchAddressResult } from "@/features/petmate/api/petmate-api"
 import { SmoothScrollList } from "@/features/petmate/components/SmoothScrollList"
-import { RequestsModal } from "@/features/petmate/components/RequestsModal"
+import { MatchingFriendsModal } from "@/features/petmate/components/MatchingFriendsModal"
 import { Button } from "@/shared/ui/button"
 import { Card } from "@/shared/ui/card"
 import {
@@ -19,7 +19,7 @@ import {
   X,
   Navigation,
   Search,
-  Bell,
+  Users,
 } from "lucide-react"
 import { useAuth } from "@/features/auth/context/auth-context"
 import { useNavigate, Link } from "react-router-dom"
@@ -68,11 +68,14 @@ export default function PetMatePage() {
     toggleLike,
     isUserLiked,
     updateFilter,
+    matches,
     pendingRequests,
     pendingCount,
+    sentRequests,
     acceptRequest,
     rejectRequest,
     updateOnlineStatus,
+    unfriend,
   } = usePetMate({
     userId: user?.id ? Number(user.id) : 1,
     initialFilter: userCoords ? {
@@ -412,17 +415,17 @@ export default function PetMatePage() {
             </div>
           </Card>
 
-          {/* 요청 알림함 */}
+          {/* 매칭친구 */}
           <Card
             className="p-4 bg-white border-2 border-orange-200 cursor-pointer transition-all hover:shadow-lg hover:border-orange-400 relative"
             onClick={() => setRequestsModalOpen(true)}
           >
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-full bg-gradient-to-r from-orange-500 to-pink-500">
-                <Bell className="h-5 w-5 text-white" />
+                <Users className="h-5 w-5 text-white" />
               </div>
               <div className="flex-1">
-                <p className="font-semibold text-gray-900">받은 요청</p>
+                <p className="font-semibold text-gray-900">매칭 친구</p>
                 <p className="text-xs text-gray-500">클릭하여 확인</p>
               </div>
               {pendingCount > 0 && (
@@ -517,10 +520,10 @@ export default function PetMatePage() {
             >
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-full bg-gradient-to-r from-orange-500 to-pink-500">
-                  <Bell className="h-5 w-5 text-white" />
+                  <Users className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-900">받은 요청</p>
+                  <p className="font-semibold text-gray-900">매칭 친구</p>
                   <p className="text-xs text-gray-500">클릭하여 확인</p>
                 </div>
                 {pendingCount > 0 && (
@@ -939,13 +942,16 @@ export default function PetMatePage() {
           </Button>
         </DialogContent>
       </Dialog>
-      {/* 요청 알림함 모달 */}
-      <RequestsModal
+      {/* 매칭친구 모달 */}
+      <MatchingFriendsModal
         isOpen={requestsModalOpen}
         onClose={() => setRequestsModalOpen(false)}
-        requests={pendingRequests}
+        matches={matches}
+        pendingRequests={pendingRequests}
+        sentRequests={sentRequests}
         onAccept={acceptRequest}
         onReject={rejectRequest}
+        onUnfriend={unfriend}
         onMatchSuccess={(result, request) => {
           setMatchedUser({
             id: request.matchId,
