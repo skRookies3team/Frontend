@@ -23,7 +23,7 @@ interface SignupResponse {
 export interface GetPetDto {
     petId: number;
     petName: string;
-    species: 'DOG' | 'CAT';
+    species: 'DOG' | 'CAT' | 'RABBIT' | 'HAMSTER' | 'BIRD' | 'GUINEAPIG' | 'REPTILE' | 'FISH' | 'ETC';
     breed: string;
     genderType: 'MALE' | 'FEMALE';
     is_neutered: boolean;
@@ -172,6 +172,25 @@ export interface UserCoinDto {
 // 코인 수량 조회 API
 export const getUserCoinApi = async (userId: number): Promise<UserCoinDto> => {
     const response = await httpClient.get<UserCoinDto>(`/users/${userId}/coin`);
+    return response;
+};
+
+// 동물 사진 분석 응답 DTO
+export interface AnalyzeAnimalDto {
+    species: 'CAT' | 'DOG' | 'RABBIT' | 'HAMSTER' | 'BIRD' | 'GUINEAPIG' | 'REPTILE' | 'FISH' | 'ETC';
+    breed: string;
+}
+
+// 동물 사진 분석 API
+export const analyzeAnimalApi = async (photo: File): Promise<AnalyzeAnimalDto> => {
+    const formData = new FormData();
+    formData.append("photo", photo);
+
+    const response = await httpClient.post<AnalyzeAnimalDto>('/users/ai', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    });
     return response;
 };
 

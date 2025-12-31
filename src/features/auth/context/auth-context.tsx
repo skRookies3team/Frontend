@@ -97,11 +97,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('petlog_token'); // 토큰 삭제
     }
     setTokenState(newToken);
-    if (newToken) {
-      localStorage.setItem("petlog_token", newToken);
-    } else {
-      localStorage.removeItem("petlog_token");
-    }
+    // 즉시 axios 인터셉터에 토큰 반영 (useEffect는 렌더링 후 실행되므로 늦음)
+    setTokenGetter(() => newToken);
   };
 
   // 토큰 존재 여부 확인
