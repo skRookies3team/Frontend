@@ -71,6 +71,25 @@ export interface LikeRequest {
     toUserId: number;
 }
 
+export interface PendingRequest {
+    matchId: number;
+    fromUserId: number;
+    fromUserName: string;
+    fromUserAvatar: string;
+    petName: string;
+    petPhoto: string;
+    petBreed: string;
+    petAge?: number;
+    location?: string;
+    createdAt: string;
+}
+
+export interface RequestRespondPayload {
+    matchId: number;
+    userId: number;
+    accept: boolean;
+}
+
 // 주소 정보 인터페이스
 export interface AddressInfo {
     fullAddress: string;
@@ -161,6 +180,22 @@ export const petMateApi = {
         } catch {
             return null;
         }
+    },
+
+    // 받은 매칭 요청 목록 조회
+    getPendingRequests: async (userId: number): Promise<PendingRequest[]> => {
+        return httpClient.get<PendingRequest[]>(`/petmate/requests/${userId}`);
+    },
+
+    // 받은 매칭 요청 수 조회 (배지용)
+    getPendingRequestsCount: async (userId: number): Promise<number> => {
+        return httpClient.get<number>(`/petmate/requests/${userId}/count`);
+    },
+
+    // 매칭 요청 수락/거절
+    respondToRequest: async (matchId: number, userId: number, accept: boolean): Promise<MatchResult> => {
+        const payload: RequestRespondPayload = { matchId, userId, accept };
+        return httpClient.post<MatchResult>(`/petmate/requests/${matchId}/respond`, payload);
     },
 };
 
