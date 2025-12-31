@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/shared/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select"
 import { PawPrint, Upload, X, Sparkles, Dog, Cat, Rabbit, Bird, Fish, ChevronLeft } from 'lucide-react'
 import { useAuth } from "@/features/auth/context/auth-context"
+import { getPetApi, updatePetApi } from "@/features/healthcare/api/pet-api"
+import { analyzeAnimalApi } from "@/features/auth/api/auth-api"
 
 const ANIMAL_TYPES = [
     { id: "dog", label: "강아지", icon: Dog },
@@ -22,82 +24,62 @@ const ANIMAL_TYPES = [
 ]
 
 const DOG_BREEDS = [
-    "골든 리트리버",
-    "그레이트 데인",
-    "그레이하운드",
-    "달마티안",
-    "도베르만 핀셔",
-    "래브라도 리트리버",
-    "로데시안 리지백",
-    "로트와일러",
-    "말티즈",
-    "미니어처 닥스훈트",
-    "미니어처 슈나우저",
-    "바센지",
-    "바셋 하운드",
-    "벨지안 셰퍼드 독",
-    "보더 콜리",
-    "보르조이",
-    "보스턴 테리어",
-    "복서",
-    "불 마스티프",
-    "불 테리어",
-    "브리타니 스파니엘",
-    "비글",
-    "비숑 프리제",
-    "사모예드",
-    "살루키",
-    "셔틀랜드 쉽독",
-    "스코티시 테리어",
-    "스탠더드 닥스훈트",
-    "스탠더드 슈나우저",
-    "시바견",
-    "시베리안 허스키",
-    "시추",
-    "아메리칸 스태퍼드셔 테리어",
-    "아이리시 워터 스패니얼",
-    "아이리시 울프하운드",
-    "아키타견",
-    "아프간 하운드",
-    "알래스칸 말라뮤트",
-    "에어데일 테리어",
-    "오스트레일리안 캐틀 독",
-    "올드 잉글리시 쉽독",
-    "와이마라너",
-    "요크셔 테리어",
-    "웨스트 하이랜드 화이트 테리어",
-    "잉글리시 세터",
-    "잉글리시 스프링어 스패니얼",
-    "자이언트 슈나우저",
-    "잭 러셀 테리어",
-    "저먼 셰퍼드 독",
-    "저먼 쇼트헤어드 포인터",
-    "저먼 핀셔",
-    "진돗개",
-    "차우차우",
-    "체서피크 베이 리트리버",
-    "치와와",
-    "카디건 웰시 코기",
-    "카발리에 킹 찰스 스패니얼",
-    "캐닌헨 닥스훈트",
-    "코커 스패니얼",
-    "퍼그",
-    "펨브로크 웰시 코기",
-    "포메라니안",
-    "프렌치 불도그",
-    "푸들",
-    "파피용",
-    "블러드하운드",
-    "휘펫",
+    "골든 리트리버", "그레이트 데인", "그레이하운드", "달마티안", "도베르만 핀셔", "래브라도 리트리버", "로데시안 리지백", "로트와일러", "말티즈", "미니어처 닥스훈트", "미니어처 슈나우저", "바센지", "바셋 하운드", "벨지안 셰퍼드 독", "보더 콜리", "보르조이", "보스턴 테리어", "복서", "불 마스티프", "불 테리어", "브리타니 스파니엘", "비글", "비숑 프리제", "사모예드", "살루키", "셔틀랜드 쉽독", "스코티시 테리어", "스탠더드 닥스훈트", "스탠더드 슈나우저", "시바견", "시베리안 허스키", "시추", "아메리칸 스태퍼드셔 테리어", "아이리시 워터 스패니얼", "아이리시 울프하운드", "아키타견", "아프간 하운드", "알래스칸 말라뮤트", "에어데일 테리어", "오스트레일리안 캐틀 독", "올드 잉글리시 쉽독", "와이마라너", "요크셔 테리어", "웨스트 하이랜드 화이트 테리어", "잉글리시 세터", "잉글리시 스프링어 스패니얼", "자이언트 슈나우저", "잭 러셀 테리어", "저먼 셰퍼드 독", "저먼 쇼트헤어드 포인터", "저먼 핀셔", "진돗개", "차우차우", "체서피크 베이 리트리버", "치와와", "카디건 웰시 코기", "카발리에 킹 찰스 스패니얼", "캐닌헨 닥스훈트", "코커 스패니얼", "퍼그", "펨브로크 웰시 코기", "포메라니안", "프렌치 불도그", "푸들", "파피용", "블러드하운드", "휘펫", "기타"
+]
+
+
+const CAT_BREEDS = [
+    "노르웨이 숲", "데본 렉스", "랙돌", "러시안 블루", "먼치킨", "메인 쿤", "뱅갈", "버만", "브리티시 숏헤어", "샤미즈", "스코티시 폴드", "스핑크스", "아비시니안", "아메리칸 숏헤어", "오리엔탈 숏헤어", "코니시 렉스", "코리안 숏헤어", "터키시 앙고라", "터키시 반", "페르시안", "히말라얀", "엑조틱 숏헤어", "기타"
+]
+
+const RABBIT_BREEDS = [
+    "네덜란드 드워프", "미니 렉스", "렉스", "홀랜드 롭", "미니 롭", "프렌치 롭", "잉글리시 롭", "라이언헤드", "저지 울리", "앵고라", "저먼 앵고라", "프렌치 앵고라", "사틴 앵고라", "미니 사틴", "사틴", "하바나", "캘리포니안", "뉴질랜드 화이트", "플레미시 자이언트", "체커드 자이언트", "실버 마틴", "친칠라", "잉글리시 스팟", "더치", "히말라얀", "폴리시", "아메리칸 퍼지 롭", "기타"
+]
+
+const HAMSTER_BREEDS = [
+    "골든 햄스터", "테디베어 햄스터", "블랙 햄스터", "판다 햄스터", "드워프 햄스터", "정글리안 햄스터", "캠벨 햄스터", "로보로브스키 햄스터", "차이니즈 햄스터", "기타"
+]
+
+const BIRD_BREEDS = [
+    "앵무새", "잉꼬", "모란앵무", "코뉴어", "왕관앵무", "사랑앵무", "퀘이커앵무", "카이큐", "아마존앵무", "회색앵무", "마코앵무", "사랑새", "문조", "자바참새", "카나리아", "핀치", "금화조", "십자매", "벵갈리즈 핀치", "비둘기", "집비둘기", "공작비둘기", "메추리", "닭", "기타"
+]
+
+const GUINEAPIG_BREEDS = [
+    "아메리칸", "아비시니안", "페루비안", "셀프 실키", "코로넷", "텍셀", "메리노", "루키아", "화이트 크레스티드", "크레스티드", "테디", "렉스", "발드윈", "스키니", "기타"
+]
+
+const REPTILE_BREEDS = [
+    "레오파드게코", "크레스티드게코", "토케이게코", "리프테일게코", "비어디드래곤", "블루텅 스킨크", "그린 아놀", "유로메스틱스", "카멜레온", "볼파이톤", "콘스네이크", "킹스네이크", "밀크스네이크", "호그노즈스네이크", "가터스네이크", "러시안 토터스", "레오파드육지거북", "설카타육지거북", "레드이어슬라이더", "머스크터틀", "맵터틀", "기타"
+]
+
+const FISH_BREEDS = [
+    "금붕어", "구피", "플래티", "몰리", "소드테일", "베타", "제브라 다니오", "화이트 클라우드 마운틴 미노우", "네온테트라", "카디널 테트라", "블랙테트라", "엠버테트라", "라스보라", "하렘테트라", "엔젤피시", "디스커스", "구라미", "시클리드", "코리도라스", "플레코", "오토싱클루스", "로치", "니모", "블루탱", "옐로우탱", "만다린피시", "라이언피시", "엔젤피시", "버터플라이피시", "복어", "나이프피시", "아처피시", "바이칼 엔젤", "스팅레이", "기타"
+]
+
+// Helper for Species Mapping
+const SPECIES_MAP: Record<string, string> = {
+    "DOG": "강아지",
+    "CAT": "고양이",
+    "RABBIT": "토끼",
+    "HAMSTER": "햄스터",
+    "BIRD": "새",
+    "GUINEAPIG": "기니피그",
+    "REPTILE": "파충류",
+    "FISH": "물고기",
+    "ETC": "기타"
+}
+
+// Reverse mapping helper
+const REVERSE_SPECIES_MAP: Record<string, string> = Object.entries(SPECIES_MAP).reduce((acc, [key, value]) => {
+    acc[value] = key;
+    return acc;
+}, {} as Record<string, string>);
+
+const ETC_BREEDS = [
     "기타"
 ]
 
-const CAT_BREEDS = [
-    "코리안 숏헤어", "페르시안", "러시안 블루", "브리티시 숏헤어", "샴", "스코티시 폴드",
-    "뱅갈", "메인쿤", "아메리칸 숏헤어", "노르웨이 숲", "기타"
-]
 
-import { getPetApi, updatePetApi } from "@/features/healthcare/api/pet-api"
 
 export default function PetEditPage() {
     const navigate = useNavigate()
@@ -125,34 +107,19 @@ export default function PetEditPage() {
 
     useEffect(() => {
         const fetchPetData = async () => {
+            console.log("PetEditPage: Fetching data for petId:", petId)
             if (!petId) return
-
-            // 1. Try to find in local user state
-            if (user) {
-                const localPet = user.pets.find(p => p.id === petId)
-                if (localPet) {
-                    setFormData({
-                        name: localPet.name,
-                        species: localPet.species,
-                        breed: localPet.breed,
-                        age: localPet.age != null ? String(localPet.age) : "",
-                        gender: localPet.gender === "남아" ? "male" : "female",
-                        neutered: localPet.neutered ? "yes" : "no",
-                        birthday: localPet.birthday || "",
-                        vaccinated: localPet.healthStatus?.vaccination === "접종 완료" ? "yes" : "no", // Basic mapping for local data
-                    })
-                    setPhotoPreview(localPet.photo)
-                    return
-                }
-            }
 
             // 2. Fallback to API
             try {
                 setIsLoading(true)
                 const apiPet = await getPetApi(Number(petId))
+                console.log(apiPet.species)
+                const speciesKey = String(apiPet.species).toUpperCase().trim()
+                const speciesLabel = SPECIES_MAP[speciesKey] || "기타"
                 setFormData({
                     name: apiPet.petName,
-                    species: apiPet.species === "DOG" ? "강아지" : "고양이",
+                    species: speciesLabel,
                     breed: apiPet.breed,
                     age: String(apiPet.age),
                     gender: apiPet.genderType === "MALE" ? "male" : "female",
@@ -163,7 +130,7 @@ export default function PetEditPage() {
                 setPhotoPreview(apiPet.profileImage)
             } catch (error) {
                 console.error("Failed to fetch pet:", error)
-                navigate("/profile")
+                // navigate("/profile")
             } finally {
                 setIsLoading(false)
             }
@@ -172,21 +139,26 @@ export default function PetEditPage() {
         fetchPetData()
     }, [user, petId, navigate])
 
-    const analyzePhoto = async (_file: File) => {
+    const analyzePhoto = async (file: File) => {
         setIsAnalyzing(true)
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        const mockAnalysis = {
-            species: "강아지",
-            breed: "골든 리트리버",
-            confidence: 0.92
+        try {
+            const result = await analyzeAnimalApi(file)
+
+            // Map API species to frontend label
+            // Map API species to frontend label
+            const speciesLabel = SPECIES_MAP[result.species] || "기타"
+
+            setFormData(prev => ({
+                ...prev,
+                species: speciesLabel,
+                breed: result.breed
+            }))
+            setAiAnalysisComplete(true)
+        } catch (error) {
+            console.error("Failed to analyze pet photo:", error)
+        } finally {
+            setIsAnalyzing(false)
         }
-        setFormData(prev => ({
-            ...prev,
-            species: mockAnalysis.species,
-            breed: mockAnalysis.breed
-        }))
-        setIsAnalyzing(false)
-        setAiAnalysisComplete(true)
     }
 
     const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -213,7 +185,7 @@ export default function PetEditPage() {
                 genderType: formData.gender === "male" ? "MALE" : "FEMALE",
                 age: Number(formData.age),
                 birth: formData.birthday,
-                species: formData.species === "강아지" ? "DOG" : "CAT",
+                species: (REVERSE_SPECIES_MAP[formData.species] || "ETC") as any,
                 neutered: formData.neutered === "yes",
                 vaccinated: formData.vaccinated === "yes"
             }, selectedFile)
@@ -245,9 +217,23 @@ export default function PetEditPage() {
     }
 
     const getBreedOptions = () => {
-        if (formData.species === "강아지") return DOG_BREEDS
-        if (formData.species === "고양이") return CAT_BREEDS
-        return ["직접 입력"]
+        let options: string[] = []
+        if (formData.species === "강아지") options = DOG_BREEDS
+        else if (formData.species === "고양이") options = CAT_BREEDS
+        else if (formData.species === "토끼") options = RABBIT_BREEDS
+        else if (formData.species === "햄스터") options = HAMSTER_BREEDS
+        else if (formData.species === "새") options = BIRD_BREEDS
+        else if (formData.species === "기니피그") options = GUINEAPIG_BREEDS
+        else if (formData.species === "파충류") options = REPTILE_BREEDS
+        else if (formData.species === "물고기") options = FISH_BREEDS
+        else if (formData.species === "기타") options = ETC_BREEDS
+        else options = ["직접 입력"]
+
+        // If current breed is not in the options (e.g. from AI or legacy/custom data), add it
+        if (formData.breed && !options.includes(formData.breed) && formData.breed !== "직접 입력") {
+            return [formData.breed, ...options]
+        }
+        return options
     }
 
     if (isLoading) {
@@ -371,7 +357,17 @@ export default function PetEditPage() {
                                     품종
                                     {aiAnalysisComplete && <span className="text-xs text-green-600">(AI 분석 완료)</span>}
                                 </Label>
-                                {formData.species && (formData.species === "강아지" || formData.species === "고양이") ? (
+                                {formData.species && (
+                                    formData.species === "강아지" ||
+                                    formData.species === "고양이" ||
+                                    formData.species === "토끼" ||
+                                    formData.species === "햄스터" ||
+                                    formData.species === "새" ||
+                                    formData.species === "기니피그" ||
+                                    formData.species === "파충류" ||
+                                    formData.species === "물고기" ||
+                                    formData.species === "기타"
+                                ) ? (
                                     <Select
                                         value={formData.breed}
                                         onValueChange={(value) => setFormData({ ...formData, breed: value })}
