@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Dialog, DialogContent, DialogTitle, DialogClose } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/shared/ui/dialog"; // DialogClose 제거
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -51,7 +51,6 @@ function CommentItem({
     <div className={`flex gap-3 group items-start ${isReply ? "ml-12 mt-2" : "mt-4"}`}>
         {isReply && <CornerDownRight className="w-4 h-4 text-gray-300 mt-2 shrink-0" />}
 
-        {/* [수정] 닉네임 -> writerId로 링크 변경 */}
         <Link to={`/user/${comment.writerId}`} className="shrink-0">
             <Avatar className="h-8 w-8 mt-1">
                 <AvatarImage src={comment.writerProfileImage || "/placeholder-user.jpg"} />
@@ -60,7 +59,6 @@ function CommentItem({
         </Link>
         <div className="flex-1">
             <div className="text-[14px] leading-relaxed">
-                {/* [수정] 닉네임 -> writerId로 링크 변경 */}
                 <Link to={`/user/${comment.writerId}`} className="font-bold mr-2 text-gray-900 hover:text-[#FF69B4] transition-colors">
                     {comment.writerNickname}
                 </Link>
@@ -218,20 +216,15 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
       <DialogContent 
         className="max-w-full md:max-w-[1200px] w-full p-0 gap-0 overflow-hidden h-full md:h-[90vh] flex flex-col md:flex-row bg-white border-none sm:rounded-[2.5rem] z-50 shadow-2xl transition-all"
         overlayClassName="bg-black/20 backdrop-blur-sm" 
-        showCloseButton={false}
+        showCloseButton={false} // 기본 닫기 버튼 숨김
       >
         <DialogTitle className="sr-only">게시물 상세</DialogTitle>
-        <DialogClose className="fixed right-8 top-8 z-[60] p-3 rounded-full bg-white shadow-lg text-gray-400 hover:bg-[#FF69B4] hover:text-white hover:scale-110 transition-all cursor-pointer border border-gray-100">
-            <X className="h-6 w-6 stroke-[3px]" />
-            <span className="sr-only">Close</span>
-        </DialogClose>
+        {/* [삭제] 기존의 fixed DialogClose 제거됨 */}
 
         {/* 왼쪽: 이미지 영역 */}
-        {/* [수정] 배경색 bg-black (사진 집중 및 레터박스 효과) */}
         <div className="relative bg-black flex items-center justify-center w-full h-[45vh] md:h-full md:flex-[1.5_1_0%] overflow-hidden border-r border-[#FFF0F5] group">
            {images.length > 0 ? (
              <>
-               {/* [수정] object-contain (비율 유지, 잘림 방지) */}
                <img src={images[currentImageIndex]} alt={`Post-${currentImageIndex}`} className="w-full h-full object-contain"/>
                {hasMultipleImages && (
                  <>
@@ -262,7 +255,6 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
           {/* 헤더 */}
           <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50 shrink-0">
              <div className="flex items-center gap-4">
-                {/* [수정] writerId로 링크 변경 */}
                 <Link to={`/user/${post.writerId}`} className="flex items-center gap-3 group">
                     <Avatar className="h-10 w-10 ring-2 ring-transparent group-hover:ring-[#FF69B4] transition-all">
                         <AvatarImage src={post.writerProfileImage || "/placeholder-user.jpg"} />
@@ -271,15 +263,21 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
                     <span className="text-[15px] font-bold text-gray-900 group-hover:text-[#FF69B4] transition-colors">{post.writerNickname}</span>
                 </Link>
              </div>
-             <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#FFF0F5] rounded-full text-gray-400 hover:text-[#FF69B4] transition-colors">
-                <MoreHorizontal className="h-6 w-6" />
-             </Button>
+             {/* [수정] 오른쪽 상단에 옵션 버튼과 닫기 버튼 배치 */}
+             <div className="flex items-center gap-2">
+               <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#FFF0F5] rounded-full text-gray-400 hover:text-[#FF69B4] transition-colors">
+                 <MoreHorizontal className="h-6 w-6" />
+               </Button>
+               {/* 닫기 버튼 추가 */}
+               <Button variant="ghost" size="icon" onClick={onClose} className="h-9 w-9 hover:bg-[#FFF0F5] rounded-full text-gray-400 hover:text-[#FF69B4] transition-colors">
+                 <X className="h-6 w-6" />
+               </Button>
+             </div>
           </div>
 
           {/* 댓글 목록 */}
           <ScrollArea className="flex-1 p-6">
               <div className="flex gap-4 mb-8">
-                {/* [수정] writerId로 링크 변경 */}
                 <Link to={`/user/${post.writerId}`} className="shrink-0">
                     <Avatar className="h-10 w-10">
                         <AvatarImage src={post.writerProfileImage || "/placeholder-user.jpg"} />
@@ -288,7 +286,6 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
                 </Link>
                 <div className="flex-1 space-y-1.5">
                     <div className="text-[15px] leading-relaxed">
-                      {/* [수정] writerId로 링크 변경 */}
                       <Link to={`/user/${post.writerId}`} className="font-bold mr-2 hover:underline decoration-[#FF69B4] decoration-2 underline-offset-2 text-gray-900">{post.writerNickname}</Link>
                       <span className="text-gray-800 whitespace-pre-wrap">{post.content}</span>
                     </div>
@@ -320,14 +317,14 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
                              {parentComment.children && parentComment.children.length > 0 && (
                                  <div className="flex flex-col">
                                      {parentComment.children.map((childComment) => (
-                                         <CommentItem 
-                                            key={childComment.commentId} 
-                                            comment={childComment} 
-                                            currentUserId={currentUserId}
-                                            onDelete={handleDeleteComment}
-                                            onUpdate={handleUpdateComment}
-                                            onReply={handleReplyClick}
-                                         />
+                                       <CommentItem 
+                                          key={childComment.commentId} 
+                                          comment={childComment} 
+                                          currentUserId={currentUserId}
+                                          onDelete={handleDeleteComment}
+                                          onUpdate={handleUpdateComment}
+                                          onReply={handleReplyClick}
+                                       />
                                      ))}
                                  </div>
                              )}
@@ -366,24 +363,24 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
 
           <form onSubmit={handlePostComment} className="shrink-0 p-5 border-t border-gray-50 bg-white flex items-center gap-3">
               <div className="flex-1 relative">
-                 <Input 
+                  <Input 
                       ref={inputRef}
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
                       placeholder={replyTarget ? "답글을 입력하세요..." : "댓글 달기..."}
                       className="border-none bg-[#FAFAFA] focus-visible:ring-2 focus-visible:ring-[#FF69B4] rounded-full px-5 h-12 text-[14px] w-full placeholder:text-gray-400 text-gray-800 shadow-inner"
-                 />
-                 <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                     <Button 
-                         type="submit" 
-                         variant="ghost" 
-                         size="sm"
-                         className={`text-[#FF69B4] font-extrabold hover:bg-[#FFF0F5] hover:text-[#FF1493] rounded-full px-4 transition-all ${!commentText.trim() ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-                         disabled={createCommentMutation.isPending}
-                     >
-                         게시
-                     </Button>
-                 </div>
+                  />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                      <Button 
+                          type="submit" 
+                          variant="ghost" 
+                          size="sm"
+                          className={`text-[#FF69B4] font-extrabold hover:bg-[#FFF0F5] hover:text-[#FF1493] rounded-full px-4 transition-all ${!commentText.trim() ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                          disabled={createCommentMutation.isPending}
+                      >
+                          게시
+                      </Button>
+                  </div>
               </div>
           </form>
         </div>
