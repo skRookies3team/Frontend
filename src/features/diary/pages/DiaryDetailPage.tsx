@@ -61,8 +61,8 @@ export default function DiaryDetailPage() {
                     } catch (styleError) {
                         console.warn("스타일 로드 실패:", styleError)
                     }
-                } else {
-                    const settings = await getMyStyleApi()
+                } else if (user?.id) {
+                    const settings = await getMyStyleApi(Number(user.id))
                     if (settings) {
                         setStyleSettings(settings)
                     }
@@ -107,10 +107,7 @@ export default function DiaryDetailPage() {
         }
     }, [])
 
-    const handleEdit = () => {
-        if (!id) return
-        navigate(`/diary/${id}/edit`)
-    }
+
 
     const handleDelete = async () => {
         if (!id) return
