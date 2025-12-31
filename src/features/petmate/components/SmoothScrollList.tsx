@@ -9,11 +9,12 @@ interface SmoothScrollCardProps {
     isLiked: boolean
     onLike: (e: React.MouseEvent) => void
     onClick: () => void
+    onScrollToCenter: () => void
     isActive: boolean
     position: 'prev2' | 'prev' | 'current' | 'next' | 'next2' | 'hidden'
 }
 
-export function SmoothScrollCard({ candidate, isLiked, onLike, onClick, isActive, position }: SmoothScrollCardProps) {
+export function SmoothScrollCard({ candidate, isLiked, onLike, onClick, onScrollToCenter, isActive, position }: SmoothScrollCardProps) {
     const variants = {
         prev2: { y: -200, scale: 0.75, opacity: 0.4, zIndex: 1, filter: 'grayscale(80%)' },
         prev: { y: -100, scale: 0.85, opacity: 0.6, zIndex: 5, filter: 'grayscale(50%)' },
@@ -26,7 +27,13 @@ export function SmoothScrollCard({ candidate, isLiked, onLike, onClick, isActive
     return (
         <motion.div
             className="absolute w-full cursor-pointer"
-            onClick={onClick}
+            onClick={() => {
+                if (isActive) {
+                    onClick()
+                } else {
+                    onScrollToCenter()
+                }
+            }}
             initial={false}
             animate={position}
             variants={variants}
@@ -209,6 +216,7 @@ export function SmoothScrollList({ candidates, isUserLiked, onLike, onSelect }: 
                                     onLike(candidate)
                                 }}
                                 onClick={() => onSelect(candidate)}
+                                onScrollToCenter={() => setCurrentIndex(index)}
                                 isActive={index === currentIndex}
                                 position={position}
                             />

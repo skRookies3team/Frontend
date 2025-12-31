@@ -197,6 +197,16 @@ export const petMateApi = {
         const payload: RequestRespondPayload = { matchId, userId, accept };
         return httpClient.post<MatchResult>(`/petmate/requests/${matchId}/respond`, payload);
     },
+
+    // 보낸 매칭 요청 목록 조회 (PENDING 상태)
+    getSentRequests: async (userId: number): Promise<PendingRequest[]> => {
+        return httpClient.get<PendingRequest[]>(`/petmate/requests/${userId}/sent`);
+    },
+
+    // 친구 끊기 (매칭 삭제)
+    unfriend: async (userId: number, matchedUserId: number): Promise<boolean> => {
+        return httpClient.delete<boolean>(`/petmate/matches/${userId}/${matchedUserId}`);
+    },
 };
 
 // GPS 좌표 가져오기 유틸리티
