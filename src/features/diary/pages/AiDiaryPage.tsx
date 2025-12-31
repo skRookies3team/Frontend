@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import {
   earnCoin,
   createSocialFeed,
+  createAiDiaryApi, // [NEW]
 } from "../api/diary-api";
 
 import EditStep from '../components/EditStep';
@@ -52,11 +53,12 @@ const AiDiaryPage = () => {
   const [locationName, setLocationName] = useState("");
   const [locationCoords, setLocationCoords] = useState<{ lat: number, lng: number } | null>(null);
 
-  const [createdDiaryId] = useState<number | null>(null);
+  const [createdDiaryId, setCreatedDiaryId] = useState<number | null>(null);
   const [showGallery, setShowGallery] = useState(false);
   const [editedDiary, setEditedDiary] = useState(() => getSavedState('editedDiary', ""));
   // progress removed
   const [selectedDate] = useState(() => getSavedState('selectedDate', format(new Date(), 'yyyy-MM-dd')));
+  const [title, setTitle] = useState(() => getSavedState('title', "")); // [NEW] Title State
 
   // Style States
   const [layoutStyle, setLayoutStyle] = useState("grid"); // galleryType
@@ -115,6 +117,28 @@ const AiDiaryPage = () => {
     try {
       console.log("=== [Frontend] Saving Diary... ===");
       if (user && user.id) {
+        // [NEW] Actual Save to Backend
+        const diaryRequest = {
+          userId: Number(user.id),
+          petId: selectedPetId || 0,
+          date: selectedDate,
+          title: title, // [NEW]
+          content: editedDiary,
+          weather: weather,
+          mood: mood,
+          locationName: locationName,
+          latitude: locationCoords?.lat,
+          longitude: locationCoords?.lng,
+          visibility: "PUBLIC", // Default
+          isAiGen: true,
+          imageUrls: selectedImages.map(img => img.imageUrl),
+          archiveIds: selectedImages.map(img => img.archiveId).filter(id => id != null)
+        };
+
+        const newDiaryId = await createAiDiaryApi(diaryRequest); // Call API
+        console.log("=== [Frontend] Diary Saved. ID:", newDiaryId);
+        setCreatedDiaryId(newDiaryId);
+
         const REWARD_AMOUNT = 15;
         const coinResult = await earnCoin(user.id, REWARD_AMOUNT, 'WRITEDIARY');
 
@@ -195,6 +219,7 @@ const AiDiaryPage = () => {
             locationCoords={locationCoords} setLocationCoords={setLocationCoords}
             selectedDate={selectedDate}
             layoutStyle={layoutStyle} textAlign={textAlign} fontSize={fontSize} backgroundColor={backgroundColor}
+            title={title} setTitle={setTitle} // [NEW]
             onNext={() => setStep('style')}
           />
         )}
@@ -208,6 +233,7 @@ const AiDiaryPage = () => {
             preset={preset} setPreset={setPreset}
             handleShareToFeed={handleShareToFeed} isSubmitting={isSubmitting}
             onBack={() => setStep('edit')}
+            title={title} // [NEW] Pass Title
           />
         )}
         {step === 'complete' && <CompleteStep onHome={handleReset} earnedAmount={earnedReward} onShare={handleSocialShare} />}

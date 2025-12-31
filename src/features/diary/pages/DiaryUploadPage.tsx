@@ -269,6 +269,7 @@ const DiaryUploadPage = () => {
                 selectedDate, // Persist date
                 selectedPetId,
                 createdDiaryId: null, // [CHANGED] No diaryId yet!
+                title: previewData.title || "제목 없음", // [NEW] Capture Title
                 editedDiary: previewData.content || "AI가 일기를 생성하지 못했습니다.",
                 weather: previewData.weather || "맑음",
                 mood: previewData.mood || "행복",

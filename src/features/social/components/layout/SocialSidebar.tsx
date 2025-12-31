@@ -1,13 +1,14 @@
-import { useState } from "react"
-import { Link } from "react-router-dom"
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
-import { Input } from "@/shared/ui/input"
-import { Home, Search, TrendingUp, PlusSquare, User, X, Loader2, Hash, Clock } from "lucide-react"
-import { useAuth } from "@/features/auth/context/auth-context"
-import { useUserSearch, useHashtagSearch } from "../../hooks/use-search-query"
-// [확인] RecentSearchItem이 여기서 import 되어 있어야 합니다.
-import { useRecentSearch, RecentSearchItem } from "../../hooks/use-recent-search"
-import { SearchUserDto } from "../../types/feed"
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
+import { Input } from "@/shared/ui/input";
+import { Home, Search, TrendingUp, PlusSquare, User, X, Loader2, Hash, Clock } from "lucide-react";
+import { useAuth } from "@/features/auth/context/auth-context";
+import { useUserSearch, useHashtagSearch } from "../../hooks/use-feed-query";
+import { useRecentSearch, RecentSearchItem } from "../../hooks/use-recent-search";
+import { SearchUserDto } from "../../types/feed";
+import { useQuery } from "@tanstack/react-query"; // 추가
+import { getUserApi } from "@/features/auth/api/auth-api"; // 추가
 
 interface SocialSidebarProps {
   activePage: "home" | "search" | "popular" | "create" | "profile" | string;
@@ -20,7 +21,18 @@ export function SocialSidebar({ activePage, onSearchToggle, onCreateClick }: Soc
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   
-  const { data: userResults, isLoading: isUserLoading } = useUserSearch(searchQuery);
+  // [추가] ProfilePage와 동일하게 최신 유저 정보를 가져옵니다.
+  const { data: apiUserData } = useQuery({
+    queryKey: ['user', user?.id],
+    queryFn: () => getUserApi(Number(user?.id)),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // 프로필 이미지 결정 로직 (ProfilePage와 동일)
+  const myProfileImage = apiUserData?.profileImage || user?.avatar || "/placeholder-user.jpg";
+
+  const { data: userResults, isLoading: isUserLoading } = useUserSearch(searchQuery, user ? Number(user.id) : 0);
   const { data: tagResults, isLoading: isTagLoading } = useHashtagSearch(searchQuery);
   
   const { recentSearches, addRecentSearch, removeRecentSearch, clearRecentSearches } = useRecentSearch();
@@ -75,7 +87,8 @@ export function SocialSidebar({ activePage, onSearchToggle, onCreateClick }: Soc
                   <>
                     {item.isProfile ? (
                       <Avatar className={`h-7 w-7 transition-transform group-hover:scale-105 ${isActive ? "ring-2 ring-white" : ""}`}>
-                        <AvatarImage src={user?.avatar || "/placeholder-user.jpg"} />
+                        {/* [수정] 위에서 정의한 myProfileImage 사용 */}
+                        <AvatarImage src={myProfileImage} className="object-cover" />
                         <AvatarFallback className="text-[10px] bg-white text-[#FF69B4] font-bold">Me</AvatarFallback>
                       </Avatar>
                     ) : (
@@ -140,7 +153,6 @@ export function SocialSidebar({ activePage, onSearchToggle, onCreateClick }: Soc
                       </div>
                     ) : (
                       <div className="space-y-1">
-                        {/* [수정] item에 RecentSearchItem 타입 명시 */}
                         {recentSearches?.map((item: RecentSearchItem) => (
                           <div key={`${item.type}-${item.targetId}`} className="flex items-center justify-between group p-2 hover:bg-gray-50 rounded-xl transition-colors">
                             <Link 
@@ -150,8 +162,9 @@ export function SocialSidebar({ activePage, onSearchToggle, onCreateClick }: Soc
                             >
                               {item.type === 'USER' ? (
                                 <Avatar className="h-9 w-9 border border-gray-100">
-                                  <AvatarImage src={item.image || "/placeholder-user.jpg"} />
-                                  <AvatarFallback className="text-[10px]">{item.text[0]}</AvatarFallback>
+                                  {/* [수정] user.image 사용 (recentSearchItem 구조에 따름) */}
+                                  <AvatarImage src={item.image || "/placeholder-user.jpg"} className="object-cover" />
+                                  <AvatarFallback className="text-[10px] bg-[#FFF0F5] text-[#FF69B4] font-bold">{item.text[0]}</AvatarFallback>
                                 </Avatar>
                               ) : (
                                 <div className="h-9 w-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-500">
@@ -170,7 +183,6 @@ export function SocialSidebar({ activePage, onSearchToggle, onCreateClick }: Soc
                     )}
                   </div>
                 ) : (
-                  // 검색 결과 영역
                   <div className="space-y-6">
                     {isLoading ? (
                       <div className="flex justify-center py-10"><Loader2 className="animate-spin h-6 w-6 text-[#FF69B4]" /></div>
@@ -178,7 +190,6 @@ export function SocialSidebar({ activePage, onSearchToggle, onCreateClick }: Soc
                       <div className="py-10 text-center text-sm text-gray-400">결과가 없어요 🥲</div>
                     ) : (
                       <>
-                        {/* 해시태그 결과 섹션 */}
                         {hasTagResults && (
                           <div className="space-y-2">
                             <div className="px-1 text-xs font-bold text-gray-500 mb-1">해시태그</div>
@@ -208,7 +219,6 @@ export function SocialSidebar({ activePage, onSearchToggle, onCreateClick }: Soc
                           </div>
                         )}
 
-                        {/* 사용자 결과 섹션 */}
                         {hasUserResults && (
                           <div className="space-y-2">
                             <div className="px-1 text-xs font-bold text-gray-500 mb-1">사용자</div>
@@ -223,11 +233,12 @@ export function SocialSidebar({ activePage, onSearchToggle, onCreateClick }: Soc
                                   type: 'USER',
                                   text: u.username || "알 수 없음",
                                   subText: `@${u.social}`,
-                                  image: u.profileImage
+                                  image: u.profileImage 
                                 })}
                               >
                                 <Avatar className="h-10 w-10 border border-white shadow-sm">
-                                  <AvatarImage src={u.profileImage || "/placeholder-user.jpg"} />
+                                  {/* [수정] u.profileImage 사용 */}
+                                  <AvatarImage src={u.profileImage || "/placeholder-user.jpg"} className="object-cover" />
                                   <AvatarFallback className="bg-[#FFF0F5] text-[#FF69B4] font-bold text-xs">{u.username?.[0] || "U"}</AvatarFallback>
                                 </Avatar>
                                 <div className="flex flex-col overflow-hidden">

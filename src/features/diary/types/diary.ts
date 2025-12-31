@@ -60,6 +60,7 @@ export interface DiaryRequest {
     longitude?: number | null;
     locationName?: string; // [New]
     date?: string; // [New] yyyy-MM-dd
+    title?: string; // [New]
 
     // Legacy image objects (optional if we use imageUrls/archiveIds)
     images?: DiaryImageDTO[];
@@ -71,6 +72,7 @@ export interface DiaryRequest {
 
 // [New] AI Diary Preview Response
 export interface AiDiaryResponse {
+    title: string; // [NEW]
     content: string;
     weather: string;
     mood: string;
@@ -79,6 +81,34 @@ export interface AiDiaryResponse {
     longitude: number;
     imageUrls: string[];
     archiveIds: number[];
+}
+
+// [NEW] 백엔드 DiaryResponse (조회용)
+export interface DiaryResponse {
+    diaryId: number;
+    userId: number;
+    petId: number;
+    title: string;
+    content: string;
+    weather: string;
+    mood: string;
+    date: string; // LocalDate -> string
+    images: DiaryImage[]; // ✅ imageUrls 대신 images 사용
+    isAiGen: boolean;
+    createdAt: string;
+    visibility?: string;
+    latitude?: number;
+    longitude?: number;
+    locationName?: string;
+    updatedAt?: string;
+}
+
+// 백엔드 이미지 객체 구조
+export interface DiaryImage {
+    imageId: number;
+    imageUrl: string;
+    imgOrder: number;
+    mainImage: boolean;
 }
 
 // Mock 데이터 상수
