@@ -1,48 +1,102 @@
-import { Link } from "react-router-dom"
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
-import { User } from "lucide-react"
-import { useAuth } from "@/features/auth/context/auth-context"
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
+import { Button } from "@/shared/ui/button";
+import { useAuth } from "@/features/auth/context/auth-context";
+import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { getUserApi } from "@/features/auth/api/auth-api";
 
 export function SocialRightSidebar() {
   const { user } = useAuth();
-  const myUserId = user ? Number(user.id) : 0;
+  
+  // [추가] ProfilePage와 동일하게 최신 유저 정보를 가져옵니다.
+  const { data: apiUserData } = useQuery({
+    queryKey: ['user', user?.id],
+    queryFn: () => getUserApi(Number(user?.id)),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5, // 5분간 캐시 유지
+  });
+
+  // 프로필 이미지 결정 로직 (ProfilePage와 동일)
+  const profileImage = apiUserData?.profileImage || user?.avatar || "/placeholder-user.jpg";
+  const userName = apiUserData?.username || user?.name || "사용자";
+  const userHandle = apiUserData?.social || user?.username || "user";
+
+  // 추천 친구 데이터 (임시)
+  const suggestedUsers = [
+    { id: 1, name: "강아지사랑", username: "doglover", avatar: null },
+    { id: 2, name: "냥냥펀치", username: "catpunch", avatar: null },
+    { id: 3, name: "펫마스터", username: "petmaster", avatar: null },
+  ];
 
   return (
-    <aside className="hidden lg:block sticky top-20 h-[calc(100vh-6rem)] w-[320px] shrink-0 mr-4 z-30">
-      <div className="h-full bg-white rounded-[2.5rem] shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-gray-100 overflow-y-auto custom-scrollbar py-8 px-6">
-        {user && (
-          <div className="flex items-center justify-between mb-8 p-3.5 bg-[#FFF0F5]/40 rounded-[20px] border border-[#FF69B4]/10">
-            <Link to={`/user/${myUserId}`} className="flex items-center gap-3 group">
-              <Avatar className="h-10 w-10 border-[2px] border-white shadow-sm bg-white">
-                <AvatarImage src={user.avatar || "/placeholder-user.jpg"} />
-                <AvatarFallback className="text-[#FF69B4] font-bold bg-[#FFF0F5]">{user.name?.[0] || "U"}</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col">
-                <span className="font-bold text-sm text-gray-900 group-hover:text-[#FF69B4] transition-colors">{user.username}</span>
-                <span className="text-gray-400 text-xs font-medium">{user.name}</span>
-              </div>
+    <aside className="hidden xl:block w-[320px] shrink-0 sticky top-24 h-fit ml-8">
+      {/* 내 프로필 카드 */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
+        <div className="flex items-center gap-4 mb-4">
+          <Link to={`/user/${user?.id}`}>
+            <Avatar className="h-14 w-14 border border-gray-100 cursor-pointer">
+              {/* [수정] ProfilePage와 동일한 로직 적용 */}
+              <AvatarImage 
+                src={profileImage} 
+                className="object-cover" 
+              />
+              <AvatarFallback className="bg-[#FFF0F5] text-[#FF69B4] font-bold">
+                {userName[0]}
+              </AvatarFallback>
+            </Avatar>
+          </Link>
+          <div className="flex-1 min-w-0">
+            <Link to={`/user/${user?.id}`}>
+              <h3 className="font-bold text-gray-900 truncate hover:underline cursor-pointer">
+                {userName}
+              </h3>
             </Link>
+            <p className="text-sm text-gray-500 truncate">@{userHandle}</p>
           </div>
-        )}
-
-        <div className="flex items-center justify-between mb-4 px-1">
-          <span className="text-sm font-bold text-gray-500">회원님을 위한 추천</span>
-          <button className="text-xs font-bold text-gray-900 hover:text-[#FF69B4] transition-colors">모두 보기</button>
+          <Button variant="ghost" className="text-xs text-[#FF69B4] hover:text-[#FF1493] font-bold">
+            전환
+          </Button>
         </div>
+      </div>
 
-        <div className="space-y-3">
-          <div className="flex items-center gap-3 p-2 hover:bg-[#FAFAFA] rounded-[18px] transition-colors cursor-pointer group">
-            <div className="h-9 w-9 bg-gray-100 rounded-full flex items-center justify-center"><User className="h-4 w-4 text-gray-400" /></div>
-            <div className="flex-1"><div className="h-3 bg-gray-100 w-20 rounded mb-1"></div><div className="h-2 bg-gray-50 w-12 rounded"></div></div>
-          </div>
-          <div className="text-xs text-[#FF69B4] py-4 text-center font-bold bg-[#FFF0F5]/30 rounded-[18px] mt-4">
-            새로운 친구를 찾고 있어요 🐾
-          </div>
+      {/* 추천 친구 리스트 */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-gray-500 text-sm">회원님을 위한 추천</h3>
+          <button className="text-xs font-bold text-gray-900 hover:text-gray-700">모두 보기</button>
         </div>
+        <div className="space-y-4">
+          {suggestedUsers.map((u) => (
+            <div key={u.id} className="flex items-center justify-between group">
+              <div className="flex items-center gap-3">
+                <Link to={`/user/${u.id}`}>
+                  <Avatar className="h-10 w-10 border border-gray-100 cursor-pointer">
+                    <AvatarImage 
+                      src={u.avatar || "/placeholder-user.jpg"} 
+                      className="object-cover" 
+                    />
+                    <AvatarFallback className="bg-gray-100 text-gray-500 text-xs font-bold">
+                      {u.name[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                </Link>
+                <div className="flex flex-col">
+                  <Link to={`/user/${u.id}`} className="text-sm font-bold text-gray-900 group-hover:text-[#FF69B4] transition-colors cursor-pointer">
+                    {u.username}
+                  </Link>
+                  <span className="text-xs text-gray-400">회원님을 팔로우합니다</span>
+                </div>
+              </div>
+              <Button variant="ghost" className="text-xs text-[#FF69B4] hover:text-[#FF1493] font-bold h-auto p-0 hover:bg-transparent">
+                팔로우
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
 
-        <div className="mt-auto pt-6 border-t border-gray-50 text-[10px] text-gray-300 space-y-2 px-1">
-          <div className="uppercase font-extrabold text-[#FF69B4]/20 tracking-widest">© 2025 PETLOG</div>
-        </div>
+      <div className="mt-6 flex flex-wrap gap-x-2 gap-y-1 text-xs text-gray-400 px-2">
+        <div className="w-full mt-4">© 2025 PETLOG FROM SK ROOKIES</div>
       </div>
     </aside>
   );
