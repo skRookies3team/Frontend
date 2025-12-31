@@ -1,9 +1,9 @@
+
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import html2canvas from "html2canvas"
 import jsPDF from "jspdf"
 import {
-    Sparkles,
     Download,
     Share2,
     Trash2,
@@ -13,8 +13,7 @@ import {
     Instagram,
     Link as LinkIcon,
     X,
-    FileText,
-    Image as ImageIcon
+    Sparkles
 } from "lucide-react"
 
 import { Button } from "@/shared/ui/button"
@@ -22,6 +21,12 @@ import { Badge } from "@/shared/ui/badge"
 import { getDiary, deleteDiary, getMyStyleApi } from "@/features/diary/api/diary-api"
 import { useAuth } from "@/features/auth/context/auth-context"
 import DiaryPreview from "@/features/diary/components/DiaryPreview"
+
+declare global {
+    interface Window {
+        Kakao: any
+    }
+}
 
 export default function DiaryDetailPage() {
     const { id } = useParams<{ id: string }>()
@@ -43,60 +48,76 @@ export default function DiaryDetailPage() {
 
             try {
                 setIsLoading(true)
-                console.log("=== 📖 다이어리 상세 정보 로드 시작 ===")
-                console.log("Diary ID:", id)
-
                 const data = await getDiary(Number(id))
-                console.log("✅ 다이어리 데이터 로드 성공:", data)
                 setDiary(data)
 
                 // Use style from diary response if available
                 if (data.style) {
-                    console.log("🎨 [다이어리 응답에서 스타일 발견]")
-                    console.log("스타일 상세:", {
-                        galleryType: data.style.galleryType,
-                        textAlignment: data.style.textAlignment,
-                        fontSize: data.style.fontSize,
-                        backgroundColor: data.style.backgroundColor,
-                        sizeOption: data.style.sizeOption,
-                        themeStyle: data.style.themeStyle,
-                        preset: data.style.preset
-                    })
                     setStyleSettings(data.style)
                 } else if (user?.id && data.petId) {
-                    console.log("⚠️ 다이어리 응답에 스타일 없음 → 펫 기본 스타일 조회 시도")
-                    console.log("User ID:", user.id, "Pet ID:", data.petId)
                     try {
                         const styleData = await getMyStyleApi(Number(user.id), data.petId)
-                        console.log("✅ 펫 기본 스타일 로드 성공:", styleData)
                         setStyleSettings(styleData)
                     } catch (styleError) {
-                        console.warn("❌ 스타일 로드 실패 - 기본값 사용:", styleError)
+                        console.warn("스타일 로드 실패:", styleError)
                     }
                 } else {
-                    console.log("ℹ️ 스타일 정보 없음 - 기본 스타일 적용")
+                    const settings = await getMyStyleApi()
+                    if (settings) {
+                        setStyleSettings(settings)
+                    }
                 }
-
-                console.log("=== 다이어리 로드 완료 ===")
             } catch (error) {
-                console.error('❌ Failed to fetch diary:', error)
-                alert('다이어리를 불러오는데 실패했습니다.')
-                navigate(-1)
+                console.error("다이어리 로드 실패:", error)
             } finally {
                 setIsLoading(false)
             }
         }
 
         fetchDiaryDetail()
-    }, [id, navigate, user])
+    }, [id, user])
 
-    const handleDelete = async () => {
-        if (!diary || !window.confirm('이 다이어리를 정말 삭제하시겠습니까?\\n삭제된 다이어리는 복구할 수 없습니다.')) {
-            return
+    // Kakao SDK 초기화 (Dynamic Loading)
+    useEffect(() => {
+        const kakaoKey = import.meta.env.VITE_KAKAO_JS_KEY
+
+        const initKakao = () => {
+            if (window.Kakao && !window.Kakao.isInitialized() && kakaoKey) {
+                try {
+                    window.Kakao.init(kakaoKey)
+                    console.log("✅ Kakao SDK Initialized")
+                } catch (e) {
+                    console.error("❌ Kakao Init Error:", e)
+                }
+            }
         }
 
+        if (!window.Kakao) {
+            console.log("⏳ Kakao SDK not found, loading script dynamically...")
+            const script = document.createElement("script")
+            script.src = "https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js"
+            script.async = true
+            script.onload = () => {
+                console.log("📦 Kakao SDK Script Loaded")
+                initKakao()
+            }
+            document.head.appendChild(script)
+        } else {
+            initKakao()
+        }
+    }, [])
+
+    const handleEdit = () => {
+        if (!id) return
+        navigate(`/diary/${id}/edit`)
+    }
+
+    const handleDelete = async () => {
+        if (!id) return
+        if (!window.confirm('정말 이 다이어리를 삭제하시겠습니까?')) return
+
         try {
-            await deleteDiary(diary.diaryId, user?.id ? Number(user.id) : undefined)
+            await deleteDiary(Number(id))
             alert('다이어리가 삭제되었습니다.')
             navigate(-1)
         } catch (error) {
@@ -105,38 +126,102 @@ export default function DiaryDetailPage() {
         }
     }
 
-    const handleShare = (platform: string) => {
+    const shareToKakao = () => {
+        if (!window.Kakao || !window.Kakao.isInitialized()) {
+            alert('카카오톡 공유를 위한 설정이 필요합니다 (앱 키 미설정).')
+            return
+        }
+
+        // 아이템 리스트 생성 (날짜, 날씨, 기분, 위치)
+        const items = []
+        // 날짜 추가
+        if (diary.date) {
+            items.push({
+                item: '날짜',
+                itemOp: new Date(diary.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })
+            })
+        }
+        if (diary.weather) items.push({ item: '날씨', itemOp: diary.weather })
+        if (diary.mood) items.push({ item: '기분', itemOp: diary.mood })
+        if (diary.locationName) items.push({ item: '위치', itemOp: diary.locationName })
+
+        // 사진 개수 표시
+        const imageCount = diary.images?.length || 0
+        const titleText = diary.title
+            ? `${diary.title}${imageCount > 1 ? ` (사진 ${imageCount}장)` : ''}`
+            : 'PetLog 다이어리'
+
+        window.Kakao.Share.sendDefault({
+            objectType: 'feed',
+            content: {
+                title: titleText,
+                description: diary.content.substring(0, 100) + (diary.content.length > 100 ? '...' : ''),
+                imageUrl: diary.images?.[0]?.imageUrl || 'https://via.placeholder.com/300',
+                link: {
+                    mobileWebUrl: window.location.href,
+                    webUrl: window.location.href,
+                },
+            },
+            itemContent: {
+                items: items.length > 0 ? items : undefined
+            },
+            buttons: [
+                {
+                    title: '일기 전체 보기',
+                    link: {
+                        mobileWebUrl: window.location.href,
+                        webUrl: window.location.href,
+                    },
+                },
+            ],
+        })
+    }
+
+    const handleShare = async (platform: string) => {
         const shareUrl = window.location.href
-        const shareText = `${diary.title} - ${diary.content.substring(0, 100)}...`
+        const shareText = `${diary.title} - PetLog에서 작성된 일기입니다.`
 
         switch (platform) {
-            case 'facebook':
-                window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank')
-                break
-            case 'instagram':
-                // Instagram doesn't have direct web share, just copy link
-                navigator.clipboard.writeText(shareUrl)
-                alert('링크가 복사되었습니다! Instagram 앱에서 붙여넣기 해주세요.')
-                break
-            case 'message':
-                // SMS share (mobile only)
+            case 'native':
                 if (navigator.share) {
-                    navigator.share({
-                        title: diary.title,
-                        text: shareText,
-                        url: shareUrl
-                    }).catch(err => console.log('Share failed', err))
+                    try {
+                        await navigator.share({
+                            title: diary.title,
+                            text: shareText,
+                            url: shareUrl,
+                        })
+                        setShowShareModal(false)
+                    } catch (err) {
+                        console.log('Share failed', err)
+                    }
                 } else {
-                    navigator.clipboard.writeText(shareUrl)
-                    alert('링크가 복사되었습니다!')
+                    alert('이 브라우저에서는 기본 공유 기능을 지원하지 않습니다.')
                 }
                 break
-            case 'link':
+            case 'kakao':
+                shareToKakao()
+                setShowShareModal(false)
+                break
+            case 'facebook':
+                window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank')
+                setShowShareModal(false)
+                break
+            case 'instagram':
                 navigator.clipboard.writeText(shareUrl)
-                alert('링크가 복사되었습니다!')
+                alert('링크가 복사되었습니다! 인스타그램 앱을 열어 붙여넣기 해주세요.')
+                setShowShareModal(false)
+                break
+            case 'copy':
+                try {
+                    await navigator.clipboard.writeText(shareUrl)
+                    alert('링크가 복사되었습니다!')
+                    setShowShareModal(false)
+                } catch (err) {
+                    console.error('Clipboard failed', err)
+                    alert('링크 복사에 실패했습니다.')
+                }
                 break
         }
-        setShowShareModal(false)
     }
 
     const handleDownload = async (format: 'pdf' | 'image') => {
@@ -225,9 +310,7 @@ export default function DiaryDetailPage() {
         )
     }
 
-    if (!diary) {
-        return null
-    }
+    if (!diary) return null
 
     // Prepare images for preview
     const selectedImages = diary.images || diary.imageUrls?.map((url: string) => ({ imageUrl: url })) || []
@@ -323,7 +406,7 @@ export default function DiaryDetailPage() {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-lg font-bold text-gray-800">공유하기</h3>
+                            <h3 className="text-xl font-bold text-gray-800">공유하기</h3>
                             <button
                                 onClick={() => setShowShareModal(false)}
                                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -332,108 +415,144 @@ export default function DiaryDetailPage() {
                             </button>
                         </div>
 
-                        <div className="flex justify-around gap-4">
+                        <div className="space-y-4">
+                            {/* Main Native Share */}
                             <button
-                                onClick={() => handleShare('facebook')}
-                                className="flex flex-col items-center gap-2 group"
+                                onClick={() => handleShare('native')}
+                                className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl bg-gray-900 hover:bg-gray-800 text-white transition-all shadow-lg hover:-translate-y-0.5 font-bold"
                             >
-                                <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                    <Facebook className="w-8 h-8 text-white fill-current" />
-                                </div>
-                                <span className="text-sm font-medium text-gray-600">Facebook</span>
+                                <Share2 className="w-5 h-5" />
+                                앱으로 공유
                             </button>
 
-                            <button
-                                onClick={() => handleShare('message')}
-                                className="flex flex-col items-center gap-2 group"
-                            >
-                                <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                    <svg
-                                        className="w-8 h-8 text-gray-800"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
-                                    >
-                                        <path d="M12 2C6.48 2 2 5.58 2 10c0 2.76 1.56 5.18 4 6.65V22l5.5-3.5c.5.08 1 .12 1.5.12 5.52 0 10-3.58 10-8s-4.48-8-10-8z" />
-                                    </svg>
-                                </div>
-                                <span className="text-sm font-medium text-gray-600">KakaoTalk</span>
-                            </button>
+                            <div className="grid grid-cols-4 gap-2">
+                                <button
+                                    onClick={() => handleShare('kakao')}
+                                    className="flex flex-col items-center gap-2 p-2 rounded-xl hover:bg-yellow-50 transition-colors group"
+                                >
+                                    <div className="w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                                        <svg className="w-6 h-6 text-gray-900 fill-current" viewBox="0 0 24 24"><path d="M12 3c5.52 0 10 3.48 10 7.78 0 2.45-1.47 4.64-3.76 6.07.13.48.5 1.84.55 2.05s.12.56-.2.74c-.32.19-.68-.07-.76-.12-.32-.19-3.87-2.65-4.48-3.08-.43.06-.88.1-1.35.1-5.52 0-10-3.48-10-7.78S6.48 3 12 3z" /></svg>
+                                    </div>
+                                    <span className="text-xs text-gray-500 font-medium">카카오톡</span>
+                                </button>
 
-                            <button
-                                onClick={() => handleShare('instagram')}
-                                className="flex flex-col items-center gap-2 group"
-                            >
-                                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                    <Instagram className="w-8 h-8 text-white" />
-                                </div>
-                                <span className="text-sm font-medium text-gray-600">Instagram</span>
-                            </button>
+                                <button
+                                    onClick={() => handleShare('facebook')}
+                                    className="flex flex-col items-center gap-2 p-2 rounded-xl hover:bg-blue-50 transition-colors group"
+                                >
+                                    <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                                        <Facebook className="w-6 h-6 text-white" />
+                                    </div>
+                                    <span className="text-xs text-gray-500 font-medium">페이스북</span>
+                                </button>
 
-                            <button
-                                onClick={() => handleShare('link')}
-                                className="flex flex-col items-center gap-2 group"
-                            >
-                                <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                    <LinkIcon className="w-8 h-8 text-white" />
-                                </div>
-                                <span className="text-sm font-medium text-gray-600">Copy Link</span>
-                            </button>
+                                <button
+                                    onClick={() => handleShare('instagram')}
+                                    className="flex flex-col items-center gap-2 p-2 rounded-xl hover:bg-pink-50 transition-colors group"
+                                >
+                                    <div className="w-12 h-12 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                                        <Instagram className="w-6 h-6 text-white" />
+                                    </div>
+                                    <span className="text-xs text-gray-500 font-medium">인스타그램</span>
+                                </button>
+
+                                <button
+                                    onClick={() => handleShare('copy')}
+                                    className="flex flex-col items-center gap-2 p-2 rounded-xl hover:bg-gray-100 transition-colors group"
+                                >
+                                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                                        <LinkIcon className="w-6 h-6 text-gray-600" />
+                                    </div>
+                                    <span className="text-xs text-gray-500 font-medium">링크 복사</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Download Format Selection Modal */}
+            {/* Download Modal - could be separate component but keeping here for context access */}
             {showDownloadModal && (
                 <div
-                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 transition-opacity animate-in fade-in duration-200"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in"
                     onClick={() => setShowDownloadModal(false)}
                 >
                     <div
-                        className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative animate-in zoom-in-95 duration-200"
+                        className="bg-white rounded-3xl w-full max-w-sm p-6 mx-4 animate-in zoom-in-95 duration-300 shadow-2xl"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <button
-                            onClick={() => setShowDownloadModal(false)}
-                            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                        >
-                            <X className="w-5 h-5 text-gray-400" />
-                        </button>
-
-                        <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">다운로드 형식 선택</h3>
-
-                        <div className="space-y-4">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-bold text-gray-800">다운로드</h3>
+                            <button
+                                onClick={() => setShowDownloadModal(false)}
+                                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                                <X className="w-5 h-5 text-gray-500" />
+                            </button>
+                        </div>
+                        <div className="space-y-3">
                             <button
                                 onClick={() => handleDownload('pdf')}
-                                disabled={isDownloading}
-                                className="w-full flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-gray-200 hover:border-red-400 hover:bg-red-50 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full flex items-center justify-between p-4 rounded-xl bg-gray-50 hover:bg-purple-50 transition-colors group"
                             >
-                                <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                    <FileText className="w-8 h-8 text-white" />
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-lg font-semibold text-gray-800">PDF로 저장</div>
-                                    <div className="text-sm text-gray-500 mt-1">인쇄 및 배포에 최적화</div>
-                                </div>
+                                <span className="font-medium text-gray-700 group-hover:text-purple-700">PDF로 저장</span>
+                                <FileText className="w-5 h-5 text-gray-400 group-hover:text-purple-500" />
                             </button>
-
                             <button
                                 onClick={() => handleDownload('image')}
-                                disabled={isDownloading}
-                                className="w-full flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full flex items-center justify-between p-4 rounded-xl bg-gray-50 hover:bg-blue-50 transition-colors group"
                             >
-                                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                    <ImageIcon className="w-8 h-8 text-white" />
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-lg font-semibold text-gray-800">이미지로 저장</div>
-                                    <div className="text-sm text-gray-500 mt-1">SNS 공유 및 보관용</div>
-                                </div>
+                                <span className="font-medium text-gray-700 group-hover:text-blue-700">이미지로 저장</span>
+                                <ImageIcon className="w-5 h-5 text-gray-400 group-hover:text-blue-500" />
                             </button>
                         </div>
                     </div>
                 </div>
             )}
         </div>
+    )
+}
+
+function FileText({ className }: { className?: string }) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+        >
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" x2="8" y1="13" y2="13" />
+            <line x1="16" x2="8" y1="17" y2="17" />
+            <line x1="10" x2="8" y1="9" y2="9" />
+        </svg>
+    )
+}
+
+function ImageIcon({ className }: { className?: string }) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+        >
+            <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+            <circle cx="9" cy="9" r="2" />
+            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+        </svg>
     )
 }
