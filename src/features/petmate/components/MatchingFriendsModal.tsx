@@ -16,6 +16,7 @@ interface MatchingFriendsModalProps {
     onAccept: (matchId: number) => Promise<MatchResult | null>;
     onReject: (matchId: number) => Promise<boolean>;
     onUnfriend: (matchedUserId: number) => Promise<boolean>;
+    onCancelRequest: (toUserId: number) => Promise<boolean>;
     onMatchSuccess: (result: MatchResult, request: PendingRequest) => void;
 }
 
@@ -28,6 +29,7 @@ export function MatchingFriendsModal({
     onAccept,
     onReject,
     onUnfriend,
+    onCancelRequest,
     onMatchSuccess
 }: MatchingFriendsModalProps) {
     const [activeTab, setActiveTab] = useState<TabType>('matched');
@@ -91,7 +93,7 @@ export function MatchingFriendsModal({
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.9, opacity: 0 }}
                         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                        className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden"
+                        className="bg-white rounded-3xl shadow-2xl max-w-lg w-full h-[500px] flex flex-col overflow-hidden"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* 헤더 */}
@@ -117,8 +119,8 @@ export function MatchingFriendsModal({
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={`flex-1 py-3 px-4 text-sm font-medium transition-colors relative ${activeTab === tab.id
-                                            ? 'text-pink-600'
-                                            : 'text-gray-500 hover:text-gray-700'
+                                        ? 'text-pink-600'
+                                        : 'text-gray-500 hover:text-gray-700'
                                         }`}
                                 >
                                     <div className="flex items-center justify-center gap-1">
@@ -126,25 +128,22 @@ export function MatchingFriendsModal({
                                         <span>{tab.label}</span>
                                         {tab.count > 0 && (
                                             <span className={`ml-1 px-1.5 py-0.5 text-xs rounded-full ${activeTab === tab.id
-                                                    ? 'bg-pink-100 text-pink-600'
-                                                    : 'bg-gray-100 text-gray-500'
+                                                ? 'bg-pink-100 text-pink-600'
+                                                : 'bg-gray-100 text-gray-500'
                                                 }`}>
                                                 {tab.count}
                                             </span>
                                         )}
                                     </div>
                                     {activeTab === tab.id && (
-                                        <motion.div
-                                            layoutId="activeTab"
-                                            className="absolute bottom-0 left-0 right-0 h-0.5 bg-pink-500"
-                                        />
+                                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-pink-500" />
                                     )}
                                 </button>
                             ))}
                         </div>
 
                         {/* 컨텐츠 */}
-                        <div className="overflow-y-auto max-h-[calc(85vh-180px)]">
+                        <div className="flex-1 overflow-y-auto">
                             {/* 매칭된 친구 탭 */}
                             {activeTab === 'matched' && (
                                 <div className="p-4">
@@ -308,9 +307,15 @@ export function MatchingFriendsModal({
                                                             <p className="text-sm text-gray-500">{request.fromUserName}</p>
                                                             <p className="text-xs text-orange-500 mt-1">응답 대기 중...</p>
                                                         </div>
-                                                        <div className="text-xs text-gray-400">
-                                                            {formatTime(request.createdAt)}
-                                                        </div>
+                                                        <Button
+                                                            onClick={() => onCancelRequest(request.fromUserId)}
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="text-red-500 border-red-200 hover:bg-red-50 text-xs"
+                                                        >
+                                                            <X className="h-3 w-3 mr-1" />
+                                                            취소
+                                                        </Button>
                                                     </div>
                                                 </div>
                                             ))}

@@ -76,6 +76,7 @@ export default function PetMatePage() {
     rejectRequest,
     updateOnlineStatus,
     unfriend,
+    cancelRequest,
   } = usePetMate({
     userId: user?.id ? Number(user.id) : 1,
     initialFilter: userCoords ? {
@@ -952,6 +953,7 @@ export default function PetMatePage() {
         onAccept={acceptRequest}
         onReject={rejectRequest}
         onUnfriend={unfriend}
+        onCancelRequest={cancelRequest}
         onMatchSuccess={(result, request) => {
           setMatchedUser({
             id: request.matchId,

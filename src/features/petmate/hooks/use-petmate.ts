@@ -200,6 +200,27 @@ export function usePetMate({ userId, initialFilter }: UsePetMateOptions) {
         }
     }, [userId, fetchMatches]);
 
+    // Cancel sent request (unlike)
+    const cancelRequest = useCallback(async (toUserId: number): Promise<boolean> => {
+        try {
+            const success = await petMateApi.unlike({ fromUserId: userId, toUserId });
+            if (success) {
+                // Remove from likedUserIds and refresh sent requests
+                setLikedUserIds(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(toUserId);
+                    return newSet;
+                });
+                await fetchSentRequests();
+            }
+            return success;
+        } catch (err) {
+            console.error('Failed to cancel request:', err);
+            setError('요청 취소에 실패했습니다.');
+            return false;
+        }
+    }, [userId, fetchSentRequests]);
+
     // Initial fetch
     useEffect(() => {
         fetchCandidates(currentFilter);
@@ -239,5 +260,6 @@ export function usePetMate({ userId, initialFilter }: UsePetMateOptions) {
         sentRequests,
         fetchSentRequests,
         unfriend,
+        cancelRequest,
     };
 }
