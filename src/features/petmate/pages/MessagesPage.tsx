@@ -1,129 +1,233 @@
-import { useState } from "react";
-import { Search, MoreVertical, Phone, Video, Send } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
-import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import { Card } from "@/shared/ui/card";
-import { ScrollArea } from "@/shared/ui/scroll-area";
+import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/features/auth/context/auth-context';
+import { chatApi } from '../api/chat-api';
+import { useChatSocket } from '../hooks/use-chat-socket';
+// [수정] 사용하지 않는 ChatMessage 제거
+import { ChatRoom } from '../types/chat'; 
+import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
+import { Input } from '@/shared/ui/input';
+import { Button } from '@/shared/ui/button';
+import { ScrollArea } from '@/shared/ui/scroll-area';
+import { Send, ArrowLeft, MoreVertical, Loader2 } from 'lucide-react';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-// 펫메이트 메시지 페이지 (구 Social MessagesPage)
 export default function MessagesPage() {
-  const [selectedChat, setSelectedChat] = useState<number | null>(null);
+  const { user } = useAuth();
+  const currentUserId = Number(user?.id);
+  // [수정] 사용하지 않는 queryClient 제거
+  // const queryClient = useQueryClient(); 
+
+  const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
   
-  // 더미 데이터 (백엔드 연동 전)
-  const chats = [
-    { id: 1, name: "강형욱", message: "산책 언제 가실래요?", time: "방금 전", unread: 2, avatar: "/placeholder-user.jpg" },
-    { id: 2, name: "이효리", message: "우리 강아지가 너무 좋아해요!", time: "10분 전", unread: 0, avatar: "/placeholder-user.jpg" },
-  ];
+  const { data: chatRooms, isLoading: isRoomsLoading } = useQuery({
+    queryKey: ['chatRooms', currentUserId],
+    queryFn: () => chatApi.getMyChatRooms(currentUserId),
+    enabled: !!currentUserId,
+    refetchInterval: 5000,
+  });
+
+  // [수정] room 파라미터에 타입 명시 (room: ChatRoom)
+  const activeRoom = chatRooms?.find((room: ChatRoom) => room.id === selectedRoomId);
 
   return (
-    <div className="flex h-screen bg-[#FDFBFD] pt-16">
-      <div className="container max-w-6xl mx-auto flex h-[calc(100vh-5rem)] gap-6 p-4">
+    <div className="flex h-[calc(100vh-6rem)] w-full max-w-6xl mx-auto bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden my-4">
+      <div className={`w-full md:w-[320px] lg:w-[380px] border-r border-gray-100 flex flex-col ${selectedRoomId ? 'hidden md:flex' : 'flex'}`}>
+        <div className="p-5 border-b border-gray-50">
+          <h1 className="text-xl font-bold text-gray-900">메시지</h1>
+        </div>
         
-        {/* 채팅 목록 사이드바 */}
-        <Card className="w-80 flex flex-col border-none shadow-lg rounded-3xl overflow-hidden bg-white">
-          <div className="p-4 border-b">
-            <h2 className="font-bold text-xl mb-4">메시지</h2>
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-              <Input placeholder="검색..." className="pl-9 bg-gray-50 border-none rounded-xl" />
+        <ScrollArea className="flex-1">
+          {isRoomsLoading ? (
+            <div className="flex justify-center p-10"><Loader2 className="animate-spin text-gray-300" /></div>
+          ) : chatRooms?.length === 0 ? (
+            <div className="p-10 text-center text-gray-400 text-sm">
+              진행 중인 대화가 없습니다.<br/>펫메이트에서 친구를 찾아보세요! 🐾
             </div>
-          </div>
-          <ScrollArea className="flex-1">
-            <div className="p-2 space-y-1">
-              {chats.map((chat) => (
-                <div
-                  key={chat.id}
-                  onClick={() => setSelectedChat(chat.id)}
-                  className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer transition-colors ${
-                    selectedChat === chat.id ? "bg-[#FFF0F5]" : "hover:bg-gray-50"
+          ) : (
+            <div className="flex flex-col">
+              {/* [수정] room 파라미터에 타입 명시 (room: ChatRoom) */}
+              {chatRooms?.map((room: ChatRoom) => (
+                <button
+                  key={room.id}
+                  onClick={() => setSelectedRoomId(room.id)}
+                  className={`flex items-center gap-4 p-4 text-left transition-colors hover:bg-gray-50 ${
+                    selectedRoomId === room.id ? 'bg-[#FFF0F5] hover:bg-[#FFF0F5]' : ''
                   }`}
                 >
                   <div className="relative">
-                    <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
-                      <AvatarImage src={chat.avatar} />
-                      <AvatarFallback>{chat.name[0]}</AvatarFallback>
+                    <Avatar className="h-12 w-12 border border-gray-100">
+                      <AvatarImage src={room.otherUserAvatar || '/placeholder-user.jpg'} className="object-cover" />
+                      <AvatarFallback>{room.otherUserName[0]}</AvatarFallback>
                     </Avatar>
-                    {chat.unread > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-[#FF69B4] text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">
-                        {chat.unread}
+                    {room.unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border-2 border-white">
+                        {room.unreadCount > 99 ? '99+' : room.unreadCount}
                       </span>
                     )}
                   </div>
-                  <div className="flex-1 overflow-hidden">
-                    <div className="flex justify-between items-center mb-0.5">
-                      <span className="font-bold text-sm">{chat.name}</span>
-                      <span className="text-[10px] text-gray-400">{chat.time}</span>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-bold text-gray-900 truncate">{room.otherUserName}</span>
+                      {room.lastMessageAt && (
+                        <span className="text-[11px] text-gray-400 shrink-0">
+                          {format(new Date(room.lastMessageAt), 'M월 d일', { locale: ko })}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-xs text-gray-500 truncate">{chat.message}</p>
+                    <p className={`text-sm truncate ${room.unreadCount > 0 ? 'text-gray-900 font-semibold' : 'text-gray-500'}`}>
+                      {room.lastMessage || '대화를 시작해보세요!'}
+                    </p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
-          </ScrollArea>
-        </Card>
-
-        {/* 채팅방 영역 */}
-        <Card className="flex-1 flex flex-col border-none shadow-lg rounded-3xl overflow-hidden bg-white">
-          {selectedChat ? (
-            <>
-              <div className="p-4 border-b flex justify-between items-center bg-white">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src="/placeholder-user.jpg" />
-                    <AvatarFallback>U</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-bold text-sm">상대방 이름</div>
-                    <div className="text-xs text-green-500 flex items-center gap-1">
-                      <span className="w-2 h-2 bg-green-500 rounded-full"></span> 온라인
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="icon" className="rounded-full"><Phone className="h-5 w-5 text-gray-500" /></Button>
-                  <Button variant="ghost" size="icon" className="rounded-full"><Video className="h-5 w-5 text-gray-500" /></Button>
-                  <Button variant="ghost" size="icon" className="rounded-full"><MoreVertical className="h-5 w-5 text-gray-500" /></Button>
-                </div>
-              </div>
-              
-              <ScrollArea className="flex-1 p-4 bg-gray-50/50">
-                <div className="flex flex-col gap-4">
-                  {/* 더미 메시지 */}
-                  <div className="flex gap-3 justify-start">
-                    <div className="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-sm max-w-[70%] border border-gray-100">
-                      안녕하세요! 펫메이트 보고 연락드렸어요.
-                    </div>
-                    <span className="text-[10px] text-gray-400 self-end">10:00 AM</span>
-                  </div>
-                  <div className="flex gap-3 justify-end">
-                    <span className="text-[10px] text-gray-400 self-end">10:05 AM</span>
-                    <div className="bg-[#FF69B4] text-white p-3 rounded-2xl rounded-tr-none shadow-md shadow-pink-100 text-sm max-w-[70%]">
-                      네 안녕하세요! 반갑습니다 🐶
-                    </div>
-                  </div>
-                </div>
-              </ScrollArea>
-
-              <div className="p-4 bg-white border-t">
-                <div className="flex gap-2">
-                  <Input placeholder="메시지를 입력하세요..." className="rounded-xl border-gray-200 bg-gray-50 focus-visible:ring-[#FF69B4]" />
-                  <Button size="icon" className="bg-[#FF69B4] hover:bg-[#FF1493] rounded-xl shadow-lg shadow-pink-200">
-                    <Send className="h-5 w-5 text-white" />
-                  </Button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                <Send className="h-10 w-10 text-gray-300" />
-              </div>
-              <p>대화를 시작할 친구를 선택해주세요!</p>
-            </div>
           )}
-        </Card>
+        </ScrollArea>
+      </div>
+
+      <div className={`flex-1 flex flex-col bg-[#FDFBFD] ${!selectedRoomId ? 'hidden md:flex' : 'flex'}`}>
+        {selectedRoomId && activeRoom ? (
+          <ChatWindow 
+            roomId={selectedRoomId} 
+            userId={currentUserId} 
+            roomInfo={activeRoom} 
+            onBack={() => setSelectedRoomId(null)} 
+          />
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-4">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
+              <Send className="w-8 h-8 text-gray-300" />
+            </div>
+            <p>채팅방을 선택하여 대화를 시작하세요.</p>
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+// ... (ChatWindow 컴포넌트는 기존과 동일, 변경 필요 없음)
+// 하단 ChatWindow 함수는 그대로 두시면 됩니다.
+function ChatWindow({ roomId, userId, roomInfo, onBack }: { roomId: number, userId: number, roomInfo: ChatRoom, onBack: () => void }) {
+  // ... 기존 코드 유지 ...
+  const [input, setInput] = useState('');
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
+
+  const { data: historyMessages, isLoading } = useQuery({
+    queryKey: ['chatHistory', roomId],
+    queryFn: () => chatApi.getMessages(roomId, userId),
+    enabled: !!roomId,
+  });
+
+  const { realtimeMessages, sendMessage, connected } = useChatSocket(roomId, userId);
+
+  useEffect(() => {
+    if (roomId) {
+      chatApi.markAsRead(roomId, userId).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
+      });
+    }
+  }, [roomId, userId, queryClient]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [historyMessages, realtimeMessages]);
+
+  const handleSend = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || !connected) return;
+
+    const sent = sendMessage(input);
+    if (sent) {
+      setInput('');
+      queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
+    }
+  };
+
+  const allMessages = [...(historyMessages || []), ...realtimeMessages];
+
+  return (
+    <>
+      <div className="h-16 px-4 md:px-6 border-b border-gray-100 bg-white flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="md:hidden p-2 -ml-2 text-gray-600">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <Avatar className="h-9 w-9 border border-gray-100">
+            <AvatarImage src={roomInfo.otherUserAvatar || '/placeholder-user.jpg'} />
+            <AvatarFallback>{roomInfo.otherUserName[0]}</AvatarFallback>
+          </Avatar>
+          <div>
+            <h2 className="font-bold text-gray-900 text-sm">{roomInfo.otherUserName}</h2>
+            {connected && <p className="text-[10px] text-green-500 font-medium">● 실시간 연결됨</p>}
+          </div>
+        </div>
+        <button className="p-2 text-gray-400 hover:text-gray-600"><MoreVertical className="w-5 h-5" /></button>
+      </div>
+
+      <ScrollArea className="flex-1 p-4 bg-[#FDFBFD]">
+        {isLoading ? (
+          <div className="flex justify-center py-10"><Loader2 className="animate-spin text-[#FF69B4]" /></div>
+        ) : (
+          <div className="flex flex-col gap-3 pb-4">
+            {allMessages.map((msg, idx) => {
+              const isMe = msg.senderId === userId;
+              const showProfile = !isMe && (idx === 0 || allMessages[idx - 1].senderId !== msg.senderId);
+
+              return (
+                <div key={idx} className={`flex gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                  {!isMe && (
+                    <div className="w-8 shrink-0">
+                      {showProfile && (
+                        <Avatar className="h-8 w-8 mt-1">
+                          <AvatarImage src={roomInfo.otherUserAvatar || '/placeholder-user.jpg'} />
+                          <AvatarFallback>{roomInfo.otherUserName[0]}</AvatarFallback>
+                        </Avatar>
+                      )}
+                    </div>
+                  )}
+                  <div className={`max-w-[70%] px-4 py-2.5 rounded-[20px] text-sm leading-relaxed shadow-sm ${
+                    isMe 
+                      ? 'bg-[#FF69B4] text-white rounded-tr-none' 
+                      : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
+                  }`}>
+                    {msg.content}
+                  </div>
+                  <div className="text-[10px] text-gray-400 self-end mb-1 min-w-[40px]">
+                    {format(new Date(msg.createdAt), 'a h:mm', { locale: ko })}
+                  </div>
+                </div>
+              );
+            })}
+            <div ref={scrollRef} />
+          </div>
+        )}
+      </ScrollArea>
+
+      <div className="p-4 bg-white border-t border-gray-100 shrink-0">
+        <form onSubmit={handleSend} className="flex gap-2 relative">
+          <Input 
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="메시지를 입력하세요..."
+            className="rounded-full bg-gray-50 border-transparent focus:bg-white focus:border-[#FF69B4] pr-12 transition-all"
+          />
+          <Button 
+            type="submit" 
+            size="icon" 
+            disabled={!input.trim() || !connected}
+            className={`absolute right-1 top-1 h-8 w-8 rounded-full ${input.trim() ? 'bg-[#FF69B4] hover:bg-[#FF1493]' : 'bg-gray-200 text-gray-400'}`}
+          >
+            <Send className="w-4 h-4" />
+          </Button>
+        </form>
+      </div>
+    </>
   );
 }

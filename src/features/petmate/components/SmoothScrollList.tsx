@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useMemo } from 'react' // useMemo 추가
 import { motion, AnimatePresence } from 'framer-motion'
 import { PetMateCandidate } from '../api/petmate-api'
 import { MapPin, Star, Heart, ChevronUp, ChevronDown } from 'lucide-react'
@@ -15,48 +15,12 @@ interface SmoothScrollCardProps {
 
 export function SmoothScrollCard({ candidate, isLiked, onLike, onClick, isActive, position }: SmoothScrollCardProps) {
     const variants = {
-        prev2: {
-            y: -200,
-            scale: 0.75,
-            opacity: 0.4,
-            zIndex: 1,
-            filter: 'grayscale(80%)'
-        },
-        prev: {
-            y: -100,
-            scale: 0.85,
-            opacity: 0.6,
-            zIndex: 5,
-            filter: 'grayscale(50%)'
-        },
-        current: {
-            y: 0,
-            scale: 1.05,
-            opacity: 1,
-            zIndex: 10,
-            filter: 'grayscale(0%)'
-        },
-        next: {
-            y: 100,
-            scale: 0.85,
-            opacity: 0.6,
-            zIndex: 5,
-            filter: 'grayscale(50%)'
-        },
-        next2: {
-            y: 200,
-            scale: 0.75,
-            opacity: 0.4,
-            zIndex: 1,
-            filter: 'grayscale(80%)'
-        },
-        hidden: {
-            y: position === 'prev' || position === 'prev2' ? -250 : 250,
-            scale: 0.7,
-            opacity: 0,
-            zIndex: 0,
-            filter: 'grayscale(100%)'
-        }
+        prev2: { y: -200, scale: 0.75, opacity: 0.4, zIndex: 1, filter: 'grayscale(80%)' },
+        prev: { y: -100, scale: 0.85, opacity: 0.6, zIndex: 5, filter: 'grayscale(50%)' },
+        current: { y: 0, scale: 1.05, opacity: 1, zIndex: 10, filter: 'grayscale(0%)' },
+        next: { y: 100, scale: 0.85, opacity: 0.6, zIndex: 5, filter: 'grayscale(50%)' },
+        next2: { y: 200, scale: 0.75, opacity: 0.4, zIndex: 1, filter: 'grayscale(80%)' },
+        hidden: { y: position === 'prev' || position === 'prev2' ? -250 : 250, scale: 0.7, opacity: 0, zIndex: 0, filter: 'grayscale(100%)' }
     }
 
     return (
@@ -72,6 +36,7 @@ export function SmoothScrollCard({ candidate, isLiked, onLike, onClick, isActive
                 damping: 30,
                 mass: 0.8
             }}
+            layout // 위치 변경 시 부드러운 애니메이션을 위해 추가 권장
         >
             <div className={`bg-white rounded-2xl shadow-lg border-2 ${isActive ? 'border-pink-400 shadow-xl' : 'border-pink-100'} transition-colors overflow-hidden`}>
                 <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 p-4 sm:p-5">
@@ -142,6 +107,23 @@ export function SmoothScrollList({ candidates, isUserLiked, onLike, onSelect }: 
     const [currentIndex, setCurrentIndex] = useState(0)
     const containerRef = useRef<HTMLDivElement>(null)
 
+    // [수정] 중복된 userId를 가진 후보 제거 (Key 중복 오류 방지)
+    const uniqueCandidates = useMemo(() => {
+        const seen = new Set();
+        return candidates.filter(candidate => {
+            if (seen.has(candidate.userId)) return false;
+            seen.add(candidate.userId);
+            return true;
+        });
+    }, [candidates]);
+
+    // uniqueCandidates 길이가 줄어들었을 때 인덱스 범위 조정
+    useEffect(() => {
+        if (currentIndex >= uniqueCandidates.length && uniqueCandidates.length > 0) {
+            setCurrentIndex(uniqueCandidates.length - 1);
+        }
+    }, [uniqueCandidates.length, currentIndex]);
+
     // 마우스 휠 이벤트 핸들러
     useEffect(() => {
         const container = containerRef.current
@@ -157,7 +139,7 @@ export function SmoothScrollList({ candidates, isUserLiked, onLike, onSelect }: 
 
             if (e.deltaY > 0) {
                 // 아래로 스크롤 - 다음 카드
-                setCurrentIndex(prev => Math.min(prev + 1, candidates.length - 1))
+                setCurrentIndex(prev => Math.min(prev + 1, uniqueCandidates.length - 1))
             } else {
                 // 위로 스크롤 - 이전 카드
                 setCurrentIndex(prev => Math.max(prev - 1, 0))
@@ -170,13 +152,13 @@ export function SmoothScrollList({ candidates, isUserLiked, onLike, onSelect }: 
 
         container.addEventListener('wheel', handleWheel, { passive: false })
         return () => container.removeEventListener('wheel', handleWheel)
-    }, [candidates.length])
+    }, [uniqueCandidates.length]) // candidates -> uniqueCandidates
 
     // 키보드 이벤트
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-                setCurrentIndex(prev => Math.min(prev + 1, candidates.length - 1))
+                setCurrentIndex(prev => Math.min(prev + 1, uniqueCandidates.length - 1))
             } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
                 setCurrentIndex(prev => Math.max(prev - 1, 0))
             }
@@ -184,7 +166,7 @@ export function SmoothScrollList({ candidates, isUserLiked, onLike, onSelect }: 
 
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [candidates.length])
+    }, [uniqueCandidates.length]) // candidates -> uniqueCandidates
 
     const getPosition = (index: number): 'prev2' | 'prev' | 'current' | 'next' | 'next2' | 'hidden' => {
         const diff = index - currentIndex
@@ -197,7 +179,7 @@ export function SmoothScrollList({ candidates, isUserLiked, onLike, onSelect }: 
     }
 
     const goUp = () => setCurrentIndex(prev => Math.max(prev - 1, 0))
-    const goDown = () => setCurrentIndex(prev => Math.min(prev + 1, candidates.length - 1))
+    const goDown = () => setCurrentIndex(prev => Math.min(prev + 1, uniqueCandidates.length - 1))
 
     return (
         <div className="carousel-container" ref={containerRef}>
@@ -212,14 +194,14 @@ export function SmoothScrollList({ candidates, isUserLiked, onLike, onSelect }: 
 
             {/* 카드 컨테이너 */}
             <div className="relative h-[480px] flex items-center justify-center px-4">
-                <AnimatePresence mode="popLayout">
-                    {candidates.map((candidate, index) => {
+                <AnimatePresence mode="popLayout" initial={false}>
+                    {uniqueCandidates.map((candidate, index) => { // uniqueCandidates 사용
                         const position = getPosition(index)
                         if (position === 'hidden' && Math.abs(index - currentIndex) > 3) return null
 
                         return (
                             <SmoothScrollCard
-                                key={candidate.userId}
+                                key={candidate.userId} // 중복 제거되었으므로 안전
                                 candidate={candidate}
                                 isLiked={isUserLiked(candidate.userId)}
                                 onLike={(e) => {
@@ -238,15 +220,15 @@ export function SmoothScrollList({ candidates, isUserLiked, onLike, onSelect }: 
             {/* 아래로 버튼 */}
             <button
                 onClick={goDown}
-                disabled={currentIndex === candidates.length - 1}
-                className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-20 p-2 rounded-full bg-white/80 hover:bg-white shadow-lg transition-all ${currentIndex === candidates.length - 1 ? 'opacity-30 cursor-not-allowed' : 'opacity-100'}`}
+                disabled={currentIndex === uniqueCandidates.length - 1}
+                className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-20 p-2 rounded-full bg-white/80 hover:bg-white shadow-lg transition-all ${currentIndex === uniqueCandidates.length - 1 ? 'opacity-30 cursor-not-allowed' : 'opacity-100'}`}
             >
                 <ChevronDown className="h-6 w-6 text-pink-600" />
             </button>
 
             {/* 인디케이터 */}
             <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 z-20">
-                {candidates.map((_, index) => (
+                {uniqueCandidates.map((_, index) => (
                     <button
                         key={index}
                         onClick={() => setCurrentIndex(index)}
@@ -260,7 +242,7 @@ export function SmoothScrollList({ candidates, isUserLiked, onLike, onSelect }: 
 
             {/* 카운터 */}
             <div className="absolute bottom-4 right-4 text-sm font-medium text-gray-500 z-20">
-                {currentIndex + 1} / {candidates.length}
+                {currentIndex + 1} / {uniqueCandidates.length}
             </div>
         </div>
     )
