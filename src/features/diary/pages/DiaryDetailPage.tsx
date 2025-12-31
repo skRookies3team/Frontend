@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
+import html2canvas from "html2canvas"
+import jsPDF from "jspdf"
 import {
     Sparkles,
     Download,
@@ -10,7 +12,9 @@ import {
     Facebook,
     Instagram,
     Link as LinkIcon,
-    X
+    X,
+    FileText,
+    Image as ImageIcon
 } from "lucide-react"
 
 import { Button } from "@/shared/ui/button"
@@ -27,6 +31,8 @@ export default function DiaryDetailPage() {
     const [diary, setDiary] = useState<any | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [showShareModal, setShowShareModal] = useState(false)
+    const [showDownloadModal, setShowDownloadModal] = useState(false)
+    const [isDownloading, setIsDownloading] = useState(false)
 
     // Style settings
     const [styleSettings, setStyleSettings] = useState<any>(null)
@@ -133,6 +139,81 @@ export default function DiaryDetailPage() {
         setShowShareModal(false)
     }
 
+    const handleDownload = async (format: 'pdf' | 'image') => {
+        setIsDownloading(true)
+        try {
+            const element = document.getElementById('diary-preview')
+            if (!element) {
+                alert('다이어리를 찾을 수 없습니다.')
+                return
+            }
+
+            // Capture the element as canvas
+            const canvas = await html2canvas(element, {
+                scale: 2, // Higher quality
+                useCORS: true, // Allow cross-origin images
+                logging: false,
+                backgroundColor: '#ffffff',
+                onclone: (clonedDoc) => {
+                    // 1. 지도 요소 대체 (CORS 방지)
+                    const mapElement = clonedDoc.getElementById('map')
+                    if (mapElement) {
+                        const container = mapElement.parentElement
+                        if (container) {
+                            container.innerHTML = `
+                                <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #f3f4f6; color: #6b7280; font-weight: bold; font-family: sans-serif;">
+                                    📍 ${diary.locationName || '위치 정보'}
+                                </div>
+                            `
+                        }
+                    }
+
+                    // 2. S3 이미지 URL을 프록시 URL로 변경 (CORS 방지)
+                    const images = clonedDoc.getElementsByTagName('img')
+                    const s3Url = 'https://petlog-images-bucket.s3.ap-northeast-2.amazonaws.com'
+
+                    Array.from(images).forEach((img) => {
+                        if (img.src.includes(s3Url)) {
+                            // S3 URL을 로컬 프록시 URL로 변경
+                            img.src = img.src.replace(s3Url, '/s3-images')
+                            img.crossOrigin = 'anonymous' // CORS 요청 허용
+                        }
+                    })
+                }
+            })
+
+            if (format === 'pdf') {
+                // Create PDF
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                })
+
+                const imgWidth = 210 // A4 width in mm
+                const imgHeight = (canvas.height * imgWidth) / canvas.width
+
+                const imgData = canvas.toDataURL('image/png')
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight)
+                pdf.save(`diary-${diary.title || 'untitled'}.pdf`)
+            } else {
+                // Create Image
+                const link = document.createElement('a')
+                link.download = `diary-${diary.title || 'untitled'}.png`
+                link.href = canvas.toDataURL('image/png')
+                link.click()
+            }
+
+            setShowDownloadModal(false)
+            alert(`${format === 'pdf' ? 'PDF' : '이미지'} 다운로드가 완료되었습니다!`)
+        } catch (error) {
+            console.error('다운로드 실패:', error)
+            alert('다운로드 중 오류가 발생했습니다.')
+        } finally {
+            setIsDownloading(false)
+        }
+    }
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -174,23 +255,25 @@ export default function DiaryDetailPage() {
 
             {/* Content with DiaryPreview Component */}
             <div className="container max-w-4xl mx-auto px-4 py-8">
-                <DiaryPreview
-                    title={diary.title || "무제"}
-                    selectedImages={selectedImages}
-                    editedDiary={diary.content}
-                    weather={diary.weather}
-                    mood={diary.mood}
-                    locationName={diary.locationName}
-                    locationCoords={diary.latitude && diary.longitude ? { lat: diary.latitude, lng: diary.longitude } : null}
-                    selectedDate={diary.date}
-                    layoutStyle={styleSettings?.galleryType || "grid"}
-                    textAlign={styleSettings?.textAlignment || "left"}
-                    fontSize={styleSettings?.fontSize || 16}
-                    backgroundColor={styleSettings?.backgroundColor || "#ffffff"}
-                    sizeOption={styleSettings?.sizeOption || "medium"}
-                    themeStyle={styleSettings?.themeStyle || "basic"}
-                    preset={styleSettings?.preset || null}
-                />
+                <div id="diary-preview">
+                    <DiaryPreview
+                        title={diary.title || "무제"}
+                        selectedImages={selectedImages}
+                        editedDiary={diary.content}
+                        weather={diary.weather}
+                        mood={diary.mood}
+                        locationName={diary.locationName}
+                        locationCoords={diary.latitude && diary.longitude ? { lat: diary.latitude, lng: diary.longitude } : null}
+                        selectedDate={diary.date}
+                        layoutStyle={styleSettings?.galleryType || "grid"}
+                        textAlign={styleSettings?.textAlignment || "left"}
+                        fontSize={styleSettings?.fontSize || 16}
+                        backgroundColor={styleSettings?.backgroundColor || "#ffffff"}
+                        sizeOption={styleSettings?.sizeOption || "medium"}
+                        themeStyle={styleSettings?.themeStyle || "basic"}
+                        preset={styleSettings?.preset || null}
+                    />
+                </div>
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 mt-6 border-t pt-6">
@@ -210,9 +293,13 @@ export default function DiaryDetailPage() {
                         <Trash2 className="mr-2 h-5 w-5" />
                         삭제
                     </Button>
-                    <Button className="flex-1 text-base h-12">
+                    <Button
+                        className="flex-1 text-base h-12"
+                        onClick={() => setShowDownloadModal(true)}
+                        disabled={isDownloading}
+                    >
                         <Download className="mr-2 h-5 w-5" />
-                        다운로드
+                        {isDownloading ? '다운로드 중...' : '다운로드'}
                     </Button>
                     <Button
                         variant="outline"
@@ -290,6 +377,58 @@ export default function DiaryDetailPage() {
                                     <LinkIcon className="w-8 h-8 text-white" />
                                 </div>
                                 <span className="text-sm font-medium text-gray-600">Copy Link</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Download Format Selection Modal */}
+            {showDownloadModal && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 transition-opacity animate-in fade-in duration-200"
+                    onClick={() => setShowDownloadModal(false)}
+                >
+                    <div
+                        className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            onClick={() => setShowDownloadModal(false)}
+                            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                        >
+                            <X className="w-5 h-5 text-gray-400" />
+                        </button>
+
+                        <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">다운로드 형식 선택</h3>
+
+                        <div className="space-y-4">
+                            <button
+                                onClick={() => handleDownload('pdf')}
+                                disabled={isDownloading}
+                                className="w-full flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-gray-200 hover:border-red-400 hover:bg-red-50 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                    <FileText className="w-8 h-8 text-white" />
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-lg font-semibold text-gray-800">PDF로 저장</div>
+                                    <div className="text-sm text-gray-500 mt-1">인쇄 및 배포에 최적화</div>
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={() => handleDownload('image')}
+                                disabled={isDownloading}
+                                className="w-full flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                    <ImageIcon className="w-8 h-8 text-white" />
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-lg font-semibold text-gray-800">이미지로 저장</div>
+                                    <div className="text-sm text-gray-500 mt-1">SNS 공유 및 보관용</div>
+                                </div>
                             </button>
                         </div>
                     </div>
