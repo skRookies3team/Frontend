@@ -3,11 +3,11 @@ export interface ChatMessage {
   chatRoomId: number;
   senderId: number;
   senderName: string;
-  senderAvatar: string | null;
+  senderAvatar: string | null; // 백엔드에서 null 가능
   content: string;
   messageType: 'TEXT' | 'IMAGE' | 'SYSTEM';
   isRead: boolean;
-  createdAt: string;
+  createdAt: string; // ISO String
 }
 
 export interface ChatRoom {
@@ -17,8 +17,8 @@ export interface ChatRoom {
   otherUserAvatar: string | null;
   petName: string;
   petPhoto: string | null;
-  lastMessage: string | null;
-  lastMessageAt: string | null;
+  lastMessage: string | null;    // 메시지 없을 때 null 가능
+  lastMessageAt: string | null;  // 메시지 없을 때 null 가능
   unreadCount: number;
 }
 
