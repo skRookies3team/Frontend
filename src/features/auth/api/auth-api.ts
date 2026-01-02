@@ -227,3 +227,33 @@ export const getAllArchivesApi = async (): Promise<CreateArchiveDtoList> => {
     return response;
 };
 
+
+// 알람 DTO
+export interface GetNotificationDto {
+    notificationId: number;
+    userNotificationId: number;
+    senderId: number;
+    receiverId: number;
+    content: string;
+    title: string;
+    time: string; // LocalDateTime string
+    targetId: number;
+    isRead?: boolean; // May be serialized as 'read' by some libraries
+    read?: boolean;   // Standard Jackson serialization for boolean isRead
+    alarmType: 'FOLLOW' | 'LIKE' | 'MATCH' | 'COMMENT';
+}
+
+export interface GetNotificationListDto {
+    isEmpty: boolean;
+    notifications: GetNotificationDto[];
+}
+
+// 알람 조회 API
+export const getNotificationsApi = async (): Promise<GetNotificationListDto> => {
+    return await httpClient.get<GetNotificationListDto>('/notifications');
+};
+
+// 알람 읽음 처리 API
+export const readNotificationApi = async (userNotificationId: number): Promise<GetNotificationDto> => {
+    return await httpClient.patch<GetNotificationDto>(`/notifications/${userNotificationId}`, {});
+};
