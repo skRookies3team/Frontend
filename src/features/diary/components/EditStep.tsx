@@ -88,8 +88,10 @@ const EditStep = ({
     }, [userId]);
 
     const handleLocationSelect = (name: string, lat: number, lng: number) => {
+        console.log('📍 [Location Debug] Location selected:', { name, lat, lng });
         setLocationName(name);
         setLocationCoords({ lat, lng });
+        console.log('📍 [Location Debug] State setters called - locationName and locationCoords updated');
     };
 
     return (
