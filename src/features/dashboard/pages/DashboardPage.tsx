@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Button } from "@/shared/ui/button"
 import { useAuth } from "@/features/auth/context/auth-context"
+import { getUserApi, GetPetDto, getUserCoinApi } from "@/features/auth/api/auth-api"
 import {
   AlertCircle,
   MapPin,
@@ -21,6 +22,8 @@ import {
   ArrowUpRight,
   Link as LinkIcon,
   Award,
+  Cat,
+  Dog,
 } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Badge } from "@/shared/ui/badge"
@@ -134,6 +137,8 @@ export default function DashboardPage() {
   const [isAddingTodo, setIsAddingTodo] = useState(false)
   const [aiDiaries, setAiDiaries] = useState<DiaryResponse[]>([])
   const [isDiariesLoading, setIsDiariesLoading] = useState(true)
+  const [myPets, setMyPets] = useState<GetPetDto[]>([])
+  const [petCoin, setPetCoin] = useState<number>(0)
   const petsPerPage = 4
 
   useEffect(() => {
@@ -173,6 +178,34 @@ export default function DashboardPage() {
     fetchAiDiaries()
   }, [user?.id])
 
+  // 내 펫 정보 가져오기
+  useEffect(() => {
+    const fetchMyPets = async () => {
+      if (!user?.id) return
+      try {
+        const userData = await getUserApi(Number(user.id))
+        setMyPets(userData.pets)
+      } catch (error) {
+        console.error("Failed to fetch user pets:", error)
+      }
+    }
+    fetchMyPets()
+  }, [user?.id])
+
+  // 펫 코인 가져오기
+  useEffect(() => {
+    const fetchPetCoin = async () => {
+      if (!user?.id) return
+      try {
+        const coinData = await getUserCoinApi(Number(user.id))
+        setPetCoin(coinData.petCoin)
+      } catch (error) {
+        console.error("Failed to fetch pet coin:", error)
+      }
+    }
+    fetchPetCoin()
+  }, [user?.id])
+
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-pink-50/50 to-white flex items-center justify-center">
@@ -195,7 +228,7 @@ export default function DashboardPage() {
     setCurrentPage((prev) => (prev < totalPages - 1 ? prev + 1 : 0))
   }
 
-  const hasPets = user.pets && user.pets.length > 0
+  const hasPets = myPets && myPets.length > 0
 
   const handleConnectWithapet = () => {
     connectWithapet()
@@ -525,31 +558,48 @@ export default function DashboardPage() {
 
             <aside className="hidden lg:block space-y-6">
               {hasPets ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>나의 반려동물</CardTitle>
+                <Card className="border-pink-200 bg-gradient-to-br from-pink-50/50 to-white">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-lg text-pink-700">
+                      <Cat className="h-5 w-5" />
+                      나의 반려동물
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {user.pets.map((pet) => (
+                    {myPets.map((pet) => (
                       <div
-                        key={pet.id}
-                        className="flex items-center justify-between rounded-xl border border-border bg-muted/30 p-4 transition-all hover:shadow-md"
+                        key={pet.petId}
+                        className="flex items-center justify-between rounded-xl border border-pink-100 bg-white p-4 transition-all hover:shadow-md hover:border-pink-200"
                       >
                         <div className="flex items-center gap-4">
                           <img
-                            src={pet.photo || "/placeholder.svg"}
-                            alt={pet.name}
+                            src={pet.profileImage || "/placeholder.svg"}
+                            alt={pet.petName}
                             className="h-16 w-16 rounded-full object-cover"
                           />
                           <div>
-                            <h3 className="font-semibold text-foreground">{pet.name}</h3>
+                            <h3 className="font-semibold text-foreground">{pet.petName}</h3>
                             <p className="text-sm text-muted-foreground">
-                              {pet.breed} · {!pet.age && pet.age !== 0 ? '나이 미등록' : (String(pet.age).includes('개월') || String(pet.age).includes('살') ? pet.age : `${pet.age}세`)} · {pet.gender}
+                              {pet.breed} · {(() => {
+                                if (pet.birth) {
+                                  const today = new Date()
+                                  const [year, month, day] = pet.birth.split('-').map(Number)
+                                  const birthDate = new Date(year, month - 1, day)
+                                  let months = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth())
+                                  if (today.getDate() < birthDate.getDate()) {
+                                    months--
+                                  }
+                                  if (months < 12) {
+                                    return `${Math.max(0, months)}개월`
+                                  }
+                                }
+                                return !pet.age && pet.age !== 0 ? '나이 미등록' : `${pet.age}세`
+                              })()} · {pet.genderType === 'FEMALE' ? '여아' : '남아'}
                             </p>
-                            {pet.birthday && <p className="text-xs text-muted-foreground mt-1">생일: {pet.birthday}</p>}
+                            {pet.birth && <p className="text-xs text-muted-foreground mt-1">생일: {pet.birth}</p>}
                           </div>
                         </div>
-                        <Link to={`/profile/pet/${pet.id}?returnTo=/dashboard`}>
+                        <Link to={`/profile/pet/${pet.petId}?returnTo=/dashboard`}>
                           <Button variant="outline" size="sm">
                             프로필
                           </Button>
@@ -587,15 +637,15 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="text-center">
-                    <div className="text-3xl font-bold text-fuchsia-600 mb-1">{user.petCoin.toLocaleString()}</div>
+                    <div className="text-3xl font-bold text-fuchsia-600 mb-1">{petCoin.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">사용 가능한 코인</p>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
                       <span>다음 등급까지</span>
-                      <span className="font-medium">750 코인</span>
+                      <span className="font-medium">{Math.max(0, 500 - petCoin)} 코인</span>
                     </div>
-                    <Progress value={62} className="h-2" />
+                    <Progress value={Math.min(100, (petCoin / 500) * 100)} className="h-2" />
                   </div>
                   <div className="space-y-2 pt-2 border-t">
                     <h4 className="text-sm font-medium">코인 적립 방법</h4>
@@ -605,12 +655,8 @@ export default function DashboardPage() {
                         <span className="text-fuchsia-600 font-medium">+15</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span>• 첫 일기 보너스</span>
-                        <span className="text-fuchsia-600 font-medium">+50</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>• withapet 연동</span>
-                        <span className="text-fuchsia-600 font-medium">+100</span>
+                        <span>• 피드 공유</span>
+                        <span className="text-fuchsia-600 font-medium">+10</span>
                       </div>
                     </div>
                   </div>

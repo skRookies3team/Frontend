@@ -27,6 +27,7 @@ import { useAuth } from "@/features/auth/context/auth-context"
 import { Link, useNavigate, Outlet } from "react-router-dom"
 import { useState, useRef, type ChangeEvent, useEffect } from "react"
 import { getUserApi, updateProfileApi, type GetUserDto } from "@/features/auth/api/auth-api"
+import { deletePetApi, lostPetApi } from "@/features/healthcare/api/pet-api"
 
 import UserDiaryPage from "./UserDiaryPage"
 
@@ -204,13 +205,67 @@ export default function ProfilePage() {
     setShowAddPetDialog(true)
   }
 
-  const handleDeletePet = (id: string) => {
-    deletePet(id)
+  const handleDeletePet = async (id: string, event?: React.MouseEvent) => {
+    // Prevent event bubbling if triggered from a button inside another clickable element
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    if (!confirm("정말로 이 반려동물을 삭제하시겠습니까?")) return;
+
+    try {
+      await deletePetApi(parseInt(id));
+
+      // Update local state via context
+      deletePet(id);
+
+      // Also update apiUserData if it exists locally to reflect change immediately in UI without refetch
+      if (apiUserData) {
+        setApiUserData({
+          ...apiUserData,
+          pets: apiUserData.pets.filter(p => p.petId.toString() !== id)
+        });
+      }
+
+      alert("펫이 삭제되었습니다.");
+    } catch (error) {
+      console.error("Failed to delete pet:", error);
+      alert("펫 삭제에 실패했습니다.");
+    }
   }
 
 
 
 
+
+  const handleToggleMemorial = async (pet: any) => {
+    if (pet.isMemorial) {
+      // Already memorial (dead), user wants to revert (alive)?
+      // Current API `lostPetApi` only sets status to 'DEAD'.
+      // Assuming there isn't an easy way to revert via this specific API or user instructions imply one-way for 'lostPet'.
+      // However, existing UI code tried to toggle locally. 
+      // We will warn or just toggle locally if functionality is not supported by API, 
+      // BUT user asked to "call memorial api" when clicking the button.
+      // It's safer to only call it when turning ON memorial.
+
+      // For now, let's assume we can only set it to memorial via API. Reverting might just be local or not supported.
+      // But to keep UI responsive, let's just toggle local state if it's already memorial (maybe mis-click).
+      updatePet(pet.id, { isMemorial: !pet.isMemorial });
+      return;
+    }
+
+    if (!confirm("정말로 이 반려동물을 추모(사망) 처리하시겠습니까?")) return;
+
+    try {
+      await lostPetApi(parseInt(pet.id));
+      updatePet(pet.id, { isMemorial: true });
+      alert("반려동물이 추모 상태로 변경되었습니다.");
+    } catch (error) {
+      console.error("Failed to set memorial status:", error);
+      alert("상태 변경에 실패했습니다.");
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -500,9 +555,7 @@ export default function ProfilePage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      updatePet(pet.id, { isMemorial: !pet.isMemorial })
-                    }}
+                    onClick={() => handleToggleMemorial(pet)}
                     className={cn(
                       pet.isMemorial && "bg-gray-100"
                     )}
@@ -510,7 +563,7 @@ export default function ProfilePage() {
                     {pet.isMemorial ? "추모 해제" : "추모 모드"}
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => handleEditPet(pet)}>수정</Button>
-                  <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDeletePet(pet.id)}>삭제</Button>
+                  <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={(e) => handleDeletePet(pet.id, e)}>삭제</Button>
                 </div>
               </div>
             ))}

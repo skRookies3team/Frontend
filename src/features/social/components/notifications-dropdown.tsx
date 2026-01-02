@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Bell, Heart, MessageCircle, Users, Sparkles } from 'lucide-react'
+import { Bell, Heart, MessageCircle, Users, Sparkles, Calendar, BookOpen, Award } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,6 +57,12 @@ export function NotificationsDropdown() {
       navigate(`/feed?feedId=${notification.targetId}`);
     } else if (notification.alarmType === 'MATCH') {
       navigate(`/pet-mate?modal=requests`);
+    } else if (notification.alarmType === 'DIARY') {
+      navigate(`/ai-studio/diary/calendar`);
+    } else if (notification.alarmType === 'RECAP') {
+      navigate(`/ai-studio/recap`);
+    } else if (notification.alarmType === 'COIN') {
+      navigate(`/dashboard`);
     }
   };
 
@@ -71,6 +77,9 @@ export function NotificationsDropdown() {
       case 'LIKE': return { icon: Heart, color: 'text-pink-500' };
       case 'COMMENT': return { icon: MessageCircle, color: 'text-green-500' };
       case 'MATCH': return { icon: Sparkles, color: 'text-purple-500' };
+      case 'DIARY': return { icon: Calendar, color: 'text-blue-500' };
+      case 'RECAP': return { icon: BookOpen, color: 'text-orange-500' };
+      case 'COIN': return { icon: Award, color: 'text-yellow-500' };
       default: return { icon: Bell, color: 'text-gray-500' };
     }
   };

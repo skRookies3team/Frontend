@@ -240,7 +240,7 @@ export interface GetNotificationDto {
     targetId: number;
     isRead?: boolean; // May be serialized as 'read' by some libraries
     read?: boolean;   // Standard Jackson serialization for boolean isRead
-    alarmType: 'FOLLOW' | 'LIKE' | 'MATCH' | 'COMMENT';
+    alarmType: 'FOLLOW' | 'LIKE' | 'MATCH' | 'COMMENT'| 'DIARY' | 'RECAP' | 'COIN';
 }
 
 export interface GetNotificationListDto {
