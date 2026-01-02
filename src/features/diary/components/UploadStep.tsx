@@ -89,6 +89,21 @@ const UploadStep = ({
                 </div>
             ) : (
                 <div className="space-y-6">
+                    {/* Selected Images Count */}
+                    <div className="flex items-center justify-between">
+                        <p className="text-pink-600 font-bold text-lg">
+                            선택된 사진 {selectedImages.length}/10
+                        </p>
+                        <button
+                            onClick={() => setShowGallery(true)}
+                            disabled={isSubmitting}
+                            className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-green-400 text-green-600 rounded-xl font-bold hover:bg-green-50 transition-all shadow-sm"
+                        >
+                            <ImageIcon className="w-5 h-5" />
+                            보관함
+                        </button>
+                    </div>
+
                     <div className="rounded-2xl bg-pink-50 p-4 grid grid-cols-3 gap-3 md:grid-cols-5">
                         {selectedImages.map((image: any, index: number) => (
                             <div
@@ -96,6 +111,11 @@ const UploadStep = ({
                                 className={`relative aspect-square rounded-xl overflow-hidden group border-2 ${mainImageIndex === index ? 'border-yellow-400 ring-2 ring-yellow-200' : 'border-transparent'}`}
                             >
                                 <img src={image.imageUrl} alt="upload" className="w-full h-full object-cover" />
+
+                                {/* Source Badge (GALLERY or ARCHIVE) */}
+                                <div className={`absolute bottom-1 left-1 px-2 py-0.5 text-[10px] font-bold text-white rounded-md ${image.source === 'GALLERY' ? 'bg-blue-600' : 'bg-green-600'}`}>
+                                    {image.source === 'GALLERY' ? 'GALLERY' : 'ARCHIVE'}
+                                </div>
 
                                 {/* Main Image Selector (Star) */}
                                 <button
@@ -115,6 +135,9 @@ const UploadStep = ({
                                 )}
                             </div>
                         ))}
+
+
+                        {/* Upload More Button */}
                         <label className="flex items-center justify-center border-2 border-dashed border-pink-300 rounded-xl cursor-pointer hover:bg-white">
                             <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="hidden" />
                             <Upload className="text-pink-400" />
