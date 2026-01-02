@@ -9,6 +9,7 @@ import {
   earnCoin,
   createSocialFeed,
   createAiDiaryApi, // [NEW]
+  getWeatherApi, // [NEW] Weather API
 } from "../api/diary-api";
 
 import EditStep from '../components/EditStep';
@@ -76,6 +77,35 @@ const AiDiaryPage = () => {
 
   // 보관함 ID를 관리하기 위한 상태 정의
   const [archiveImages, setArchiveImages] = useState<{ archiveId: number, url: string }[]>([]);
+
+  // [NEW] 날씨 자동 업데이트 - 위치나 날짜 변경 시 백엔드에서 날씨 정보 가져오기
+  useEffect(() => {
+    console.log('🌤️ [Weather Debug] useEffect triggered');
+    console.log('🌤️ [Weather Debug] locationCoords:', locationCoords);
+    console.log('🌤️ [Weather Debug] selectedDate:', selectedDate);
+    console.log('🌤️ [Weather Debug] current weather state:', weather);
+
+    if (locationCoords && selectedDate) {
+      console.log(`🌤️ [Weather Debug] ✅ Conditions met - Fetching weather for ${selectedDate} at (${locationCoords.lat}, ${locationCoords.lng})`);
+      getWeatherApi(locationCoords.lat, locationCoords.lng, selectedDate)
+        .then(weatherData => {
+          console.log('🌤️ [Weather Debug] API Response:', weatherData);
+          if (weatherData) {
+            console.log(`🌤️ [Weather Debug] ✅ Updating weather state: ${weather} → ${weatherData}`);
+            setWeather(weatherData);
+          } else {
+            console.warn('🌤️ [Weather Debug] ⚠️ API returned null/empty weather data');
+          }
+        })
+        .catch(err => {
+          console.error('🌤️ [Weather Debug] ❌ Weather fetch error:', err);
+        });
+    } else {
+      console.warn('🌤️ [Weather Debug] ⚠️ Conditions not met for weather fetch');
+      if (!locationCoords) console.warn('🌤️ [Weather Debug]   - Missing locationCoords');
+      if (!selectedDate) console.warn('🌤️ [Weather Debug]   - Missing selectedDate');
+    }
+  }, [locationCoords, selectedDate]);
 
   // 보관함 이미지 불러오기
   useEffect(() => {

@@ -283,3 +283,17 @@ export const getAiDiariesApi = async (userId: number): Promise<DiaryResponse[]> 
         ] as DiaryResponse[];
     }
 };
+
+// [NEW] 날씨 조회 API - 위치와 날짜 기반 날씨 정보 가져오기
+export const getWeatherApi = async (latitude: number, longitude: number, date: string): Promise<string | null> => {
+    try {
+        const response = await httpClient.get<{ weather: string }>('/diaries/weather', {
+            params: { latitude, longitude, date }
+        });
+        console.log(`[getWeatherApi] Weather for ${date} at (${latitude}, ${longitude}):`, response.weather);
+        return response.weather;
+    } catch (error) {
+        console.error('[getWeatherApi] Failed to fetch weather:', error);
+        return null; // Return null on error, let UI handle fallback
+    }
+};
