@@ -107,7 +107,7 @@ const DiaryStylePage = () => {
                     archiveIds: previewArchiveIds,
                     // ✅ selectedImages에서 images 배열 생성
                     images: selectedImages.map((img, index) => ({
-                        imageUrl: img.imageUrl,
+                        imageUrl: previewImageUrls[index] || img.imageUrl, // ✅ S3 URL 우선
                         imgOrder: index + 1,
                         mainImage: index === mainImageIndex, // ✅ mainImageIndex 사용
                         source: img.source || 'ARCHIVE',
