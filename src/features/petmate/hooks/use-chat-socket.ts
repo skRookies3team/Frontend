@@ -25,7 +25,7 @@ export function useChatSocket(userId: number, currentRoomId: number | null) {
     const client = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000, // 자동 재연결 (5초)
-      debug: (str) => {
+      debug: (_str) => {
         // console.log('STOMP Debug:', str);
       },
       onConnect: () => {
