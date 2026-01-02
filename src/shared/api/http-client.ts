@@ -4,14 +4,13 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosRequestConfig, A
 const baseURL = import.meta.env.VITE_API_URL || '/api';
 
 let getTokenFunction: (() => string | null) | null = null;
-// [수정] User ID를 가져오는 함수 변수 추가
 let getUserIdFunction: (() => string | null) | null = null;
 
+// [기존 유지] 외부에서 함수 주입
 export const setTokenGetter = (fn: () => string | null) => {
     getTokenFunction = fn;
 };
 
-// [수정] User ID Getter 설정 함수 추가
 export const setUserIdGetter = (fn: () => string | null) => {
     getUserIdFunction = fn;
 };
@@ -28,33 +27,51 @@ const axiosInstance: AxiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
     (config: InternalAxiosRequestConfig & { skipAuth?: boolean }) => {
-        // [수정] headers 객체 안전성 보장
         if (!config.headers) {
             config.headers = {} as any;
         }
 
         if (!config.skipAuth) {
-            // 토큰 설정
+            // [수정] 1. 토큰 설정 로직 강화 (함수 -> 로컬스토리지 순서)
+            let token: string | null = null;
+            
+            // 1-1. 주입된 함수가 있으면 시도
             if (getTokenFunction) {
-                const token = getTokenFunction();
-                if (token) {
-                    config.headers.Authorization = `Bearer ${token}`;
-                }
+                token = getTokenFunction();
             }
             
-            // [수정] X-USER-ID 헤더 설정
+            // 1-2. 함수가 없거나 토큰을 못 찾았으면 localStorage 직접 확인 (새로고침 직후 대비)
+            if (!token) {
+                token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+            }
+
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
+            
+            // [수정] 2. User ID 설정 로직 강화
+            let userId: string | null = null;
+
             if (getUserIdFunction) {
-                const userId = getUserIdFunction();
-                if (userId) {
-                    config.headers['X-USER-ID'] = userId;
-                }
+                userId = getUserIdFunction();
+            }
+            
+            // 함수 실패 시 localStorage 확인
+            if (!userId) {
+                userId = localStorage.getItem('userId');
+            }
+
+            if (userId) {
+                config.headers['X-USER-ID'] = userId;
             }
 
             // 로그 출력 (디버깅)
             const tokenLog = config.headers.Authorization 
                 ? `Bearer ${String(config.headers.Authorization).substring(7, 17)}...` 
                 : 'No Token';
-            console.log(`[API Request] ${config.url} | Auth: ${tokenLog} | X-USER-ID: ${config.headers['X-USER-ID']}`);
+            
+            // 개발 환경에서만 로그 출력 권장 (선택사항)
+            console.log(`[API Request] ${config.url} | Auth: ${tokenLog} | X-USER-ID: ${config.headers['X-USER-ID'] || 'None'}`);
         }
         return config;
     },
@@ -64,7 +81,10 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
     (response) => response,
     async (error: AxiosError) => {
-        // 401 에러 처리 로직 (필요시 주석 해제하여 사용)
+        // 에러 로그 강화
+        if (error.response) {
+             console.error(`[API Error] ${error.response.status} ${error.config?.url}`, error.response.data);
+        }
         return Promise.reject(error);
     }
 );
