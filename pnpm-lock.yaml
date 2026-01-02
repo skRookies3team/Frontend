@@ -101,6 +101,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.90.12
         version: 5.90.12(react@18.3.1)
+      '@types/sockjs-client':
+        specifier: ^1.5.4
+        version: 1.5.4
       axios:
         specifier: ^1.13.2
         version: 1.13.2
@@ -1554,6 +1557,9 @@ packages:
 
   '@types/scheduler@0.26.0':
     resolution: {integrity: sha512-WFHp9YUJQ6CKshqoC37iOlHnQSmxNc795UhB26CyBBttrN9svdIrUjl/NjnNmfcwtncN0h/0PPAFWv9ovP8mLA==}
+
+  '@types/sockjs-client@1.5.4':
+    resolution: {integrity: sha512-zk+uFZeWyvJ5ZFkLIwoGA/DfJ+pYzcZ8eH4H/EILCm2OBZyHH6Hkdna1/UWL/CFruh5wj6ES7g75SvUB0VsH5w==}
 
   '@types/stats.js@0.17.4':
     resolution: {integrity: sha512-jIBvWWShCvlBqBNIZt0KAshWpvSjhkwkEu4ZUcASoAvhmrgAUI2t1dXrjSL4xXVLB4FznPrIsX3nKXFl/Dt4vA==}
@@ -4408,6 +4414,8 @@ snapshots:
       csstype: 3.2.3
 
   '@types/scheduler@0.26.0': {}
+
+  '@types/sockjs-client@1.5.4': {}
 
   '@types/stats.js@0.17.4': {}
 
