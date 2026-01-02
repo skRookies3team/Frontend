@@ -140,10 +140,15 @@ export default function PortfolioPage() {
               else if (d.images[0].imageUrl) firstImage = d.images[0].imageUrl;
             }
 
-            // [FIX] Rewrite S3 URL to use local proxy to bypass CORS
+            // Use proxy in development, direct S3 URL in production
             if (firstImage.includes('petlog-images-bucket.s3.ap-northeast-2.amazonaws.com')) {
-              firstImage = firstImage.replace('https://petlog-images-bucket.s3.ap-northeast-2.amazonaws.com', '/s3-images');
+              // In development, use proxy to bypass CORS
+              if (import.meta.env.DEV) {
+                firstImage = firstImage.replace('https://petlog-images-bucket.s3.ap-northeast-2.amazonaws.com', '/s3-images');
+              }
+              // In production, S3 URLs work directly with proper CORS settings
             }
+
 
             return {
               id: d.diaryId,
@@ -586,8 +591,8 @@ export default function PortfolioPage() {
                           <button
                             key={index}
                             className={`h-2.5 w-2.5 rounded-full transition-all ${index === currentImageIndex
-                                ? 'bg-white w-8'
-                                : 'bg-white/50 hover:bg-white/80'
+                              ? 'bg-white w-8'
+                              : 'bg-white/50 hover:bg-white/80'
                               }`}
                             onClick={(e) => {
                               e.stopPropagation()
