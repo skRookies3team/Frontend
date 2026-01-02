@@ -122,8 +122,8 @@ const DiaryUploadPage = () => {
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
-        if (imageFiles.length + files.length > 10) {
-            alert("최대 10장까지 업로드 가능합니다.");
+        if (imageFiles.length + files.length > 6) {
+            alert("최대 6장까지 업로드 가능합니다.");
             return;
         }
         setImageFiles(prev => [...prev, ...files]);
@@ -132,6 +132,7 @@ const DiaryUploadPage = () => {
             source: ImageSource.GALLERY,
             archiveId: null
         }));
+        console.log('[handleImageUpload] Adding GALLERY images:', newPreviews);
         setSelectedImages(prev => [...prev, ...newPreviews]);
         e.target.value = '';
     };
@@ -140,13 +141,30 @@ const DiaryUploadPage = () => {
         const isSelected = selectedImages.some(img => img.imageUrl === image.url);
         if (isSelected) {
             setSelectedImages(prev => prev.filter(img => img.imageUrl !== image.url));
-        } else if (selectedImages.length < 10) {
-            setSelectedImages(prev => [...prev, {
+        } else if (selectedImages.length < 6) {
+            const newArchiveImage = {
                 imageUrl: image.url,
                 source: ImageSource.ARCHIVE,
                 archiveId: image.archiveId
-            }]);
+            };
+            console.log('[handleSelectFromGallery] Adding ARCHIVE image:', newArchiveImage);
+            setSelectedImages(prev => [...prev, newArchiveImage]);
         }
+    };
+
+    const handleRemoveImage = (indexToRemove: number) => {
+        // Remove the image
+        setSelectedImages(prev => prev.filter((_, i) => i !== indexToRemove));
+
+        // Adjust mainImageIndex
+        if (indexToRemove === mainImageIndex) {
+            // If removing the main image, set the first remaining image as main
+            setMainImageIndex(0);
+        } else if (indexToRemove < mainImageIndex) {
+            // If removing an image before the main image, decrement mainImageIndex
+            setMainImageIndex(mainImageIndex - 1);
+        }
+        // If removing an image after mainImageIndex, no adjustment needed
     };
 
     const handleGenerate = async () => {
@@ -253,6 +271,13 @@ const DiaryUploadPage = () => {
                 source: img.source,
                 archiveId: img.archiveId || null
             }));
+
+            console.log('[DiaryUploadPage] Images DTO being sent to backend:', {
+                mainImageIndex,
+                totalImages: selectedImages.length,
+                imagesDto
+            });
+
             formData.append("images", new Blob([JSON.stringify(imagesDto)], { type: "application/json" }));
 
             // API Call
@@ -276,6 +301,7 @@ const DiaryUploadPage = () => {
                 locationName: previewData.locationName || resolvedLocationName,
                 locationCoords: location ? { lat: location.lat, lng: location.lng } : null,
                 selectedImages: selectedImages, // Keep original images for display
+                mainImageIndex: mainImageIndex, // ✅ 대표 이미지 인덱스 저장
 
                 // [NEW] Persist Backend-generated IDs for final save
                 previewImageUrls: previewData.imageUrls || [],
@@ -329,7 +355,7 @@ const DiaryUploadPage = () => {
                         isSubmitting={isSubmitting}
                         handleImageUpload={handleImageUpload}
                         handleGenerate={handleGenerate}
-                        setSelectedImages={setSelectedImages}
+                        handleRemoveImage={handleRemoveImage}
                         setShowGallery={setShowGallery}
                         pets={pets}
                         selectedPetId={selectedPetId}

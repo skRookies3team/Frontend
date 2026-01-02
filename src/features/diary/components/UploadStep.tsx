@@ -10,7 +10,7 @@ interface UploadStepProps {
     isSubmitting: boolean;
     handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
     handleGenerate: () => void;
-    setSelectedImages: (images: any[]) => void;
+    handleRemoveImage: (index: number) => void;
     setShowGallery: (show: boolean) => void;
     pets: any[];
     selectedPetId: number | null;
@@ -22,7 +22,7 @@ interface UploadStepProps {
 }
 
 const UploadStep = ({
-    selectedImages, isSubmitting, handleImageUpload, handleGenerate, setSelectedImages, setShowGallery,
+    selectedImages, isSubmitting, handleImageUpload, handleGenerate, handleRemoveImage, setShowGallery,
     pets, selectedPetId, setSelectedPetId, selectedDate, setSelectedDate, mainImageIndex, setMainImageIndex
 }: UploadStepProps) => (
     <div className="space-y-6 animate-fade-in">
@@ -81,7 +81,10 @@ const UploadStep = ({
                         <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shadow-lg">
                             <Icon className="h-10 w-10 text-white"><Upload /></Icon>
                         </div>
-                        <p className="text-xl font-bold text-pink-600">{isSubmitting ? '업로드 중...' : '사진 선택하기'}</p>
+                        <div className="text-center">
+                            <p className="text-xl font-bold text-pink-600 mb-2">{isSubmitting ? '업로드 중...' : '사진 선택하기'}</p>
+                            <p className="text-sm text-gray-500">최대 6장까지 업로드 가능 • JPG, PNG</p>
+                        </div>
                     </label>
                     <button onClick={() => setShowGallery(true)} disabled={isSubmitting} className="w-full border-2 border-pink-300 text-pink-600 py-3 rounded-full font-bold hover:bg-pink-50 flex items-center justify-center gap-2">
                         <Icon className="w-5 h-5"><ImageIcon /></Icon> 보관함에서 선택하기
@@ -89,6 +92,21 @@ const UploadStep = ({
                 </div>
             ) : (
                 <div className="space-y-6">
+                    {/* Selected Images Count */}
+                    <div className="flex items-center justify-between">
+                        <p className="text-pink-600 font-bold text-lg">
+                            선택된 사진 {selectedImages.length}/6
+                        </p>
+                        <button
+                            onClick={() => setShowGallery(true)}
+                            disabled={isSubmitting}
+                            className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-green-400 text-green-600 rounded-xl font-bold hover:bg-green-50 transition-all shadow-sm"
+                        >
+                            <ImageIcon className="w-5 h-5" />
+                            보관함
+                        </button>
+                    </div>
+
                     <div className="rounded-2xl bg-pink-50 p-4 grid grid-cols-3 gap-3 md:grid-cols-5">
                         {selectedImages.map((image: any, index: number) => (
                             <div
@@ -97,16 +115,24 @@ const UploadStep = ({
                             >
                                 <img src={image.imageUrl} alt="upload" className="w-full h-full object-cover" />
 
+                                {/* Source Badge (GALLERY or ARCHIVE) */}
+                                <div className={`absolute bottom-1 left-1 px-2 py-0.5 text-[10px] font-bold text-white rounded-md ${image.source === 'GALLERY' ? 'bg-blue-600' : 'bg-green-600'}`}>
+                                    {image.source === 'GALLERY' ? 'GALLERY' : 'ARCHIVE'}
+                                </div>
+
                                 {/* Main Image Selector (Star) */}
                                 <button
-                                    onClick={() => setMainImageIndex(index)}
+                                    onClick={() => {
+                                        console.log('[UploadStep] Setting main image index to:', index, 'Image:', image);
+                                        setMainImageIndex(index);
+                                    }}
                                     className={`absolute top-1 left-1 p-1 rounded-full backdrop-blur-sm transition-all ${mainImageIndex === index ? 'bg-yellow-400 text-white' : 'bg-black/30 text-white/70 hover:bg-yellow-400 hover:text-white'}`}
                                     title="대표 이미지로 설정"
                                 >
                                     <Star className={`w-3.5 h-3.5 ${mainImageIndex === index ? 'fill-current' : ''}`} />
                                 </button>
 
-                                <button onClick={() => setSelectedImages(selectedImages.filter((_: any, i: number) => i !== index))} className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1"><X className="w-3 h-3" /></button>
+                                <button onClick={() => handleRemoveImage(index)} className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1"><X className="w-3 h-3" /></button>
 
                                 {mainImageIndex === index && (
                                     <div className="absolute bottom-0 inset-x-0 bg-yellow-400/90 text-white text-[10px] font-bold text-center py-0.5">
@@ -115,6 +141,9 @@ const UploadStep = ({
                                 )}
                             </div>
                         ))}
+
+
+                        {/* Upload More Button */}
                         <label className="flex items-center justify-center border-2 border-dashed border-pink-300 rounded-xl cursor-pointer hover:bg-white">
                             <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="hidden" />
                             <Upload className="text-pink-400" />
