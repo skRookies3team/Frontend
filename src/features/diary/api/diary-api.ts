@@ -31,8 +31,9 @@ export const generateAiDiaryContent = (): Promise<string> => {
 
 export const createAiDiary = async (data: FormData): Promise<CreateDiaryResponse> => {
     const token = localStorage.getItem('petlog_token');
+    const API_URL = import.meta.env.VITE_API_URL || '/api';
 
-    const response = await fetch('http://localhost:8000/api/diaries/ai', {
+    const response = await fetch(`${API_URL}/diaries/ai`, {
         method: 'POST',
         headers: {
             'Authorization': token ? `Bearer ${token}` : ''
@@ -53,7 +54,8 @@ export const createAiDiary = async (data: FormData): Promise<CreateDiaryResponse
 
 export const getDiary = async (diaryId: number): Promise<any> => {
     const token = localStorage.getItem('petlog_token');
-    const response = await fetch(`http://localhost:8000/api/diaries/${diaryId}`, {
+    const API_URL = import.meta.env.VITE_API_URL || '/api';
+    const response = await fetch(`${API_URL}/diaries/${diaryId}`, {
         method: 'GET',
         headers: {
             'Authorization': token ? `Bearer ${token}` : ''
@@ -66,7 +68,8 @@ export const getDiary = async (diaryId: number): Promise<any> => {
 
 export const updateDiary = async (diaryId: number, data: { content?: string; visibility?: string; mood?: string }): Promise<void> => {
     const token = localStorage.getItem('petlog_token');
-    const response = await fetch(`http://localhost:8000/api/diaries/${diaryId}`, {
+    const API_URL = import.meta.env.VITE_API_URL || '/api';
+    const response = await fetch(`${API_URL}/diaries/${diaryId}`, {
         method: 'PATCH',
         headers: {
             'Content-Type': 'application/json',
@@ -281,5 +284,19 @@ export const getAiDiariesApi = async (userId: number): Promise<DiaryResponse[]> 
                 createdAt: "2024-12-27T16:00:00"
             }
         ] as DiaryResponse[];
+    }
+};
+
+// [NEW] 날씨 조회 API - 위치와 날짜 기반 날씨 정보 가져오기
+export const getWeatherApi = async (latitude: number, longitude: number, date: string): Promise<string | null> => {
+    try {
+        const response = await httpClient.get<{ weather: string }>('/diaries/weather', {
+            params: { latitude, longitude, date }
+        });
+        console.log(`[getWeatherApi] Weather for ${date} at (${latitude}, ${longitude}):`, response.weather);
+        return response.weather;
+    } catch (error) {
+        console.error('[getWeatherApi] Failed to fetch weather:', error);
+        return null; // Return null on error, let UI handle fallback
     }
 };

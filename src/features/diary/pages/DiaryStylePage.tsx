@@ -60,6 +60,15 @@ const DiaryStylePage = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [earnedReward, setEarnedReward] = useState<number | null>(null);
 
+    // ✅ S3 URL로 변환된 이미지 배열 (미리보기용)
+    const displayImages = (() => {
+        const previewImageUrls = getSavedState('previewImageUrls', []);
+        return selectedImages.map((img, index) => ({
+            ...img,
+            imageUrl: previewImageUrls[index] || img.imageUrl // S3 URL 우선
+        }));
+    })();
+
     const handleBack = () => {
         if (step === 'complete') {
             navigate('/ai-studio/diary/calendar'); // Or home?
@@ -86,6 +95,7 @@ const DiaryStylePage = () => {
                 // Get Preview IDs from storage
                 const previewImageUrls = getSavedState('previewImageUrls', []);
                 const previewArchiveIds = getSavedState('previewArchiveIds', []);
+                const mainImageIndex = getSavedState('mainImageIndex', 0); // ✅ 대표 이미지 인덱스
 
                 // Construct Request JSON
                 const requestData = {
@@ -104,13 +114,42 @@ const DiaryStylePage = () => {
                     locationName: locationName,
                     imageUrls: previewImageUrls,
                     archiveIds: previewArchiveIds,
-                    images: []
+                    // ✅ selectedImages에서 images 배열 생성
+                    images: selectedImages.map((img, index) => ({
+                        imageUrl: previewImageUrls[index] || img.imageUrl, // ✅ S3 URL 우선
+                        imgOrder: index + 1,
+                        mainImage: index === mainImageIndex, // ✅ mainImageIndex 사용
+                        source: img.source || 'ARCHIVE',
+                        archiveId: img.archiveId || null,
+                        metadata: img.metadata || null // ✅ EXIF 메타데이터 포함
+                    }))
                 };
+
+                console.log('=== [DiaryStylePage] 최종 일기 생성 요청 데이터 ===');
+                console.log('[DiaryStylePage] requestData:', JSON.stringify(requestData, null, 2));
+
+                // 메타데이터 포함 여부 확인
+                const imagesWithMetadata = requestData.images.filter(img => img.metadata);
+                if (imagesWithMetadata.length > 0) {
+                    console.log('=== [FINAL METADATA] 최종 전송될 메타데이터 ===');
+                    imagesWithMetadata.forEach((img, idx) => {
+                        console.log(`[FINAL METADATA] Image ${idx + 1}:`, {
+                            imgOrder: img.imgOrder,
+                            mainImage: img.mainImage,
+                            source: img.source,
+                            metadata: img.metadata
+                        });
+                    });
+                } else {
+                    console.log('[FINAL METADATA] ⚠️ 최종 요청에 메타데이터가 없습니다.');
+                }
 
                 // Use the Real Create API (JSON)
                 const { createAiDiaryApi } = await import("../api/diary-api");
+                console.log('[DiaryStylePage] 📤 백엔드로 일기 생성 요청 전송 중...');
                 // Response is now just the ID (number)
                 const responseId = await createAiDiaryApi(requestData);
+                console.log('[DiaryStylePage] ✅ 일기 생성 성공! DiaryId:', responseId);
                 finalDiaryId = responseId;
 
                 // Update State
@@ -206,7 +245,7 @@ const DiaryStylePage = () => {
             <main className="container mx-auto max-w-7xl p-4 md:p-6">
                 {step === 'style' && (
                     <StyleStep
-                        selectedImages={selectedImages} editedDiary={editedDiary}
+                        selectedImages={displayImages} editedDiary={editedDiary}
                         weather={weather} mood={mood} locationName={locationName} locationCoords={locationCoords}
                         selectedDate={selectedDate}
                         layoutStyle={layoutStyle} setLayoutStyle={setLayoutStyle}

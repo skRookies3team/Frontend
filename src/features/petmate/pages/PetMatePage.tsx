@@ -62,6 +62,10 @@ export default function PetMatePage() {
   const [selectedCandidate, setSelectedCandidate] = useState<PetMateCandidate | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
 
+  // 채팅방 ID 상태 (매칭 성공 시 사용)
+  const [chatRoomIdFromMatch, setChatRoomIdFromMatch] = useState<number | null>(null)
+  const [requestsModalOpen, setRequestsModalOpen] = useState(false)
+
   // Use the PetMate hook - 실제 API 사용
   const {
     candidates,
@@ -88,9 +92,6 @@ export default function PetMatePage() {
     } : undefined
   })
 
-  const [chatRoomIdFromMatch, setChatRoomIdFromMatch] = useState<number | null>(null)
-  const [requestsModalOpen, setRequestsModalOpen] = useState(false)
-
   const hasNoCandidates = candidates.length === 0
 
   // 초기 위치 가져오기 (저장된 위치 우선, 없으면 GPS)
@@ -106,7 +107,6 @@ export default function PetMatePage() {
               longitude: savedLocation.longitude
             })
             setCurrentLocation(savedLocation.location || '저장된 위치')
-            console.log('저장된 기본 위치를 불러왔습니다.')
             return // 저장된 위치가 있으면 GPS 호출 안 함
           }
         } catch (error) {
@@ -127,7 +127,6 @@ export default function PetMatePage() {
             try {
               const addressInfo = await petMateApi.getAddressFromCoords(coords.longitude, coords.latitude)
               if (addressInfo) {
-                // buildingName이 있으면 건물명 표시, 없으면 fullAddress 표시
                 const displayLocation = addressInfo.buildingName || addressInfo.fullAddress
                 setCurrentLocation(displayLocation)
                 // 위치 정보를 DB에 저장 (기본 위치로 설정)
@@ -138,7 +137,6 @@ export default function PetMatePage() {
                     coords.longitude,
                     displayLocation
                   )
-                  console.log('GPS 위치가 기본 위치로 저장되었습니다.')
                 }
               }
             } catch (error) {
@@ -161,6 +159,7 @@ export default function PetMatePage() {
     const result = await toggleLike(candidate.userId)
     if (result?.action === 'matched') {
       setMatchedUser(candidate)
+      // [중요] 매칭 결과에 채팅방 ID가 있으면 설정
       if (result.matchResult?.chatRoomId) {
         setChatRoomIdFromMatch(result.matchResult.chatRoomId)
       }
@@ -180,7 +179,6 @@ export default function PetMatePage() {
     if (!navigator.geolocation) {
       setIsLocationLoading(false)
       toast.error('이 브라우저에서는 위치 서비스를 지원하지 않습니다.')
-      alert('이 브라우저에서는 위치 서비스를 지원하지 않습니다.')
       return
     }
 
@@ -195,7 +193,6 @@ export default function PetMatePage() {
         try {
           const addressInfo = await petMateApi.getAddressFromCoords(coords.longitude, coords.latitude)
           if (addressInfo) {
-            // buildingName이 있으면 건물명 표시, 없으면 fullAddress 표시
             const displayLocation = addressInfo.buildingName || addressInfo.fullAddress
             setCurrentLocation(displayLocation)
             // 위치 정보를 DB에 저장
@@ -220,22 +217,7 @@ export default function PetMatePage() {
       (error) => {
         setIsLocationLoading(false)
         console.error('Geolocation error:', error)
-
-        let errorMessage = '위치를 찾을 수 없습니다.'
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = '위치 권한이 거부되었습니다. 브라우저 설정에서 위치 권한을 허용해주세요.'
-            break
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = '위치를 찾을 수 없습니다. GPS가 켜져있는지 확인해주세요.'
-            break
-          case error.TIMEOUT:
-            errorMessage = '위치 요청 시간이 초과되었습니다. 다시 시도해주세요.'
-            break
-        }
-
-        toast.error(errorMessage)
-        alert(errorMessage)
+        toast.error('위치를 찾을 수 없습니다.')
       },
       {
         enableHighAccuracy: false,
@@ -263,7 +245,6 @@ export default function PetMatePage() {
 
   // 검색 결과 선택
   const handleSelectSearchResult = async (result: SearchAddressResult) => {
-    // buildingName이 있으면 건물명 표시, 없으면 addressName 표시
     const displayLocation = result.buildingName || result.addressName
     setCurrentLocation(displayLocation)
     setUserCoords({ latitude: result.latitude, longitude: result.longitude })
@@ -280,7 +261,6 @@ export default function PetMatePage() {
           result.longitude,
           displayLocation
         )
-        console.log('검색 위치가 DB에 저장되었습니다.')
       } catch (error) {
         console.error('Failed to save location:', error)
       }
@@ -327,7 +307,7 @@ export default function PetMatePage() {
     await updateOnlineStatus(newStatus)
     if (newStatus) {
       toast.success('온라인 상태로 전환되었습니다')
-      handleRefresh() // 온라인 전환 시 목록 새로고침
+      handleRefresh()
     } else {
       toast.info('오프라인 상태로 전환되었습니다')
     }
@@ -335,7 +315,7 @@ export default function PetMatePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-orange-50 pt-8 pb-12">
-      {/* 제목 - 항상 중앙 */}
+      {/* 제목 */}
       <div className="text-center mb-6 px-4">
         <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 via-rose-600 to-orange-600 bg-clip-text text-transparent mb-3">
           펫메이트 찾기
@@ -343,10 +323,9 @@ export default function PetMatePage() {
         <p className="text-gray-600 text-xl">우리 동네 반려동물 친구를 만나보세요 🐾</p>
       </div>
 
-      {/* 모바일용 사이드바 - 제목과 콘텐츠 사이 */}
+      {/* 모바일용 사이드바 */}
       <div className="lg:hidden px-4 mb-6">
         <div className="space-y-4">
-          {/* 매칭 상태 */}
           <Card
             className={`p-4 cursor-pointer transition-all hover:shadow-lg ${isOnline
               ? "bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300"
@@ -366,7 +345,6 @@ export default function PetMatePage() {
             </div>
           </Card>
 
-          {/* 위치 설정 */}
           <Card
             className="p-4 bg-white border-2 border-blue-200 cursor-pointer transition-all hover:shadow-lg hover:border-blue-400"
             onClick={() => setLocationModalOpen(true)}
@@ -382,7 +360,6 @@ export default function PetMatePage() {
             </div>
           </Card>
 
-          {/* 필터 설정 */}
           <Card
             className="p-4 bg-white border-2 border-purple-200 cursor-pointer transition-all hover:shadow-lg hover:border-purple-400"
             onClick={() => setFilterModalOpen(true)}
@@ -400,7 +377,6 @@ export default function PetMatePage() {
             </div>
           </Card>
 
-          {/* 새로운 사용자 불러오기 */}
           <Card
             className={`p-4 bg-white border-2 border-pink-200 cursor-pointer transition-all hover:shadow-lg hover:border-pink-400 ${isRefreshing ? 'opacity-50' : ''}`}
             onClick={handleRefresh}
@@ -416,7 +392,6 @@ export default function PetMatePage() {
             </div>
           </Card>
 
-          {/* 매칭친구 */}
           <Card
             className="p-4 bg-white border-2 border-orange-200 cursor-pointer transition-all hover:shadow-lg hover:border-orange-400 relative"
             onClick={() => setRequestsModalOpen(true)}
@@ -441,10 +416,9 @@ export default function PetMatePage() {
 
       {/* 메인 레이아웃 */}
       <div className="relative max-w-7xl mx-auto px-4">
-        {/* 사이드바 - 콘텐츠 왼쪽에 고정 */}
+        {/* 데스크탑 사이드바 */}
         <div className="hidden lg:block lg:absolute lg:right-[calc(50%+400px)] lg:top-0 lg:w-72">
           <div className="lg:sticky lg:top-24 space-y-4">
-            {/* 매칭 상태 */}
             <Card
               className={`p-4 cursor-pointer transition-all hover:shadow-lg ${isOnline
                 ? "bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300"
@@ -464,7 +438,6 @@ export default function PetMatePage() {
               </div>
             </Card>
 
-            {/* 위치 설정 */}
             <Card
               className="p-4 bg-white border-2 border-blue-200 cursor-pointer transition-all hover:shadow-lg hover:border-blue-400"
               onClick={() => setLocationModalOpen(true)}
@@ -480,7 +453,6 @@ export default function PetMatePage() {
               </div>
             </Card>
 
-            {/* 필터 설정 */}
             <Card
               className="p-4 bg-white border-2 border-purple-200 cursor-pointer transition-all hover:shadow-lg hover:border-purple-400"
               onClick={() => setFilterModalOpen(true)}
@@ -498,7 +470,6 @@ export default function PetMatePage() {
               </div>
             </Card>
 
-            {/* 새로운 사용자 불러오기 */}
             <Card
               className={`p-4 bg-white border-2 border-pink-200 cursor-pointer transition-all hover:shadow-lg hover:border-pink-400 ${isRefreshing ? 'opacity-50' : ''}`}
               onClick={handleRefresh}
@@ -514,7 +485,6 @@ export default function PetMatePage() {
               </div>
             </Card>
 
-            {/* 요청 알림함 */}
             <Card
               className="p-4 bg-white border-2 border-orange-200 cursor-pointer transition-all hover:shadow-lg hover:border-orange-400 relative"
               onClick={() => setRequestsModalOpen(true)}
@@ -537,10 +507,9 @@ export default function PetMatePage() {
           </div>
         </div>
 
-        {/* 메인 콘텐츠 - 제목과 중앙 정렬 */}
+        {/* 메인 콘텐츠 */}
         <div className="w-full max-w-2xl mx-auto">
           {!isOnline ? (
-            /* 오프라인 상태일 때 */
             <Card className="p-12 text-center shadow-2xl border-2 border-gray-200 bg-gray-50 h-full flex flex-col items-center justify-center min-h-[600px]">
               <div className="mb-6 mx-auto w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center shadow-lg">
                 <Power className="h-12 w-12 text-gray-400" />
@@ -561,7 +530,6 @@ export default function PetMatePage() {
               </Button>
             </Card>
           ) : hasNoCandidates ? (
-            /* 조건에 맞는 펫메이트가 없을 때 */
             <Card className="p-12 text-center shadow-2xl border-2 border-pink-200 bg-white h-full flex flex-col items-center justify-center min-h-[600px]">
               <div className="mb-6 mx-auto w-24 h-24 rounded-full bg-gradient-to-br from-pink-100 via-rose-100 to-orange-100 flex items-center justify-center shadow-lg">
                 <Sparkles className="h-12 w-12 text-pink-500" />
@@ -583,9 +551,7 @@ export default function PetMatePage() {
               </Button>
             </Card>
           ) : (
-            /* Smooth Scroll 리스트 */
             <div className="space-y-4">
-              {/* AI 매칭 정보 - 상단 */}
               <Card className="p-4 bg-white border-2 border-pink-200 shadow-lg">
                 <div className="flex items-center justify-center gap-3">
                   <Sparkles className="h-5 w-5 text-pink-500" />
@@ -595,7 +561,6 @@ export default function PetMatePage() {
                 </div>
               </Card>
 
-              {/* Smooth Scroll 리스트 */}
               <SmoothScrollList
                 candidates={candidates}
                 isUserLiked={isUserLiked}
@@ -645,19 +610,16 @@ export default function PetMatePage() {
                   <X className="h-5 w-5 text-gray-700" />
                 </button>
 
-                {/* 매칭 점수 */}
                 <div className="absolute right-4 bottom-4 flex items-center gap-2 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 px-4 py-2 shadow-xl">
                   <Star className="h-5 w-5 fill-white text-white" />
                   <span className="text-lg font-bold text-white">{selectedCandidate.matchScore}%</span>
                 </div>
 
-                {/* 거리 */}
                 <div className="absolute left-4 bottom-4 flex items-center gap-2 rounded-2xl bg-white px-4 py-2 shadow-xl">
                   <MapPin className="h-4 w-4 text-pink-600" />
                   <span className="text-sm font-bold text-gray-900">{selectedCandidate.distance}km</span>
                 </div>
 
-                {/* 펫 정보 */}
                 <div className="absolute left-4 bottom-16">
                   <h2 className="text-3xl font-bold text-white drop-shadow-lg">{selectedCandidate.petName}</h2>
                   <p className="text-lg text-white/90">
@@ -666,9 +628,8 @@ export default function PetMatePage() {
                 </div>
               </div>
 
-              {/* 상세 정보 영역 */}
+              {/* 상세 정보 */}
               <div className="p-6 space-y-5">
-                {/* 사용자 정보 */}
                 <Link
                   to={`/user/${selectedCandidate.userId}`}
                   className="flex items-center gap-4 p-4 rounded-xl bg-pink-50 hover:bg-pink-100 transition-colors"
@@ -690,7 +651,6 @@ export default function PetMatePage() {
                   </div>
                 </Link>
 
-                {/* Bio */}
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="flex items-start gap-3">
                     {selectedCandidate.bioIcon && (
@@ -700,7 +660,6 @@ export default function PetMatePage() {
                   </div>
                 </div>
 
-                {/* 활동성 */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-semibold text-gray-900">활동성</span>
@@ -714,7 +673,6 @@ export default function PetMatePage() {
                   </div>
                 </div>
 
-                {/* 공통 관심사 */}
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-3">공통 관심사</h3>
                   <div className="flex flex-wrap gap-2">
@@ -729,7 +687,6 @@ export default function PetMatePage() {
                   </div>
                 </div>
 
-                {/* 액션 버튼들 */}
                 <div className="flex gap-3 pt-2">
                   <Button
                     className={`flex-1 h-12 rounded-xl font-semibold ${isUserLiked(selectedCandidate.userId)
@@ -746,7 +703,10 @@ export default function PetMatePage() {
                     className="flex-1 h-12 rounded-xl font-semibold border-2 border-pink-300"
                     onClick={() => {
                       setIsDetailOpen(false)
-                      navigate(`/chat/${selectedCandidate.userId}`)
+                      // [수정] 채팅방 경로 /messages로 이동 (ID가 아직 없으므로 그냥 이동하거나 UserID로 조회)
+                      // 여기선 단순히 채팅 페이지로 이동. 만약 방을 즉시 생성하고 싶다면 별도 API 호출 필요.
+                      // 일단 목록 페이지로 이동합니다.
+                      navigate(`/messages`) 
                     }}
                   >
                     <MessageCircle className="mr-2 h-5 w-5" />
@@ -794,9 +754,10 @@ export default function PetMatePage() {
               <Button
                 onClick={() => {
                   setMatchModalOpen(false)
+                  // [수정] 올바른 경로 (/messages?roomId=...)로 이동
                   navigate(chatRoomIdFromMatch
-                    ? `/chat?roomId=${chatRoomIdFromMatch}`
-                    : `/user/${matchedUser?.userId}`)
+                    ? `/messages?roomId=${chatRoomIdFromMatch}`
+                    : `/messages`) 
                 }}
                 className="h-14 px-8 text-lg font-bold bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
               >
@@ -908,11 +869,9 @@ export default function PetMatePage() {
                     onClick={() => handleSelectSearchResult(result)}
                     className="w-full text-left p-3 rounded-lg hover:bg-pink-50 transition-colors"
                   >
-                    {/* 키워드 검색: buildingName(장소명) 우선, 주소 검색: addressName 표시 */}
                     <p className="font-medium text-gray-900">
                       {result.buildingName || result.addressName}
                     </p>
-                    {/* buildingName이 있으면 주소를 부가정보로 표시 */}
                     {result.buildingName && (
                       <p className="text-sm text-gray-500 mt-1">{result.addressName}</p>
                     )}
@@ -943,7 +902,8 @@ export default function PetMatePage() {
           </Button>
         </DialogContent>
       </Dialog>
-      {/* 매칭친구 모달 */}
+
+      {/* 매칭친구(요청) 모달 */}
       <MatchingFriendsModal
         isOpen={requestsModalOpen}
         onClose={() => setRequestsModalOpen(false)}

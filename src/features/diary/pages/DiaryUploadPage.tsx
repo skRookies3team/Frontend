@@ -4,6 +4,7 @@ import { ChevronLeft, PawPrint } from 'lucide-react';
 import { useDiaryAuth } from "../hooks/useDiaryAuth";
 import { format } from 'date-fns';
 import { ImageSource } from "../types/diary";
+import exifr from 'exifr';
 import {
     // createAiDiaryApi, // [REMOVED] Not used here anymore
     generateAiDiaryPreview,
@@ -119,19 +120,51 @@ const DiaryUploadPage = () => {
         navigate('/ai-studio/diary/calendar');
     };
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
-        if (imageFiles.length + files.length > 10) {
-            alert("최대 10장까지 업로드 가능합니다.");
+        if (imageFiles.length + files.length > 6) {
+            alert("최대 6장까지 업로드 가능합니다.");
             return;
         }
         setImageFiles(prev => [...prev, ...files]);
-        const newPreviews = files.map(file => ({
-            imageUrl: URL.createObjectURL(file),
-            source: ImageSource.GALLERY,
-            archiveId: null
-        }));
+
+        // EXIF 데이터 추출 및 이미지 미리보기 생성
+        const newPreviewsPromises = files.map(async (file) => {
+            let metadata: Record<string, any> | undefined = undefined;
+
+            try {
+                // EXIF 데이터 추출
+                const exifData = await exifr.parse(file, {
+                    gps: true,
+                    pick: ['Make', 'Model', 'DateTime', 'GPSLatitude', 'GPSLongitude', 'GPSAltitude']
+                });
+
+                if (exifData) {
+                    metadata = {
+                        cameraMake: exifData.Make,
+                        cameraModel: exifData.Model,
+                        dateTime: exifData.DateTime,
+                        gpsLatitude: exifData.GPSLatitude,
+                        gpsLongitude: exifData.GPSLongitude,
+                        gpsAltitude: exifData.GPSAltitude
+                    };
+                    console.log('[EXIF] 메타데이터 추출 성공:', metadata);
+                }
+            } catch (error) {
+                console.warn('[EXIF] 메타데이터 추출 실패 (선택사항):', error);
+            }
+
+            return {
+                imageUrl: URL.createObjectURL(file),
+                source: ImageSource.GALLERY,
+                archiveId: null,
+                metadata
+            };
+        });
+
+        const newPreviews = await Promise.all(newPreviewsPromises);
+        console.log('[handleImageUpload] Adding GALLERY images with metadata:', newPreviews);
         setSelectedImages(prev => [...prev, ...newPreviews]);
         e.target.value = '';
     };
@@ -140,13 +173,30 @@ const DiaryUploadPage = () => {
         const isSelected = selectedImages.some(img => img.imageUrl === image.url);
         if (isSelected) {
             setSelectedImages(prev => prev.filter(img => img.imageUrl !== image.url));
-        } else if (selectedImages.length < 10) {
-            setSelectedImages(prev => [...prev, {
+        } else if (selectedImages.length < 6) {
+            const newArchiveImage = {
                 imageUrl: image.url,
                 source: ImageSource.ARCHIVE,
                 archiveId: image.archiveId
-            }]);
+            };
+            console.log('[handleSelectFromGallery] Adding ARCHIVE image:', newArchiveImage);
+            setSelectedImages(prev => [...prev, newArchiveImage]);
         }
+    };
+
+    const handleRemoveImage = (indexToRemove: number) => {
+        // Remove the image
+        setSelectedImages(prev => prev.filter((_, i) => i !== indexToRemove));
+
+        // Adjust mainImageIndex
+        if (indexToRemove === mainImageIndex) {
+            // If removing the main image, set the first remaining image as main
+            setMainImageIndex(0);
+        } else if (indexToRemove < mainImageIndex) {
+            // If removing an image before the main image, decrement mainImageIndex
+            setMainImageIndex(mainImageIndex - 1);
+        }
+        // If removing an image after mainImageIndex, no adjustment needed
     };
 
     const handleGenerate = async () => {
@@ -251,8 +301,29 @@ const DiaryUploadPage = () => {
                 imgOrder: index + 1,
                 mainImage: index === mainImageIndex,
                 source: img.source,
-                archiveId: img.archiveId || null
+                archiveId: img.archiveId || null,
+                metadata: img.metadata || null // ✅ EXIF 메타데이터 포함
             }));
+
+            console.log('=== [DiaryUploadPage] 백엔드로 전송할 이미지 데이터 ===');
+            console.log('[DiaryUploadPage] mainImageIndex:', mainImageIndex);
+            console.log('[DiaryUploadPage] totalImages:', selectedImages.length);
+            console.log('[DiaryUploadPage] imagesDto:', JSON.stringify(imagesDto, null, 2));
+
+            // 메타데이터가 있는 이미지만 별도 로그
+            const imagesWithMetadata = imagesDto.filter(img => img.metadata);
+            if (imagesWithMetadata.length > 0) {
+                console.log('=== [METADATA] 메타데이터가 포함된 이미지 ===');
+                imagesWithMetadata.forEach((img, idx) => {
+                    console.log(`[METADATA] Image ${idx + 1}:`, {
+                        imageUrl: img.imageUrl.substring(0, 50) + '...',
+                        metadata: img.metadata
+                    });
+                });
+            } else {
+                console.log('[METADATA] ⚠️ 메타데이터가 포함된 이미지가 없습니다.');
+            }
+
             formData.append("images", new Blob([JSON.stringify(imagesDto)], { type: "application/json" }));
 
             // API Call
@@ -276,6 +347,7 @@ const DiaryUploadPage = () => {
                 locationName: previewData.locationName || resolvedLocationName,
                 locationCoords: location ? { lat: location.lat, lng: location.lng } : null,
                 selectedImages: selectedImages, // Keep original images for display
+                mainImageIndex: mainImageIndex, // ✅ 대표 이미지 인덱스 저장
 
                 // [NEW] Persist Backend-generated IDs for final save
                 previewImageUrls: previewData.imageUrls || [],
@@ -329,7 +401,7 @@ const DiaryUploadPage = () => {
                         isSubmitting={isSubmitting}
                         handleImageUpload={handleImageUpload}
                         handleGenerate={handleGenerate}
-                        setSelectedImages={setSelectedImages}
+                        handleRemoveImage={handleRemoveImage}
                         setShowGallery={setShowGallery}
                         pets={pets}
                         selectedPetId={selectedPetId}
