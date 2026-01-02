@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 
 const getBaseUrl = () => {
-  let url = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  let url = import.meta.env.VITE_API_URL;
   if (!url.endsWith('/api')) {
     url += '/api';
   }
