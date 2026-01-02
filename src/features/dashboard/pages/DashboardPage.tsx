@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Button } from "@/shared/ui/button"
 import { useAuth } from "@/features/auth/context/auth-context"
-import { getUserApi, GetPetDto } from "@/features/auth/api/auth-api"
+import { getUserApi, GetPetDto, getUserCoinApi } from "@/features/auth/api/auth-api"
 import {
   AlertCircle,
   MapPin,
@@ -138,6 +138,7 @@ export default function DashboardPage() {
   const [aiDiaries, setAiDiaries] = useState<DiaryResponse[]>([])
   const [isDiariesLoading, setIsDiariesLoading] = useState(true)
   const [myPets, setMyPets] = useState<GetPetDto[]>([])
+  const [petCoin, setPetCoin] = useState<number>(0)
   const petsPerPage = 4
 
   useEffect(() => {
@@ -189,6 +190,20 @@ export default function DashboardPage() {
       }
     }
     fetchMyPets()
+  }, [user?.id])
+
+  // 펫 코인 가져오기
+  useEffect(() => {
+    const fetchPetCoin = async () => {
+      if (!user?.id) return
+      try {
+        const coinData = await getUserCoinApi(Number(user.id))
+        setPetCoin(coinData.petCoin)
+      } catch (error) {
+        console.error("Failed to fetch pet coin:", error)
+      }
+    }
+    fetchPetCoin()
   }, [user?.id])
 
   if (!user) {
@@ -622,15 +637,15 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="text-center">
-                    <div className="text-3xl font-bold text-fuchsia-600 mb-1">{user.petCoin.toLocaleString()}</div>
+                    <div className="text-3xl font-bold text-fuchsia-600 mb-1">{petCoin.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">사용 가능한 코인</p>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
                       <span>다음 등급까지</span>
-                      <span className="font-medium">750 코인</span>
+                      <span className="font-medium">{Math.max(0, 500 - petCoin)} 코인</span>
                     </div>
-                    <Progress value={62} className="h-2" />
+                    <Progress value={Math.min(100, (petCoin / 500) * 100)} className="h-2" />
                   </div>
                   <div className="space-y-2 pt-2 border-t">
                     <h4 className="text-sm font-medium">코인 적립 방법</h4>
@@ -640,12 +655,8 @@ export default function DashboardPage() {
                         <span className="text-fuchsia-600 font-medium">+15</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span>• 첫 일기 보너스</span>
-                        <span className="text-fuchsia-600 font-medium">+50</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>• withapet 연동</span>
-                        <span className="text-fuchsia-600 font-medium">+100</span>
+                        <span>• 피드 공유</span>
+                        <span className="text-fuchsia-600 font-medium">+10</span>
                       </div>
                     </div>
                   </div>
