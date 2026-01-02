@@ -102,3 +102,8 @@ export const updatePetApi = async (petId: number, request: UpdatePetDto, file: F
 export const deletePetApi = async (petId: number): Promise<void> => {
     await httpClient.delete(`/pets/${petId}`);
 };
+
+// 펫 추모(사망) 처리 API
+export const lostPetApi = async (petId: number): Promise<void> => {
+    await httpClient.patch(`/pets/lost/${petId}`);
+};
