@@ -10,7 +10,7 @@ interface UploadStepProps {
     isSubmitting: boolean;
     handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
     handleGenerate: () => void;
-    setSelectedImages: (images: any[]) => void;
+    handleRemoveImage: (index: number) => void;
     setShowGallery: (show: boolean) => void;
     pets: any[];
     selectedPetId: number | null;
@@ -22,7 +22,7 @@ interface UploadStepProps {
 }
 
 const UploadStep = ({
-    selectedImages, isSubmitting, handleImageUpload, handleGenerate, setSelectedImages, setShowGallery,
+    selectedImages, isSubmitting, handleImageUpload, handleGenerate, handleRemoveImage, setShowGallery,
     pets, selectedPetId, setSelectedPetId, selectedDate, setSelectedDate, mainImageIndex, setMainImageIndex
 }: UploadStepProps) => (
     <div className="space-y-6 animate-fade-in">
@@ -122,14 +122,17 @@ const UploadStep = ({
 
                                 {/* Main Image Selector (Star) */}
                                 <button
-                                    onClick={() => setMainImageIndex(index)}
+                                    onClick={() => {
+                                        console.log('[UploadStep] Setting main image index to:', index, 'Image:', image);
+                                        setMainImageIndex(index);
+                                    }}
                                     className={`absolute top-1 left-1 p-1 rounded-full backdrop-blur-sm transition-all ${mainImageIndex === index ? 'bg-yellow-400 text-white' : 'bg-black/30 text-white/70 hover:bg-yellow-400 hover:text-white'}`}
                                     title="대표 이미지로 설정"
                                 >
                                     <Star className={`w-3.5 h-3.5 ${mainImageIndex === index ? 'fill-current' : ''}`} />
                                 </button>
 
-                                <button onClick={() => setSelectedImages(selectedImages.filter((_: any, i: number) => i !== index))} className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1"><X className="w-3 h-3" /></button>
+                                <button onClick={() => handleRemoveImage(index)} className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1"><X className="w-3 h-3" /></button>
 
                                 {mainImageIndex === index && (
                                     <div className="absolute bottom-0 inset-x-0 bg-yellow-400/90 text-white text-[10px] font-bold text-center py-0.5">

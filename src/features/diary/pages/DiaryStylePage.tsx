@@ -86,6 +86,7 @@ const DiaryStylePage = () => {
                 // Get Preview IDs from storage
                 const previewImageUrls = getSavedState('previewImageUrls', []);
                 const previewArchiveIds = getSavedState('previewArchiveIds', []);
+                const mainImageIndex = getSavedState('mainImageIndex', 0); // ✅ 대표 이미지 인덱스
 
                 // Construct Request JSON
                 const requestData = {
@@ -104,7 +105,14 @@ const DiaryStylePage = () => {
                     locationName: locationName,
                     imageUrls: previewImageUrls,
                     archiveIds: previewArchiveIds,
-                    images: []
+                    // ✅ selectedImages에서 images 배열 생성
+                    images: selectedImages.map((img, index) => ({
+                        imageUrl: img.imageUrl,
+                        imgOrder: index + 1,
+                        mainImage: index === mainImageIndex, // ✅ mainImageIndex 사용
+                        source: img.source || 'ARCHIVE',
+                        archiveId: img.archiveId || null
+                    }))
                 };
 
                 // Use the Real Create API (JSON)
