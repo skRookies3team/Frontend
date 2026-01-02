@@ -23,7 +23,6 @@ import {
   Link as LinkIcon,
   Award,
   Cat,
-  Dog,
 } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Badge } from "@/shared/ui/badge"

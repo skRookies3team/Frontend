@@ -4,7 +4,7 @@ import { Button } from "@/shared/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Badge } from "@/shared/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
-import { ChevronLeft, Calendar, Weight, Activity, Heart, Camera, Syringe } from "lucide-react"
+import { ChevronLeft, Calendar, Weight, Activity, Syringe } from "lucide-react"
 import { getPetApi, type GetPetDto } from "@/features/healthcare/api/pet-api"
 import { useState, useEffect } from "react"
 
