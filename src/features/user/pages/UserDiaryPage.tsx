@@ -146,7 +146,7 @@ export default function UserDiaryPage() {
                 {/* AI 다이어리 캘린더 탭 */}
                 <TabsContent value="calendar" className="mt-6">
                     <div className="mb-4 flex justify-end">
-                        <Button onClick={() => navigate('/ai-studio/diary')} size="sm" className="gap-1">
+                        <Button onClick={() => navigate('/ai-studio/diary/upload')} size="sm" className="gap-1">
                             <Plus className="h-4 w-4" />
                             다이어리 쓰기
                         </Button>
