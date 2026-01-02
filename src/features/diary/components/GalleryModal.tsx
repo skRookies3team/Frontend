@@ -34,7 +34,7 @@ const GalleryModal = ({ showGallery, setShowGallery, selectedImages, handleSelec
                 <div className="p-6 border-b border-pink-100 flex justify-between items-center">
                     <div>
                         <h3 className="text-xl font-bold text-pink-600">보관함에서 선택 (Source: ARCHIVE)</h3>
-                        <p className="text-sm text-gray-500 mt-1">선택된 사진: {selectedImages.filter(img => img.source === 'ARCHIVE').length}/10</p>
+                        <p className="text-sm text-gray-500 mt-1">선택된 사진: {selectedImages.filter(img => img.source === 'ARCHIVE').length}/6</p>
                     </div>
                     <button
                         onClick={() => setShowGallery(false)}

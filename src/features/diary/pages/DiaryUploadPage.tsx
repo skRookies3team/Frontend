@@ -122,8 +122,8 @@ const DiaryUploadPage = () => {
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
-        if (imageFiles.length + files.length > 10) {
-            alert("최대 10장까지 업로드 가능합니다.");
+        if (imageFiles.length + files.length > 6) {
+            alert("최대 6장까지 업로드 가능합니다.");
             return;
         }
         setImageFiles(prev => [...prev, ...files]);
@@ -140,7 +140,7 @@ const DiaryUploadPage = () => {
         const isSelected = selectedImages.some(img => img.imageUrl === image.url);
         if (isSelected) {
             setSelectedImages(prev => prev.filter(img => img.imageUrl !== image.url));
-        } else if (selectedImages.length < 10) {
+        } else if (selectedImages.length < 6) {
             setSelectedImages(prev => [...prev, {
                 imageUrl: image.url,
                 source: ImageSource.ARCHIVE,

@@ -81,7 +81,10 @@ const UploadStep = ({
                         <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shadow-lg">
                             <Icon className="h-10 w-10 text-white"><Upload /></Icon>
                         </div>
-                        <p className="text-xl font-bold text-pink-600">{isSubmitting ? '업로드 중...' : '사진 선택하기'}</p>
+                        <div className="text-center">
+                            <p className="text-xl font-bold text-pink-600 mb-2">{isSubmitting ? '업로드 중...' : '사진 선택하기'}</p>
+                            <p className="text-sm text-gray-500">최대 6장까지 업로드 가능 • JPG, PNG</p>
+                        </div>
                     </label>
                     <button onClick={() => setShowGallery(true)} disabled={isSubmitting} className="w-full border-2 border-pink-300 text-pink-600 py-3 rounded-full font-bold hover:bg-pink-50 flex items-center justify-center gap-2">
                         <Icon className="w-5 h-5"><ImageIcon /></Icon> 보관함에서 선택하기
@@ -92,7 +95,7 @@ const UploadStep = ({
                     {/* Selected Images Count */}
                     <div className="flex items-center justify-between">
                         <p className="text-pink-600 font-bold text-lg">
-                            선택된 사진 {selectedImages.length}/10
+                            선택된 사진 {selectedImages.length}/6
                         </p>
                         <button
                             onClick={() => setShowGallery(true)}
