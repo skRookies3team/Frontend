@@ -250,16 +250,16 @@ export default function DiaryDetailPage() {
                         }
                     }
 
-                    // 2. S3 이미지 URL을 프록시 URL로 변경 (CORS 방지)
+                    // 2. S3 images: use proxy in dev, direct URL in production
                     const images = clonedDoc.getElementsByTagName('img')
                     const s3Url = 'https://petlog-images-bucket.s3.ap-northeast-2.amazonaws.com'
 
                     Array.from(images).forEach((img) => {
-                        if (img.src.includes(s3Url)) {
-                            // S3 URL을 로컬 프록시 URL로 변경
+                        if (img.src.includes(s3Url) && import.meta.env.DEV) {
+                            // Development: use proxy to bypass CORS
                             img.src = img.src.replace(s3Url, '/s3-images')
-                            img.crossOrigin = 'anonymous' // CORS 요청 허용
                         }
+                        img.crossOrigin = 'anonymous' // CORS 요청 허용
                     })
                 }
             })
