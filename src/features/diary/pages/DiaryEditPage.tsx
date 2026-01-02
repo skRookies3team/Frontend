@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, PawPrint } from 'lucide-react';
 import { useDiaryAuth } from "../hooks/useDiaryAuth";
 import { format } from 'date-fns';
+import { getWeatherApi } from '../api/diary-api'; // [NEW] Weather API
 
 import EditStep from '../components/EditStep';
 
@@ -42,6 +43,35 @@ const DiaryEditPage = () => {
     const [textAlign] = useState("left");
     const [fontSize] = useState(16);
     const [backgroundColor] = useState("#ffffff");
+
+    // [NEW] 날씨 자동 업데이트 - 위치나 날짜 변경 시 백엔드에서 날씨 정보 가져오기
+    useEffect(() => {
+        console.log('🌤️ [Weather Debug - DiaryEditPage] useEffect triggered');
+        console.log('🌤️ [Weather Debug - DiaryEditPage] locationCoords:', locationCoords);
+        console.log('🌤️ [Weather Debug - DiaryEditPage] selectedDate:', selectedDate);
+        console.log('🌤️ [Weather Debug - DiaryEditPage] current weather state:', weather);
+
+        if (locationCoords && selectedDate) {
+            console.log(`🌤️ [Weather Debug - DiaryEditPage] ✅ Conditions met - Fetching weather for ${selectedDate} at (${locationCoords.lat}, ${locationCoords.lng})`);
+            getWeatherApi(locationCoords.lat, locationCoords.lng, selectedDate)
+                .then(weatherData => {
+                    console.log('🌤️ [Weather Debug - DiaryEditPage] API Response:', weatherData);
+                    if (weatherData) {
+                        console.log(`🌤️ [Weather Debug - DiaryEditPage] ✅ Updating weather state: ${weather} → ${weatherData}`);
+                        setWeather(weatherData);
+                    } else {
+                        console.warn('🌤️ [Weather Debug - DiaryEditPage] ⚠️ API returned null/empty weather data');
+                    }
+                })
+                .catch(err => {
+                    console.error('🌤️ [Weather Debug - DiaryEditPage] ❌ Weather fetch error:', err);
+                });
+        } else {
+            console.warn('🌤️ [Weather Debug - DiaryEditPage] ⚠️ Conditions not met for weather fetch');
+            if (!locationCoords) console.warn('🌤️ [Weather Debug - DiaryEditPage]   - Missing locationCoords');
+            if (!selectedDate) console.warn('🌤️ [Weather Debug - DiaryEditPage]   - Missing selectedDate');
+        }
+    }, [locationCoords, selectedDate]);
 
     // Save State on Change (Effect)
     useEffect(() => {

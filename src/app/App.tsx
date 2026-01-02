@@ -54,6 +54,8 @@ import AiRecapPage from "@/features/diary/pages/AiRecapPage"
 import AiBiographyPage from "@/features/diary/pages/AiBiographyPage"
 import GalleryPage from "@/features/diary/pages/GalleryPage"
 import PortfolioPage from "@/features/diary/pages/PortfolioPage"
+import DiaryDetailPage from "@/features/diary/pages/DiaryDetailPage"
+import DiaryStyleEditPage from "@/features/diary/pages/DiaryStyleEditPage"
 
 // Feature: PetMate
 import PetMatePage from "@/features/petmate/pages/PetMatePage"
@@ -122,6 +124,8 @@ function App() {
                                         />
                                         <Route path="pet-mate" element={<PetMatePage />} />
                                         <Route path="portfolio" element={<PortfolioPage />} />
+                                        <Route path="diary/:id" element={<DiaryDetailPage />} />
+                                        <Route path="diary/:id/style" element={<DiaryStyleEditPage />} />
                                         <Route path="profile" element={<ProfilePage />}>
                                             <Route path="mileage" element={<MileagePage />} />
                                         </Route>
