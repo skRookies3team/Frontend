@@ -6,7 +6,7 @@ export interface CreatePetDto {
     breed: string;
     genderType: "MALE" | "FEMALE" | "NONE";
     birth: string; // LocalDate yyyy-MM-dd
-    species: 'CAT' | 'DOG' | 'RABBIT' | 'HAMSTER'| 'BIRD'|'GUINEAPIG'|'REPTILE'|'FISH'|'ETC';
+    species: 'CAT' | 'DOG' | 'RABBIT' | 'HAMSTER' | 'BIRD' | 'GUINEAPIG' | 'REPTILE' | 'FISH' | 'ETC';
     neutered: boolean;
     vaccinated: boolean;
 }
@@ -15,7 +15,7 @@ export interface CreatePetDto {
 export interface PetResponseDto {
     petId: number;
     petName: string;
-    species: 'CAT' | 'DOG' | 'RABBIT' | 'HAMSTER'| 'BIRD'|'GUINEAPIG'|'REPTILE'|'FISH'|'ETC';
+    species: 'CAT' | 'DOG' | 'RABBIT' | 'HAMSTER' | 'BIRD' | 'GUINEAPIG' | 'REPTILE' | 'FISH' | 'ETC';
     breed: string;
     genderType: "MALE" | "FEMALE" | "NONE";
     is_neutered: boolean;
@@ -49,7 +49,7 @@ export const createPetApi = async (request: CreatePetDto, file: File | null): Pr
 export interface GetPetDto {
     petId: number;
     petName: string;
-    species: 'CAT' | 'DOG' | 'RABBIT' | 'HAMSTER'| 'BIRD'|'GUINEAPIG'|'REPTILE'|'FISH'|'ETC';
+    species: 'CAT' | 'DOG' | 'RABBIT' | 'HAMSTER' | 'BIRD' | 'GUINEAPIG' | 'REPTILE' | 'FISH' | 'ETC';
     breed: string;
     genderType: "MALE" | "FEMALE";
     neutered: boolean;
@@ -73,7 +73,7 @@ export interface UpdatePetDto {
     genderType: "MALE" | "FEMALE" | "NONE";
     age: number;
     birth: string; // LocalDate yyyy-MM-dd
-    species: 'CAT' | 'DOG' | 'RABBIT' | 'HAMSTER'| 'BIRD'|'GUINEAPIG'|'REPTILE'|'FISH'|'ETC';
+    species: 'CAT' | 'DOG' | 'RABBIT' | 'HAMSTER' | 'BIRD' | 'GUINEAPIG' | 'REPTILE' | 'FISH' | 'ETC';
     neutered: boolean;
     vaccinated: boolean;
 }
@@ -96,4 +96,9 @@ export const updatePetApi = async (petId: number, request: UpdatePetDto, file: F
         }
     });
     return response;
+};
+
+// 펫 삭제 API
+export const deletePetApi = async (petId: number): Promise<void> => {
+    await httpClient.delete(`/pets/${petId}`);
 };
