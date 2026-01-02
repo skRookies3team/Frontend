@@ -13,7 +13,7 @@ import { Badge } from "@/shared/ui/badge"
 import { ScrollArea } from "@/shared/ui/scroll-area"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getNotificationsApi, readNotificationApi, GetNotificationDto } from "@/features/auth/api/auth-api"
-import { formatDistanceToNow } from 'date-fns'
+import { formatDistanceToNow, addHours } from 'date-fns'
 import { ko } from 'date-fns/locale'
 
 export function NotificationsDropdown() {
@@ -122,7 +122,7 @@ export function NotificationsDropdown() {
                       <p className="font-medium text-sm">{notification.title}</p>
                       <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notification.content}</p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {formatDistanceToNow(new Date(notification.time), { addSuffix: true, locale: ko })}
+                        {formatDistanceToNow(addHours(new Date(notification.time), 9), { addSuffix: true, locale: ko })}
                       </p>
                     </div>
                     {!isRead && <div className="flex-shrink-0 h-2 w-2 rounded-full bg-pink-500 mt-1" />}
