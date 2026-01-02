@@ -17,6 +17,8 @@ export type ThemeStyle = 'basic' | 'romantic' | 'modern';
 export interface SelectedImage {
     imageUrl: string;
     source: 'GALLERY' | 'ARCHIVE';
+    archiveId?: number | null;
+    metadata?: Record<string, any>; // EXIF 데이터 등 비정형 메타데이터
 }
 
 // 백엔드 전송용 이미지 데이터 구조
@@ -25,6 +27,8 @@ export interface DiaryImageDTO {
     imgOrder: number;
     mainImage: boolean;
     source: 'GALLERY' | 'ARCHIVE';
+    archiveId?: number | null;
+    metadata?: Record<string, any>; // EXIF 데이터 등 비정형 메타데이터
 }
 
 // [추가] 일기 생성 응답 DTO
