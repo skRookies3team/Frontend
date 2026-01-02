@@ -60,6 +60,15 @@ const DiaryStylePage = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [earnedReward, setEarnedReward] = useState<number | null>(null);
 
+    // ✅ S3 URL로 변환된 이미지 배열 (미리보기용)
+    const displayImages = (() => {
+        const previewImageUrls = getSavedState('previewImageUrls', []);
+        return selectedImages.map((img, index) => ({
+            ...img,
+            imageUrl: previewImageUrls[index] || img.imageUrl // S3 URL 우선
+        }));
+    })();
+
     const handleBack = () => {
         if (step === 'complete') {
             navigate('/ai-studio/diary/calendar'); // Or home?
@@ -214,7 +223,7 @@ const DiaryStylePage = () => {
             <main className="container mx-auto max-w-7xl p-4 md:p-6">
                 {step === 'style' && (
                     <StyleStep
-                        selectedImages={selectedImages} editedDiary={editedDiary}
+                        selectedImages={displayImages} editedDiary={editedDiary}
                         weather={weather} mood={mood} locationName={locationName} locationCoords={locationCoords}
                         selectedDate={selectedDate}
                         layoutStyle={layoutStyle} setLayoutStyle={setLayoutStyle}
