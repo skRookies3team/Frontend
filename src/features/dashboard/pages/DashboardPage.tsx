@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Button } from "@/shared/ui/button"
 import { useAuth } from "@/features/auth/context/auth-context"
+import { getUserApi, GetPetDto } from "@/features/auth/api/auth-api"
 import {
   AlertCircle,
   MapPin,
@@ -21,6 +22,8 @@ import {
   ArrowUpRight,
   Link as LinkIcon,
   Award,
+  Cat,
+  Dog,
 } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Badge } from "@/shared/ui/badge"
@@ -134,6 +137,7 @@ export default function DashboardPage() {
   const [isAddingTodo, setIsAddingTodo] = useState(false)
   const [aiDiaries, setAiDiaries] = useState<DiaryResponse[]>([])
   const [isDiariesLoading, setIsDiariesLoading] = useState(true)
+  const [myPets, setMyPets] = useState<GetPetDto[]>([])
   const petsPerPage = 4
 
   useEffect(() => {
@@ -173,6 +177,20 @@ export default function DashboardPage() {
     fetchAiDiaries()
   }, [user?.id])
 
+  // 내 펫 정보 가져오기
+  useEffect(() => {
+    const fetchMyPets = async () => {
+      if (!user?.id) return
+      try {
+        const userData = await getUserApi(Number(user.id))
+        setMyPets(userData.pets)
+      } catch (error) {
+        console.error("Failed to fetch user pets:", error)
+      }
+    }
+    fetchMyPets()
+  }, [user?.id])
+
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-pink-50/50 to-white flex items-center justify-center">
@@ -195,7 +213,7 @@ export default function DashboardPage() {
     setCurrentPage((prev) => (prev < totalPages - 1 ? prev + 1 : 0))
   }
 
-  const hasPets = user.pets && user.pets.length > 0
+  const hasPets = myPets && myPets.length > 0
 
   const handleConnectWithapet = () => {
     connectWithapet()
@@ -525,31 +543,48 @@ export default function DashboardPage() {
 
             <aside className="hidden lg:block space-y-6">
               {hasPets ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>나의 반려동물</CardTitle>
+                <Card className="border-pink-200 bg-gradient-to-br from-pink-50/50 to-white">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-lg text-pink-700">
+                      <Cat className="h-5 w-5" />
+                      나의 반려동물
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {user.pets.map((pet) => (
+                    {myPets.map((pet) => (
                       <div
-                        key={pet.id}
-                        className="flex items-center justify-between rounded-xl border border-border bg-muted/30 p-4 transition-all hover:shadow-md"
+                        key={pet.petId}
+                        className="flex items-center justify-between rounded-xl border border-pink-100 bg-white p-4 transition-all hover:shadow-md hover:border-pink-200"
                       >
                         <div className="flex items-center gap-4">
                           <img
-                            src={pet.photo || "/placeholder.svg"}
-                            alt={pet.name}
+                            src={pet.profileImage || "/placeholder.svg"}
+                            alt={pet.petName}
                             className="h-16 w-16 rounded-full object-cover"
                           />
                           <div>
-                            <h3 className="font-semibold text-foreground">{pet.name}</h3>
+                            <h3 className="font-semibold text-foreground">{pet.petName}</h3>
                             <p className="text-sm text-muted-foreground">
-                              {pet.breed} · {!pet.age && pet.age !== 0 ? '나이 미등록' : (String(pet.age).includes('개월') || String(pet.age).includes('살') ? pet.age : `${pet.age}세`)} · {pet.gender}
+                              {pet.breed} · {(() => {
+                                if (pet.birth) {
+                                  const today = new Date()
+                                  const [year, month, day] = pet.birth.split('-').map(Number)
+                                  const birthDate = new Date(year, month - 1, day)
+                                  let months = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth())
+                                  if (today.getDate() < birthDate.getDate()) {
+                                    months--
+                                  }
+                                  if (months < 12) {
+                                    return `${Math.max(0, months)}개월`
+                                  }
+                                }
+                                return !pet.age && pet.age !== 0 ? '나이 미등록' : `${pet.age}세`
+                              })()} · {pet.genderType === 'FEMALE' ? '여아' : '남아'}
                             </p>
-                            {pet.birthday && <p className="text-xs text-muted-foreground mt-1">생일: {pet.birthday}</p>}
+                            {pet.birth && <p className="text-xs text-muted-foreground mt-1">생일: {pet.birth}</p>}
                           </div>
                         </div>
-                        <Link to={`/profile/pet/${pet.id}?returnTo=/dashboard`}>
+                        <Link to={`/profile/pet/${pet.petId}?returnTo=/dashboard`}>
                           <Button variant="outline" size="sm">
                             프로필
                           </Button>
