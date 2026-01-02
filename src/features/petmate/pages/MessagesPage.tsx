@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, MoreVertical, Send, ArrowLeft, Phone, Video, Trash2 } from "lucide-react";
+import { Search, Send, ArrowLeft, Phone, Video, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -27,7 +27,6 @@ export default function MessagesPage() {
     isConnected,
     isLoading,
     sendMessage,
-    loadMessages,
     loadChatRooms,
     deleteRoom,
   } = useChat({ userId, chatRoomId: selectedRoomId });
@@ -250,8 +249,8 @@ export default function MessagesPage() {
                           <div className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
                             <div
                               className={`p-3 rounded-2xl text-sm max-w-[280px] ${isMe
-                                  ? "bg-[#FF69B4] text-white rounded-tr-none shadow-md shadow-pink-100"
-                                  : "bg-white rounded-tl-none shadow-sm border border-gray-100"
+                                ? "bg-[#FF69B4] text-white rounded-tr-none shadow-md shadow-pink-100"
+                                : "bg-white rounded-tl-none shadow-sm border border-gray-100"
                                 }`}
                             >
                               {msg.content}

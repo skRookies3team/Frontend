@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Client } from '@stomp/stompjs';
+import { Client, IFrame, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { Message, ChatRoom, messageApi, SendMessageRequest } from '../api/message-api';
 
@@ -37,7 +37,7 @@ export function useChat({ userId, chatRoomId }: UseChatProps): UseChatReturn {
             reconnectDelay: 5000,
             heartbeatIncoming: 4000,
             heartbeatOutgoing: 4000,
-            debug: (str) => {
+            debug: (str: string) => {
                 if (import.meta.env.DEV) {
                     console.log('[STOMP]', str);
                 }
@@ -50,7 +50,7 @@ export function useChat({ userId, chatRoomId }: UseChatProps): UseChatReturn {
                 console.log('WebSocket Disconnected');
                 setIsConnected(false);
             },
-            onStompError: (frame) => {
+            onStompError: (frame: IFrame) => {
                 console.error('STOMP Error:', frame.headers['message']);
             },
         });
@@ -70,7 +70,7 @@ export function useChat({ userId, chatRoomId }: UseChatProps): UseChatReturn {
         const client = stompClientRef.current;
         if (!client || !isConnected || !chatRoomId) return;
 
-        const subscription = client.subscribe(`/topic/chat/${chatRoomId}`, (message) => {
+        const subscription = client.subscribe(`/topic/chat/${chatRoomId}`, (message: IMessage) => {
             const newMessage: Message = JSON.parse(message.body);
             setMessages((prev) => [...prev, newMessage]);
         });
