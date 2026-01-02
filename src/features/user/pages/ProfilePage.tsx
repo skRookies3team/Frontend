@@ -27,6 +27,7 @@ import { useAuth } from "@/features/auth/context/auth-context"
 import { Link, useNavigate, Outlet } from "react-router-dom"
 import { useState, useRef, type ChangeEvent, useEffect } from "react"
 import { getUserApi, updateProfileApi, type GetUserDto } from "@/features/auth/api/auth-api"
+import { deletePetApi } from "@/features/healthcare/api/pet-api"
 
 import UserDiaryPage from "./UserDiaryPage"
 
@@ -204,8 +205,34 @@ export default function ProfilePage() {
     setShowAddPetDialog(true)
   }
 
-  const handleDeletePet = (id: string) => {
-    deletePet(id)
+  const handleDeletePet = async (id: string, event?: React.MouseEvent) => {
+    // Prevent event bubbling if triggered from a button inside another clickable element
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    if (!confirm("정말로 이 반려동물을 삭제하시겠습니까?")) return;
+
+    try {
+      await deletePetApi(parseInt(id));
+
+      // Update local state via context
+      deletePet(id);
+
+      // Also update apiUserData if it exists locally to reflect change immediately in UI without refetch
+      if (apiUserData) {
+        setApiUserData({
+          ...apiUserData,
+          pets: apiUserData.pets.filter(p => p.petId.toString() !== id)
+        });
+      }
+
+      alert("펫이 삭제되었습니다.");
+    } catch (error) {
+      console.error("Failed to delete pet:", error);
+      alert("펫 삭제에 실패했습니다.");
+    }
   }
 
 
@@ -510,7 +537,7 @@ export default function ProfilePage() {
                     {pet.isMemorial ? "추모 해제" : "추모 모드"}
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => handleEditPet(pet)}>수정</Button>
-                  <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDeletePet(pet.id)}>삭제</Button>
+                  <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={(e) => handleDeletePet(pet.id, e)}>삭제</Button>
                 </div>
               </div>
             ))}
