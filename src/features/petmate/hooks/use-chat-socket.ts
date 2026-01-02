@@ -3,13 +3,10 @@ import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { ChatMessage, MessageRequest } from '../types/chat';
 
-// Vite Proxy가 설정되어 있다면 '/ws-chat', 없다면 전체 주소
-const SOCKET_URL = 'http://localhost:8000/ws-chat'; 
-
 export function useChatSocket(userId: number, currentRoomId: number | null) {
   const [connected, setConnected] = useState(false);
   const clientRef = useRef<Client | null>(null);
-  const subscriptionRef = useRef<any>(null); // 현재 구독 객체 저장
+  const subscriptionRef = useRef<any>(null); 
   const [newMessages, setNewMessages] = useState<ChatMessage[]>([]);
 
   // 방 변경 시 메시지 버퍼 초기화
@@ -17,27 +14,48 @@ export function useChatSocket(userId: number, currentRoomId: number | null) {
     setNewMessages([]);
   }, [currentRoomId]);
 
-  // 1. 소켓 연결 설정 (한 번만 실행)
+  // 1. 소켓 연결 설정
   useEffect(() => {
     if (!userId) return;
 
-    const socket = new SockJS(SOCKET_URL);
+    if (clientRef.current) {
+        clientRef.current.deactivate();
+    }
+
+    // [핵심 수정] HTTPS 환경에서는 wss(https), HTTP 환경에서는 ws(http)를 자동으로 선택
+    // 배포 환경(VITE_API_URL)이 있다면 그것을 쓰고, 없다면 localhost 사용
+    // 주의: 백엔드 서버도 반드시 SSL 인증서(HTTPS)가 적용되어 있어야 합니다.
+    const isSecure = window.location.protocol === 'https:';
+    
+    // .env 파일에 VITE_API_URL이 있다면 사용, 없다면 localhost:8000
+    // 예: VITE_API_URL=api.yourpetlog.com
+    let apiHost = 'localhost:8000'; 
+    if (import.meta.env.VITE_API_URL) {
+        // http:// 또는 https:// 제거하고 도메인만 추출
+        apiHost = import.meta.env.VITE_API_URL.replace(/^https?:\/\//, '');
+    }
+
+    // 최종 소켓 URL 생성 (https://api.domain.com/ws-chat 또는 http://localhost:8000/ws-chat)
+    const socketUrl = `${isSecure ? 'https' : 'http'}://${apiHost}/ws-chat`;
+
+    console.log("🔌 Connecting to WebSocket:", socketUrl);
+
+    const socket = new SockJS(socketUrl);
     const client = new Client({
       webSocketFactory: () => socket,
-      reconnectDelay: 5000, // 자동 재연결 (5초)
+      reconnectDelay: 5000,
       debug: (_str) => {
-        // console.log('STOMP Debug:', str);
+         // console.log('STOMP:', _str);
       },
       onConnect: () => {
-        console.log('✅ WebSocket Connected');
+        console.log('✅ WebSocket Connected Successfully!');
         setConnected(true);
       },
       onStompError: (frame) => {
-        console.error('❌ Broker reported error: ' + frame.headers['message']);
-        console.error('Additional details: ' + frame.body);
+        console.error('❌ Broker error:', frame.headers['message']);
       },
-      onDisconnect: () => {
-        console.log('❌ WebSocket Disconnected');
+      onWebSocketClose: () => {
+        console.log('❌ WebSocket Closed');
         setConnected(false);
       }
     });
@@ -45,51 +63,47 @@ export function useChatSocket(userId: number, currentRoomId: number | null) {
     client.activate();
     clientRef.current = client;
 
-    // 언마운트 시 연결 종료
     return () => {
       if (clientRef.current) {
         clientRef.current.deactivate();
+        setConnected(false);
       }
     };
   }, [userId]);
 
-  // 2. 방 구독 관리 (currentRoomId가 바뀔 때마다 실행)
+  // 2. 방 구독 관리
   useEffect(() => {
     const client = clientRef.current;
-
-    // 연결이 안됐거나 방 ID가 없으면 리턴
     if (!client || !client.connected || !currentRoomId) return;
 
-    // 기존 구독이 있다면 해제 (중복 수신 방지)
     if (subscriptionRef.current) {
       subscriptionRef.current.unsubscribe();
-      subscriptionRef.current = null;
     }
 
-    // 새 방 구독
-    // 백엔드 경로: /sub/chat/room/{roomId}
     console.log(`📡 Subscribing to room: ${currentRoomId}`);
     subscriptionRef.current = client.subscribe(`/sub/chat/room/${currentRoomId}`, (message: IMessage) => {
       if (message.body) {
         try {
           const receivedMsg: ChatMessage = JSON.parse(message.body);
-          setNewMessages((prev) => [...prev, receivedMsg]);
+          setNewMessages((prev) => {
+             if (prev.some(m => m.id === receivedMsg.id)) return prev;
+             return [...prev, receivedMsg];
+          });
         } catch (e) {
-          console.error("Failed to parse message", e);
+          console.error("Message parse error", e);
         }
       }
     });
 
-    // 클린업: 방이 바뀌거나 컴포넌트가 사라질 때 구독 해제
     return () => {
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe();
         subscriptionRef.current = null;
       }
     };
-  }, [currentRoomId, connected]); // connected가 true가 된 직후에도 실행되어야 함
+  }, [currentRoomId, connected]);
 
-  // 3. 메시지 전송 함수
+  // 3. 메시지 전송
   const sendMessage = useCallback((content: string, roomId: number) => {
     if (clientRef.current && clientRef.current.connected) {
       const payload: MessageRequest = {
@@ -99,14 +113,15 @@ export function useChatSocket(userId: number, currentRoomId: number | null) {
         messageType: 'TEXT',
       };
 
-      // 백엔드 발행 경로: /pub/chat/message
       clientRef.current.publish({
         destination: '/pub/chat/message',
         body: JSON.stringify(payload),
       });
       return true;
+    } else {
+        console.warn("⚠️ Cannot send message: Socket not connected");
+        return false;
     }
-    return false;
   }, [userId]);
 
   return {
