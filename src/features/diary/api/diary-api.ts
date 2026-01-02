@@ -78,16 +78,17 @@ export const updateDiary = async (diaryId: number, data: { content?: string; vis
     if (!response.ok) throw new Error('일기 수정 실패');
 };
 
-export const deleteDiary = async (diaryId: number): Promise<void> => {
-    const token = localStorage.getItem('petlog_token');
-    const response = await fetch(`http://localhost:8000/api/diaries/${diaryId}`, {
-        method: 'DELETE',
-        headers: {
-            'Authorization': token ? `Bearer ${token}` : ''
-        }
-    });
-
-    if (!response.ok) throw new Error('일기 삭제 실패');
+export const deleteDiary = async (diaryId: number, userId?: number): Promise<void> => {
+    try {
+        await httpClient.delete(`/diaries/${diaryId}`, {
+            headers: userId ? {
+                'X-USER-ID': userId.toString()
+            } : undefined
+        });
+    } catch (error: any) {
+        console.error('[deleteDiary] 삭제 실패:', error);
+        throw new Error(error.response?.data?.message || '일기 삭제 실패');
+    }
 };
 
 import { DiaryStyleRequest } from '../types/diary';
