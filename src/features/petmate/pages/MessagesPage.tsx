@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Client } from "@stomp/stompjs";
-import SockJS from "sockjs-client";
 import { Search, MoreVertical, Phone, Video, Send, ArrowLeft } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Button } from "@/shared/ui/button";
@@ -9,14 +7,18 @@ import { Input } from "@/shared/ui/input";
 import { Card } from "@/shared/ui/card";
 import { ScrollArea } from "@/shared/ui/scroll-area";
 import { useAuth } from "@/features/auth/context/auth-context";
-import { messageApi, ChatRoom, Message } from "../api/message-api";
 import { toast } from "sonner";
+
+import { chatApi } from "../api/chat-api";
+import { ChatRoom, ChatMessage } from "../types/chat";
+import { useChatSocket } from "../hooks/use-chat-socket";
 
 export default function MessagesPage() {
   const { user } = useAuth();
-  const currentUserId = user ? Number(user.id) : 0;
   
-  // URL 쿼리 파라미터에서 roomId 가져오기 (/messages?roomId=123)
+  // [수정] user가 없으면 0 대신 null로 처리하여 요청 방지
+  const currentUserId = user ? Number(user.id) : null;
+  
   const [searchParams] = useSearchParams();
   const initialRoomId = searchParams.get('roomId');
 
@@ -24,144 +26,125 @@ export default function MessagesPage() {
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(
     initialRoomId ? Number(initialRoomId) : null
   );
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputMessage, setInputMessage] = useState("");
-  const [stompClient, setStompClient] = useState<Client | null>(null);
   
-  // 스크롤 자동 이동을 위한 Ref
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputMessage, setInputMessage] = useState("");
+  
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // 1. 초기 로딩: 채팅방 목록 불러오기
-  useEffect(() => {
-    if (currentUserId) {
-      loadChatRooms();
-    }
-  }, [currentUserId]);
+  // 커스텀 훅: userId가 있을 때만 동작하도록 (0이 아닌 값)
+  const { connected, newMessages, sendMessage } = useChatSocket(currentUserId || 0, selectedRoomId);
 
-  const loadChatRooms = async () => {
-    try {
-      const rooms = await messageApi.getMyChatRooms(currentUserId);
-      setChatRooms(rooms);
-    } catch (error) {
-      console.error("Failed to load chat rooms:", error);
-    }
-  };
-
-  // 2. WebSocket 연결 설정 (페이지 진입 시 1회)
+  // 1. 초기 로딩: 채팅방 목록
   useEffect(() => {
+    // [중요] userId가 없으면 요청 보내지 않음
     if (!currentUserId) return;
 
-    // [중요] Vite Proxy 설정(/ws-chat)을 통해 연결
-    const socket = new SockJS("/ws-chat"); 
-    const client = new Client({
-      webSocketFactory: () => socket,
-      reconnectDelay: 5000,
-      debug: (str) => {
-        // console.log(str); // 디버깅 필요 시 주석 해제
-      },
-      onConnect: () => {
-        console.log("✅ WebSocket Connected");
-        // 연결 되자마자 선택된 방이 있다면 구독 (URL로 들어온 경우 등)
-        if (selectedRoomId) {
-          subscribeToRoom(client, selectedRoomId);
+    const loadChatRooms = async () => {
+      try {
+        console.log("Fetching chat rooms for user:", currentUserId);
+        const rooms = await chatApi.getMyChatRooms(currentUserId);
+        
+        if (Array.isArray(rooms)) {
+            setChatRooms(rooms);
+        } else {
+            console.warn("Unexpected chat rooms format:", rooms);
+            setChatRooms([]);
         }
-      },
-      onStompError: (frame) => {
-        console.error("Broker reported error: " + frame.headers["message"]);
-        console.error("Additional details: " + frame.body);
-      },
-    });
-
-    client.activate();
-    setStompClient(client);
-
-    return () => {
-      if (client) client.deactivate();
+      } catch (error) {
+        console.error("Failed to load chat rooms:", error);
+      }
     };
+    loadChatRooms();
   }, [currentUserId]);
 
-  // 3. 채팅방 선택 변경 시 로직 (메시지 로드 + 소켓 구독)
+  // 2. 채팅방 선택 시: 메시지 내역 로드 및 읽음 처리
   useEffect(() => {
-    if (selectedRoomId && currentUserId) {
-      // (1) HTTP로 이전 대화 내역 먼저 로드
-      loadMessages(selectedRoomId);
+    // [중요] 방 ID나 유저 ID가 없으면 요청 보내지 않음
+    if (!selectedRoomId || !currentUserId) return;
 
-      // (2) 소켓이 연결된 상태라면 해당 방 구독
-      if (stompClient && stompClient.connected) {
-        subscribeToRoom(stompClient, selectedRoomId);
+    const fetchMessages = async () => {
+      try {
+        const history = await chatApi.getMessages(selectedRoomId, currentUserId);
+        if (Array.isArray(history)) {
+            setMessages(history);
+        } else {
+            setMessages([]);
+        }
+        
+        // 읽음 처리 (에러 나도 무시)
+        try {
+            await chatApi.markAsRead(selectedRoomId, currentUserId);
+        } catch (e) {
+            console.warn("Mark as read failed", e);
+        }
+        
+        // 로컬 상태 업데이트
+        setChatRooms(prev => prev.map(room => 
+          room.id === selectedRoomId ? { ...room, unreadCount: 0 } : room
+        ));
+      } catch (error) {
+        console.error("Failed to load messages:", error);
       }
-    }
-  }, [selectedRoomId, stompClient, currentUserId]);
+    };
+    fetchMessages();
+  }, [selectedRoomId, currentUserId]);
 
-  // 스크롤 자동 하단 이동
+  // 3. 실시간 메시지 수신 처리
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: "smooth" });
+    if (newMessages.length > 0) {
+      const lastMsg = newMessages[newMessages.length - 1];
+      
+      if (lastMsg.chatRoomId === selectedRoomId) {
+        setMessages(prev => {
+          if (prev.some(m => m.id === lastMsg.id && lastMsg.id !== null)) return prev;
+          return [...prev, lastMsg];
+        });
+        
+        // 내가 보낸 게 아니면 읽음 처리 요청
+        if (lastMsg.senderId !== currentUserId && currentUserId) {
+           chatApi.markAsRead(selectedRoomId, currentUserId).catch(() => {});
+        }
+      }
+
+      setChatRooms(prev => prev.map(room => {
+        if (room.id === lastMsg.chatRoomId) {
+          const isMyMsg = lastMsg.senderId === currentUserId;
+          const isCurrentRoom = selectedRoomId === lastMsg.chatRoomId;
+          
+          return {
+            ...room,
+            lastMessage: lastMsg.content,
+            lastMessageAt: lastMsg.createdAt,
+            unreadCount: (!isMyMsg && !isCurrentRoom) 
+              ? room.unreadCount + 1 
+              : room.unreadCount
+          };
+        }
+        return room;
+      }));
     }
+  }, [newMessages, selectedRoomId, currentUserId]);
+
+  // 스크롤 자동 이동
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const loadMessages = async (roomId: number) => {
-    try {
-      const history = await messageApi.getChatHistory(roomId, currentUserId);
-      setMessages(history);
-      // 채팅방 들어왔으니 읽음 처리 -> 목록 갱신 (안읽은 배지 제거)
-      loadChatRooms();
-    } catch (error) {
-      console.error("Failed to load messages:", error);
-    }
-  };
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || !selectedRoomId || !currentUserId) return;
 
-  // 구독 헬퍼 함수
-  const subscribeToRoom = (client: Client, roomId: number) => {
-    // 백엔드 Config에 맞춰 '/sub/chat/room/{id}' 경로 구독
-    client.subscribe(`/sub/chat/room/${roomId}`, (message) => {
-      if (message.body) {
-        const newMessage: Message = JSON.parse(message.body);
-        
-        // 현재 보고 있는 방의 메시지면 화면에 추가
-        if (Number(newMessage.chatRoomId) === roomId) {
-          setMessages((prev) => [...prev, newMessage]);
-        }
-
-        // 사이드바 목록의 마지막 메시지 업데이트
-        setChatRooms((prev) => prev.map(room => 
-          room.id === Number(newMessage.chatRoomId)
-          ? { 
-              ...room, 
-              lastMessage: newMessage.content, 
-              lastMessageAt: newMessage.createdAt,
-              // 내가 보낸게 아니고, 현재 안보고 있는 방이면 안읽은 수 증가
-              unreadCount: (selectedRoomId !== Number(newMessage.chatRoomId) && newMessage.senderId !== currentUserId) 
-                ? room.unreadCount + 1 
-                : 0
-            }
-          : room
-        ));
-      }
-    });
-  };
-
-  // 메시지 전송
-  const handleSendMessage = () => {
-    if (!inputMessage.trim() || !selectedRoomId || !stompClient || !stompClient.connected) {
-        if (!stompClient?.connected) toast.error("채팅 서버와 연결이 끊어졌습니다.");
-        return;
+    if (!connected) {
+      toast.error("연결이 불안정합니다. 잠시 후 다시 시도해주세요.");
+      return;
     }
 
-    const chatMessage = {
-      chatRoomId: selectedRoomId,
-      senderId: currentUserId,
-      content: inputMessage,
-      messageType: 'TEXT'
-    };
-
-    // 백엔드 Controller의 @MessageMapping 경로로 발행
-    stompClient.publish({
-      destination: "/pub/chat/message", 
-      body: JSON.stringify(chatMessage),
-    });
-
-    setInputMessage("");
+    const success = sendMessage(inputMessage, selectedRoomId);
+    if (success) {
+      setInputMessage("");
+    } else {
+      toast.error("메시지 전송 실패");
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -172,6 +155,19 @@ export default function MessagesPage() {
   };
 
   const selectedRoom = chatRooms.find(r => r.id === selectedRoomId);
+
+  const formatTime = (dateStr: string | null) => {
+    if (!dateStr) return '';
+    try {
+        return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+        return '';
+    }
+  };
+
+  if (!user) {
+      return <div className="p-10 text-center">로그인이 필요합니다.</div>;
+  }
 
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-[#FDFBFD] pt-4">
@@ -190,7 +186,7 @@ export default function MessagesPage() {
             <div className="p-2 space-y-1">
               {chatRooms.length === 0 ? (
                  <div className="p-4 text-center text-gray-400 text-sm mt-10">
-                    아직 대화가 없어요.<br/>펫메이트와 매칭을 시작해보세요!
+                   아직 대화가 없어요.<br/>펫메이트와 매칭을 시작해보세요!
                  </div>
               ) : (
                 chatRooms.map((room) => (
@@ -203,8 +199,8 @@ export default function MessagesPage() {
                   >
                     <div className="relative">
                       <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
-                        <AvatarImage src={room.otherUserAvatar || "/placeholder-user.jpg"} />
-                        <AvatarFallback>{room.otherUserName.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={room.otherUserAvatar || undefined} />
+                        <AvatarFallback>{room.otherUserName ? room.otherUserName.charAt(0) : '?'}</AvatarFallback>
                       </Avatar>
                       {room.unreadCount > 0 && (
                         <span className="absolute -top-1 -right-1 bg-[#FF69B4] text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">
@@ -214,9 +210,9 @@ export default function MessagesPage() {
                     </div>
                     <div className="flex-1 overflow-hidden">
                       <div className="flex justify-between items-center mb-0.5">
-                        <span className="font-bold text-sm">{room.otherUserName}</span>
+                        <span className="font-bold text-sm">{room.otherUserName || '알 수 없음'}</span>
                         <span className="text-[10px] text-gray-400">
-                            {room.lastMessageAt ? new Date(room.lastMessageAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
+                            {formatTime(room.lastMessageAt)}
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 truncate">
@@ -242,13 +238,13 @@ export default function MessagesPage() {
                   </Button>
                   
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={selectedRoom?.otherUserAvatar || "/placeholder-user.jpg"} />
-                    <AvatarFallback>{selectedRoom?.otherUserName.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={selectedRoom?.otherUserAvatar || undefined} />
+                    <AvatarFallback>{selectedRoom?.otherUserName ? selectedRoom.otherUserName.charAt(0) : '?'}</AvatarFallback>
                   </Avatar>
                   <div>
                     <div className="font-bold text-sm">{selectedRoom?.otherUserName || "알 수 없는 사용자"}</div>
                     <div className="text-xs text-gray-500 flex items-center gap-1">
-                      {selectedRoom?.petName} 보호자님
+                      {selectedRoom?.petName || "반려동물"} 보호자님
                     </div>
                   </div>
                 </div>
@@ -268,7 +264,7 @@ export default function MessagesPage() {
                         <div key={msg.id || index} className={`flex gap-3 ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
                             {!isMyMessage && (
                                 <Avatar className="h-8 w-8 mt-1">
-                                    <AvatarImage src={msg.senderAvatar} />
+                                    <AvatarImage src={msg.senderAvatar || undefined} />
                                     <AvatarFallback>?</AvatarFallback>
                                 </Avatar>
                             )}
@@ -281,7 +277,7 @@ export default function MessagesPage() {
                                     {msg.content}
                                 </div>
                                 <span className="text-[10px] text-gray-400 mt-1 px-1">
-                                    {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                    {formatTime(msg.createdAt)}
                                 </span>
                             </div>
                         </div>
