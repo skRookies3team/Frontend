@@ -313,11 +313,11 @@ import {
 } from '../types/recap';
 
 /**
- * Generate AI-powered monthly recap automatically (last month)
- * POST /api/recaps/generate/auto
- * Server calculates last month's period automatically
+ * Schedule auto recap for next month (WAITING status)
+ * POST /api/recaps/schedule/auto
+ * Server schedules recap for next month
  */
-export const generateAutoRecapApi = async (data: RecapAutoGenerateRequest): Promise<GenerateRecapResponse> => {
+export const scheduleAutoRecapApi = async (data: RecapAutoGenerateRequest): Promise<GenerateRecapResponse> => {
     try {
         // Send as query parameters
         const params = new URLSearchParams({
@@ -330,13 +330,13 @@ export const generateAutoRecapApi = async (data: RecapAutoGenerateRequest): Prom
         }
 
         const response = await httpClient.post<GenerateRecapResponse>(
-            `/recaps/generate/auto?${params.toString()}`,
-            null // No body for auto generation
+            `/recaps/schedule/auto?${params.toString()}`,
+            null // No body for scheduling
         );
-        console.log('[generateAutoRecapApi] Success:', response);
+        console.log('[scheduleAutoRecapApi] Success:', response);
         return response;
     } catch (error) {
-        console.error('[generateAutoRecapApi] Failed to generate auto recap:', error);
+        console.error('[scheduleAutoRecapApi] Failed to schedule auto recap:', error);
         throw error;
     }
 };

@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/shared/ui/card"
 import { Badge } from "@/shared/ui/badge"
 import { ArrowLeft, BookOpen, Sparkles, Calendar, Loader2, Plus, X } from "lucide-react"
 import { RecapSimpleResponse } from "@/features/diary/types/recap"
-import { getUserRecapsApi, generateAutoRecapApi, generateManualRecapApi } from "@/features/diary/api/diary-api"
+import { getUserRecapsApi, scheduleAutoRecapApi, generateManualRecapApi } from "@/features/diary/api/diary-api"
 
 export default function AiRecapPage() {
   const navigate = useNavigate()
@@ -68,10 +68,11 @@ export default function AiRecapPage() {
       setGenerationError(null)
 
       if (generationMode === 'auto') {
-        await generateAutoRecapApi({
+        const response = await scheduleAutoRecapApi({
           petId: selectedPetId,
           userId: userId,
         })
+        console.log('Recap scheduled:', response)
       } else {
         await generateManualRecapApi({
           petId: selectedPetId,
