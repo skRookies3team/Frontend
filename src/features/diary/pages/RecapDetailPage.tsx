@@ -21,6 +21,15 @@ export default function RecapDetailPage() {
                 return
             }
 
+            // Check if user is logged in
+            const userStr = localStorage.getItem('petlog_user')
+            const userId = userStr ? JSON.parse(userStr).id : null
+            if (!userId || userId === '0') {
+                setError('로그인이 필요합니다.')
+                setLoading(false)
+                return
+            }
+
             try {
                 setLoading(true)
                 setError(null)
