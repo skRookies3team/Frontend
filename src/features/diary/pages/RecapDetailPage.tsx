@@ -21,6 +21,14 @@ export default function RecapDetailPage() {
                 return
             }
 
+            // Check if user is logged in
+            const userId = localStorage.getItem('userId')
+            if (!userId || userId === '0') {
+                setError('로그인이 필요합니다.')
+                setLoading(false)
+                return
+            }
+
             try {
                 setLoading(true)
                 setError(null)
