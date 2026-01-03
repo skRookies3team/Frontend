@@ -240,7 +240,7 @@ export interface GetNotificationDto {
     targetId: number;
     isRead?: boolean; // May be serialized as 'read' by some libraries
     read?: boolean;   // Standard Jackson serialization for boolean isRead
-    alarmType: 'FOLLOW' | 'LIKE' | 'MATCH' | 'COMMENT'| 'DIARY' | 'RECAP' | 'COIN';
+    alarmType: 'FOLLOW' | 'LIKE' | 'MATCH' | 'COMMENT' | 'DIARY' | 'RECAP' | 'COIN';
 }
 
 export interface GetNotificationListDto {
@@ -256,4 +256,33 @@ export const getNotificationsApi = async (): Promise<GetNotificationListDto> => 
 // 알람 읽음 처리 API
 export const readNotificationApi = async (userNotificationId: number): Promise<GetNotificationDto> => {
     return await httpClient.patch<GetNotificationDto>(`/notifications/${userNotificationId}`, {});
+};
+
+// 마일리지 내역 타입
+export type CoinType = 'WRITEDIARY' | 'WIRTEFEED' | 'BUY';
+
+// 마일리지 내역 DTO
+export interface CreateCoinLogDto {
+    type: CoinType;
+    amount: number;
+    createdAt: string; // LocalDateTime string
+}
+
+export interface CreateCoinLogDtoList {
+    coins: CreateCoinLogDto[];
+}
+
+// 마일리지 전체 내역 조회 API
+export const getCoinLogsApi = async (): Promise<CreateCoinLogDtoList> => {
+    return await httpClient.get<CreateCoinLogDtoList>('/coinlogs');
+};
+
+// 마일리지 적립 내역 조회 API
+export const getCoinAddLogsApi = async (): Promise<CreateCoinLogDtoList> => {
+    return await httpClient.get<CreateCoinLogDtoList>('/coinlogs/add');
+};
+
+// 마일리지 사용 내역 조회 API
+export const getCoinUseLogsApi = async (): Promise<CreateCoinLogDtoList> => {
+    return await httpClient.get<CreateCoinLogDtoList>('/coinlogs/redeem');
 };

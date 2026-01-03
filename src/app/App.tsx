@@ -128,9 +128,8 @@ function App() {
                                         <Route path="portfolio" element={<PortfolioPage />} />
                                         <Route path="diary/:id" element={<DiaryDetailPage />} />
                                         <Route path="diary/:id/style" element={<DiaryStyleEditPage />} />
-                                        <Route path="profile" element={<ProfilePage />}>
-                                            <Route path="mileage" element={<MileagePage />} />
-                                        </Route>
+                                        <Route path="profile" element={<ProfilePage />} />
+                                        <Route path="profile/mileage" element={<MileagePage />} />
                                         <Route path="profile/pet/:id" element={<PetProfilePage />} />
                                         <Route path="profile/pet/:id/edit" element={<PetEditPage />} />
                                         <Route path="shop" element={<ShopPage />}>

@@ -9,10 +9,17 @@ import { Badge } from "@/shared/ui/badge";
 import { NotificationsDropdown } from "@/features/social/components/notifications-dropdown";
 import { motion, AnimatePresence } from "framer-motion";
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
+
 export function Header() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const [currentPetIndex, setCurrentPetIndex] = useState(0);
 
@@ -55,13 +62,13 @@ export function Header() {
 
   const navItems = [
     ...(user ? [{ href: "/dashboard", label: "홈" }] : []),
-    { href: "/feed", label: "소셜 피드" },
-    ...(user ? [{ href: "/pet-mate", label: "펫메이트" }] : []),
-    ...(user ? [{ href: "/healthcare", label: "헬스케어" }] : []),
-    { href: "/ai-studio", label: "AI 스튜디오" },
+    { href: "/ai-studio", label: "AI 다이어리" },
     { href: getChatbotHref(), label: getChatbotLabel(), animated: true },
-    { href: "/shop", label: "쇼핑" },
+    ...(user ? [{ href: "/healthcare", label: "헬스케어" }] : []),
+    ...(user ? [{ href: "/pet-mate", label: "펫메이트" }] : []),
     ...(user ? [{ href: "/portfolio", label: "포토갤러리" }] : []),
+    { href: "/feed", label: "소셜 피드" },
+    { href: "/shop", label: "쇼핑" },
   ];
 
   return (
@@ -124,16 +131,28 @@ export function Header() {
                   </Badge>
                 </Button>
               </Link>
-              <Link to="/profile">
-                <Button variant="ghost" className="flex items-center gap-2">
-                  <img
-                    src={user.avatar || "/placeholder.svg"}
-                    alt={user.name}
-                    className="h-8 w-8 rounded-full object-cover"
-                  />
-                  <span>{user.name}</span>
-                </Button>
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2">
+                    <img
+                      src={user.avatar || "/placeholder.svg"}
+                      alt={user.name}
+                      className="h-8 w-8 rounded-full object-cover"
+                    />
+                    <span>{user.name}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <Link to="/profile">
+                    <DropdownMenuItem className="cursor-pointer">
+                      마이페이지
+                    </DropdownMenuItem>
+                  </Link>
+                  <DropdownMenuItem className="cursor-pointer text-red-600" onClick={logout}>
+                    로그아웃
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </>
           ) : (
             <>
