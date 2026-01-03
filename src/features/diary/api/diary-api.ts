@@ -357,12 +357,13 @@ export const generateManualRecapApi = async (data: RecapManualGenerateRequest): 
 };
 
 /**
- * Get recap detail by ID
- * GET /api/recaps/{recapId}
+ * Get recap detail by ID (with authorization)
+ * GET /api/recaps/{recapId}?userId={userId}
  */
 export const getRecapDetailApi = async (recapId: number): Promise<RecapDetailResponse> => {
     try {
-        const response = await httpClient.get<RecapDetailResponse>(`/recaps/${recapId}`);
+        const userId = parseInt(localStorage.getItem('userId') || '0');
+        const response = await httpClient.get<RecapDetailResponse>(`/recaps/${recapId}?userId=${userId}`);
         console.log('[getRecapDetailApi] Success:', response);
         return response;
     } catch (error) {
