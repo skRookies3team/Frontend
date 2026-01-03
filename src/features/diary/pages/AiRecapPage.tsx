@@ -48,6 +48,26 @@ export default function AiRecapPage() {
     }
   }
 
+  // Auto-refresh when WAITING recaps exist
+  useEffect(() => {
+    const hasWaitingRecap = recaps.some(recap => recap.status === 'WAITING')
+
+    if (!hasWaitingRecap) {
+      return
+    }
+
+    console.log('[Polling] WAITING 리캡 감지 - 30초마다 자동 새로고침 시작')
+    const interval = setInterval(() => {
+      console.log('[Polling] 리캡 목록 새로고침...')
+      fetchRecaps()
+    }, 30000) // 30초마다
+
+    return () => {
+      console.log('[Polling] 폴링 중지')
+      clearInterval(interval)
+    }
+  }, [recaps])
+
   const handleRecapClick = (recapId: number) => {
     navigate(`/recap/${recapId}`)
   }
