@@ -372,34 +372,6 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Menu Items */}
-          <div className="grid grid-cols-2 gap-4">
-            <Card className="border-0 shadow-md transition-all hover:shadow-lg">
-              <CardContent className="flex items-center gap-4 p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                  <Heart className="h-5 w-5" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-foreground">좋아요한 글</p>
-                  <p className="text-xs text-muted-foreground">128개</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-md transition-all hover:shadow-lg">
-              <CardContent className="flex items-center gap-4 p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600">
-                  <MessageCircle className="h-5 w-5" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-foreground">내 댓글</p>
-                  <p className="text-xs text-muted-foreground">45개</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </CardContent>
-            </Card>
-          </div>
 
           <UserDiaryPage />
         </div>
