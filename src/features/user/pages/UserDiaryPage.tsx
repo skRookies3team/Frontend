@@ -18,8 +18,7 @@ import { Card, CardContent } from "@/shared/ui/card"
 import { Badge } from "@/shared/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs"
 
-import { RECAPS, Recap } from "@/features/diary/data/recap-data"
-import { RecapModal } from "@/features/diary/components/recap-modal"
+import { RECAPS } from "@/features/diary/data/recap-data"
 import { getAllArchivesApi } from "@/features/auth/api/auth-api"
 import { getAiDiariesApi } from "@/features/diary/api/diary-api"
 import { useAuth } from "@/features/auth/context/auth-context"
@@ -36,7 +35,7 @@ export default function UserDiaryPage() {
     const [userDiaries, setUserDiaries] = useState<any[]>([])
     const { user } = useAuth()
 
-    const [selectedRecap, setSelectedRecap] = useState<Recap | null>(null)
+
 
     // --- Effects ---
     const fetchArchives = async () => {
@@ -208,7 +207,7 @@ export default function UserDiaryPage() {
                             <Card
                                 key={recap.id}
                                 className="group cursor-pointer overflow-hidden border-0 shadow-md transition-all hover:scale-105 hover:shadow-xl"
-                                onClick={() => setSelectedRecap(recap)}
+                                onClick={() => navigate(`/recap/${recap.id}`)}
                             >
                                 <div className="relative aspect-video overflow-hidden">
                                     <img
@@ -324,10 +323,7 @@ export default function UserDiaryPage() {
                 </div>
             )}
 
-            {/* Recap Modal */}
-            {selectedRecap && (
-                <RecapModal recap={selectedRecap} onClose={() => setSelectedRecap(null)} />
-            )}
+
 
             {/* Create Diary Dialog */}
 
