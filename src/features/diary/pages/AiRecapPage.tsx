@@ -1,18 +1,16 @@
 import { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { Button } from "@/shared/ui/button"
 import { Card, CardContent } from "@/shared/ui/card"
 import { Badge } from "@/shared/ui/badge"
 import { ArrowLeft, BookOpen, Sparkles, Calendar, Loader2, Plus, X } from "lucide-react"
-import { RecapModal } from "@/features/diary/components/recap-modal"
-import { RecapDetailResponse, RecapSimpleResponse } from "@/features/diary/types/recap"
-import { getUserRecapsApi, getRecapDetailApi, generateAutoRecapApi, generateManualRecapApi } from "@/features/diary/api/diary-api"
+import { RecapSimpleResponse } from "@/features/diary/types/recap"
+import { getUserRecapsApi, generateAutoRecapApi, generateManualRecapApi } from "@/features/diary/api/diary-api"
 
 export default function AiRecapPage() {
+  const navigate = useNavigate()
   const [recaps, setRecaps] = useState<RecapSimpleResponse[]>([])
-  const [selectedRecap, setSelectedRecap] = useState<RecapDetailResponse | null>(null)
   const [loading, setLoading] = useState(true)
-  const [detailLoading, setDetailLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Recap generation dialog state
@@ -50,16 +48,8 @@ export default function AiRecapPage() {
     }
   }
 
-  const handleRecapClick = async (recapId: number) => {
-    try {
-      setDetailLoading(true)
-      const detail = await getRecapDetailApi(recapId)
-      setSelectedRecap(detail)
-    } catch (err) {
-      console.error('Failed to fetch recap detail:', err)
-    } finally {
-      setDetailLoading(false)
-    }
+  const handleRecapClick = (recapId: number) => {
+    navigate(`/recap/${recapId}`)
   }
 
   const handleGenerateRecap = async () => {
@@ -253,17 +243,13 @@ export default function AiRecapPage() {
                       <span>{recap.momentCount}개의 순간</span>
                     </div>
                     <div className="mt-3 text-center text-sm font-medium text-purple-600">
-                      {detailLoading ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : '리캡 보기 →'}
+                      리캡 보기 →
                     </div>
                   </div>
                 </div>
               ),
             )}
           </div>
-        )}
-
-        {selectedRecap && (
-          <RecapModal recap={selectedRecap} onClose={() => setSelectedRecap(null)} />
         )}
 
         {/* Recap Generation Dialog */}
