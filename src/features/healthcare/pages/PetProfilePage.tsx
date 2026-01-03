@@ -4,7 +4,7 @@ import { Button } from "@/shared/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Badge } from "@/shared/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
-import { ChevronLeft, Calendar, Weight, Activity, Heart, Camera, Syringe } from "lucide-react"
+import { ChevronLeft, Calendar, Weight, Activity, Syringe } from "lucide-react"
 import { getPetApi, type GetPetDto } from "@/features/healthcare/api/pet-api"
 import { useState, useEffect } from "react"
 
@@ -84,35 +84,28 @@ export default function PetProfilePage() {
                     <div className="text-center">
                         <h2 className="text-2xl font-bold">{apiPetData?.petName || pet?.name || "반려동물"}</h2>
                         <p className="text-muted-foreground">
-                            {apiPetData?.breed || pet?.breed || "품종 미등록"} • {apiPetData?.age || pet?.age || "나이 미등록"}살
+                            {apiPetData?.breed || pet?.breed || "품종 미등록"} • {(() => {
+                                const birthStr = apiPetData?.birth || pet?.birthday
+                                const age = apiPetData?.age ?? pet?.age
+
+                                if (birthStr) {
+                                    const today = new Date()
+                                    const [year, month, day] = birthStr.split('-').map(Number)
+                                    const birthDate = new Date(year, month - 1, day)
+                                    let months = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth())
+                                    if (today.getDate() < birthDate.getDate()) {
+                                        months--
+                                    }
+                                    if (months < 12) {
+                                        return `${Math.max(0, months)}개월`
+                                    }
+                                }
+                                return (age === undefined || age === null) ? '나이 미등록' : `${age}살`
+                            })()}
                         </p>
                     </div>
                 </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-4">
-                    <Card className="border-0 shadow-md bg-pink-50/50">
-                        <CardContent className="flex flex-col items-center justify-center p-4">
-                            <Activity className="mb-2 h-6 w-6 text-pink-500" />
-                            <p className="text-2xl font-bold text-pink-600">{pet?.stats?.walks || 0}</p>
-                            <p className="text-xs text-muted-foreground">산책 횟수</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-0 shadow-md bg-purple-50/50">
-                        <CardContent className="flex flex-col items-center justify-center p-4">
-                            <Heart className="mb-2 h-6 w-6 text-purple-500" />
-                            <p className="text-2xl font-bold text-purple-600">{pet?.stats?.friends || 0}</p>
-                            <p className="text-xs text-muted-foreground">친구</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-0 shadow-md bg-blue-50/50">
-                        <CardContent className="flex flex-col items-center justify-center p-4">
-                            <Camera className="mb-2 h-6 w-6 text-blue-500" />
-                            <p className="text-2xl font-bold text-blue-600">{pet?.stats?.photos || 0}</p>
-                            <p className="text-xs text-muted-foreground">사진</p>
-                        </CardContent>
-                    </Card>
-                </div>
 
                 {/* Info Cards */}
                 <div className="space-y-4">
@@ -162,9 +155,6 @@ export default function PetProfilePage() {
                                 <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
                                     {pet?.healthStatus?.weight || "정상"}
                                 </Badge>
-                            </div>
-                            <div className="mt-2 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
-                                마지막 검진일: {pet?.healthStatus?.lastCheckup || "-"}
                             </div>
                         </CardContent>
                     </Card>
