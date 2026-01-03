@@ -300,3 +300,105 @@ export const getWeatherApi = async (latitude: number, longitude: number, date: s
         return null; // Return null on error, let UI handle fallback
     }
 };
+// ============================================================
+// Recap API Functions
+// ============================================================
+
+import {
+    RecapAutoGenerateRequest,
+    RecapManualGenerateRequest,
+    RecapDetailResponse,
+    RecapSimpleResponse,
+    GenerateRecapResponse
+} from '../types/recap';
+
+/**
+ * Generate AI-powered monthly recap automatically (last month)
+ * POST /api/recaps/generate/auto
+ * Server calculates last month's period automatically
+ */
+export const generateAutoRecapApi = async (data: RecapAutoGenerateRequest): Promise<GenerateRecapResponse> => {
+    try {
+        // Send as query parameters
+        const params = new URLSearchParams({
+            petId: data.petId.toString(),
+            userId: data.userId.toString(),
+        });
+
+        if (data.petName) {
+            params.append('petName', data.petName);
+        }
+
+        const response = await httpClient.post<GenerateRecapResponse>(
+            `/recaps/generate/auto?${params.toString()}`,
+            null // No body for auto generation
+        );
+        console.log('[generateAutoRecapApi] Success:', response);
+        return response;
+    } catch (error) {
+        console.error('[generateAutoRecapApi] Failed to generate auto recap:', error);
+        throw error;
+    }
+};
+
+/**
+ * Generate AI-powered monthly recap manually with custom date range
+ * POST /api/recaps/generate/manual
+ */
+export const generateManualRecapApi = async (data: RecapManualGenerateRequest): Promise<GenerateRecapResponse> => {
+    try {
+        const response = await httpClient.post<GenerateRecapResponse>('/recaps/generate/manual', data);
+        console.log('[generateManualRecapApi] Success:', response);
+        return response;
+    } catch (error) {
+        console.error('[generateManualRecapApi] Failed to generate manual recap:', error);
+        throw error;
+    }
+};
+
+/**
+ * Get recap detail by ID
+ * GET /api/recaps/{recapId}
+ */
+export const getRecapDetailApi = async (recapId: number): Promise<RecapDetailResponse> => {
+    try {
+        const response = await httpClient.get<RecapDetailResponse>(`/recaps/${recapId}`);
+        console.log('[getRecapDetailApi] Success:', response);
+        return response;
+    } catch (error) {
+        console.error('[getRecapDetailApi] Failed to get recap detail:', error);
+        throw error;
+    }
+};
+
+/**
+ * Get all recaps for a user
+ * GET /api/recaps/user/{userId}
+ */
+export const getUserRecapsApi = async (userId: number): Promise<RecapSimpleResponse[]> => {
+    try {
+        const response = await httpClient.get<RecapSimpleResponse[]>(`/recaps/user/${userId}`);
+        console.log('[getUserRecapsApi] Success:', response);
+        return response;
+    } catch (error) {
+        console.error('[getUserRecapsApi] Failed to get user recaps:', error);
+        // Return empty array as fallback
+        return [];
+    }
+};
+
+/**
+ * Get recaps by pet ID
+ * GET /api/recaps/pet/{petId}
+ */
+export const getPetRecapsApi = async (petId: number): Promise<RecapSimpleResponse[]> => {
+    try {
+        const response = await httpClient.get<RecapSimpleResponse[]>(`/recaps/pet/${petId}`);
+        console.log('[getPetRecapsApi] Success:', response);
+        return response;
+    } catch (error) {
+        console.error('[getPetRecapsApi] Failed to get pet recaps:', error);
+        // Return empty array as fallback
+        return [];
+    }
+};
