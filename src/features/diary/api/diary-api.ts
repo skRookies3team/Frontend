@@ -362,7 +362,8 @@ export const generateManualRecapApi = async (data: RecapManualGenerateRequest): 
  */
 export const getRecapDetailApi = async (recapId: number): Promise<RecapDetailResponse> => {
     try {
-        const userId = parseInt(localStorage.getItem('userId') || '0');
+        const userStr = localStorage.getItem('petlog_user');
+        const userId = userStr ? JSON.parse(userStr).id : 0;
         const response = await httpClient.get<RecapDetailResponse>(`/recaps/${recapId}?userId=${userId}`);
         console.log('[getRecapDetailApi] Success:', response);
         return response;

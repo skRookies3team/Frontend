@@ -22,8 +22,12 @@ export default function AiRecapPage() {
   const [periodEnd, setPeriodEnd] = useState('')
   const [generationError, setGenerationError] = useState<string | null>(null)
 
-  // Get userId and petId from localStorage
-  const userId = parseInt(localStorage.getItem('userId') || '1')
+  // Get userId from petlog_user object
+  const getUserId = () => {
+    const userStr = localStorage.getItem('petlog_user')
+    return userStr ? parseInt(JSON.parse(userStr).id) : 1
+  }
+  const userId = getUserId()
   const defaultPetId = parseInt(localStorage.getItem('petId') || '1')
 
   useEffect(() => {
