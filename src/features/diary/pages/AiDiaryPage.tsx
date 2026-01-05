@@ -10,6 +10,7 @@ import {
   createSocialFeed,
   createAiDiaryApi, // [NEW]
   getWeatherApi, // [NEW] Weather API
+  createNotification, // [NEW] Notification
 } from "../api/diary-api";
 
 import EditStep from '../components/EditStep';
@@ -178,6 +179,17 @@ const AiDiaryPage = () => {
         }
       }
       console.log("=== [Frontend] Diary Saved & Process Completed ===");
+
+      // ✅ [NEW] 일기 생성 알림 전송
+      if (createdDiaryId && user) {
+        await createNotification({
+          type: 'DIARY',
+          senderId: Number(user.id),
+          receiverId: Number(user.id),
+          targetId: createdDiaryId
+        });
+      }
+
       setStep("complete");
 
     } catch (error: any) {

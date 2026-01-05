@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/shared/lib/utils";
 import { useAuth } from "@/features/auth/context/auth-context";
 import { Badge } from "@/shared/ui/badge";
-import { NotificationsDropdown } from "@/features/social/components/notifications-dropdown";
+import { NotificationsDropdown } from "@/features/dashboard/notifications/components/notifications-dropdown";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function Header() {
