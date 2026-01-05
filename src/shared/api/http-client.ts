@@ -34,12 +34,12 @@ axiosInstance.interceptors.request.use(
         if (!config.skipAuth) {
             // [수정] 1. 토큰 설정 로직 강화 (함수 -> 로컬스토리지 순서)
             let token: string | null = null;
-            
+
             // 1-1. 주입된 함수가 있으면 시도
             if (getTokenFunction) {
                 token = getTokenFunction();
             }
-            
+
             // 1-2. 함수가 없거나 토큰을 못 찾았으면 localStorage 직접 확인 (새로고침 직후 대비)
             if (!token) {
                 token = localStorage.getItem('accessToken') || localStorage.getItem('token');
@@ -48,14 +48,14 @@ axiosInstance.interceptors.request.use(
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
             }
-            
+
             // [수정] 2. User ID 설정 로직 강화
             let userId: string | null = null;
 
             if (getUserIdFunction) {
                 userId = getUserIdFunction();
             }
-            
+
             // 함수 실패 시 localStorage 확인
             if (!userId) {
                 userId = localStorage.getItem('userId');
@@ -66,10 +66,10 @@ axiosInstance.interceptors.request.use(
             }
 
             // 로그 출력 (디버깅)
-            const tokenLog = config.headers.Authorization 
-                ? `Bearer ${String(config.headers.Authorization).substring(7, 17)}...` 
+            const tokenLog = config.headers.Authorization
+                ? `Bearer ${String(config.headers.Authorization).substring(7, 17)}...`
                 : 'No Token';
-            
+
             // 개발 환경에서만 로그 출력 권장 (선택사항)
             console.log(`[API Request] ${config.url} | Auth: ${tokenLog} | X-USER-ID: ${config.headers['X-USER-ID'] || 'None'}`);
         }
@@ -83,7 +83,7 @@ axiosInstance.interceptors.response.use(
     async (error: AxiosError) => {
         // 에러 로그 강화
         if (error.response) {
-             console.error(`[API Error] ${error.response.status} ${error.config?.url}`, error.response.data);
+            console.error(`[API Error] ${error.response.status} ${error.config?.url}`, error.response.data);
         }
         return Promise.reject(error);
     }
