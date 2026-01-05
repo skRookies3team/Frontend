@@ -404,3 +404,25 @@ export const getPetRecapsApi = async (petId: number): Promise<RecapSimpleRespons
         return [];
     }
 };
+
+/**
+ * Create notification
+ * POST /api/notifications/create
+ */
+export interface NotificationRequest {
+    type: string;        // "DIARY", "RECAP", "FEED"
+    senderId: number;    // 사용자 ID
+    receiverId: number;  // 알림 받을 사용자 ID
+    targetId: number;    // 일기/리캡/피드 ID
+    coin?: number;       // 선택 (코인 적립 시)
+}
+
+export const createNotification = async (request: NotificationRequest): Promise<void> => {
+    try {
+        await httpClient.post('/notifications/create', request);
+        console.log('[createNotification] Notification sent:', request.type);
+    } catch (error) {
+        console.error('[createNotification] Failed to send notification:', error);
+        // 알림 전송 실패해도 무시 (비즈니스 로직에 영향 없음)
+    }
+};
