@@ -237,48 +237,52 @@ const DiaryUploadPage = () => {
             let location: { lat: number, lng: number } | null = null;
             let resolvedLocationName = "위치 정보 없음";
 
-            // 1. Try Saved Location (User Default)
-            try {
-                const savedLoc = await petMateApi.getSavedLocation(Number(user.id));
-                if (savedLoc) {
-                    location = { lat: savedLoc.latitude, lng: savedLoc.longitude };
-                    resolvedLocationName = savedLoc.location || "저장된 위치";
-                }
-            } catch (e) {
-                console.warn("Saved Location Check Failed", e);
-            }
+            // Parse selected date
+            const diaryDate = selectedDate ? new Date(selectedDate) : new Date();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            diaryDate.setHours(0, 0, 0, 0);
 
-            // 2. If 'Selected Date' is today or no saved location, try GPS? 
-            // Using GPS only if we didn't find a Saved Location?
-            // Or maybe we prefer GPS for Today?
-            // User said: "It should use the saved location... default is receiving lat/lng from saved... but now it stuck"
-            // So if we found savedLoc, we are good.
+            const isPastDate = diaryDate < today;
 
-            // If NO saved location, fallback to GPS
-            if (!location) {
-                location = await getCurrentPosition();
-            }
+            // [CHANGED] 과거 날짜인 경우 위치를 전송하지 않음 (백엔드가 DB에서 조회)
+            if (!isPastDate) {
+                // 오늘 날짜인 경우에만 GPS 위치 조회
 
-            // 3. Reverse Geocoding to get Address String
-            if (location) {
+                // 1. Try Saved Location (User Default)
                 try {
-                    const addrInfo = await petMateApi.getAddressFromCoords(location.lng, location.lat);
-                    if (addrInfo) {
-                        resolvedLocationName = addrInfo.fullAddress || addrInfo.roadAddress || resolvedLocationName;
+                    const savedLoc = await petMateApi.getSavedLocation(Number(user.id));
+                    if (savedLoc) {
+                        location = { lat: savedLoc.latitude, lng: savedLoc.longitude };
+                        resolvedLocationName = savedLoc.location || "저장된 위치";
                     }
                 } catch (e) {
-                    console.warn("Reverse Geocoding Failed", e);
-                    // resolvedLocationName remains whatever it was (or "위치 정보 없음")
+                    console.warn("Saved Location Check Failed", e);
                 }
+
+                // 2. If NO saved location, fallback to GPS
+                if (!location) {
+                    location = await getCurrentPosition();
+                }
+
+                // 3. Reverse Geocoding to get Address String
+                if (location) {
+                    try {
+                        const addrInfo = await petMateApi.getAddressFromCoords(location.lng, location.lat);
+                        if (addrInfo) {
+                            resolvedLocationName = addrInfo.fullAddress || addrInfo.roadAddress || resolvedLocationName;
+                        }
+                    } catch (e) {
+                        console.warn("Reverse Geocoding Failed", e);
+                    }
+                }
+            } else {
+                console.log('[DiaryUpload] 과거 날짜 - GPS 위치 전송 스킵 (백엔드가 DB에서 조회)');
             }
 
             const formData = new FormData();
             imageFiles.forEach((file) => formData.append("imageFiles", file));
             if (imageFiles.length === 0) {
-                // Even if empty, some backends might need this key. 
-                // But typically specific backends might fail if empty file is sent as part. 
-                // User's controller says required=false for imageFiles. So maybe we can skip if empty?
-                // But let's keep empty blob just in case it's harmless or commonly handled.
                 formData.append("imageFiles", new Blob([], { type: 'application/octet-stream' }), "");
             }
 
@@ -286,11 +290,13 @@ const DiaryUploadPage = () => {
             formData.append("userId", new Blob([String(user.id)], { type: "application/json" }));
             formData.append("petId", new Blob([String(selectedPetId)], { type: "application/json" }));
 
-            // [NEW] Send Location & Date for accurate weather/context
-            if (location) {
+            // [CHANGED] 오늘 날짜인 경우에만 GPS 위치 전송
+            if (!isPastDate && location) {
                 formData.append("latitude", new Blob([String(location.lat)], { type: "application/json" }));
                 formData.append("longitude", new Blob([String(location.lng)], { type: "application/json" }));
+                console.log('[DiaryUpload] 오늘 날짜 - GPS 위치 전송:', location);
             }
+
             if (selectedDate) {
                 formData.append("date", new Blob([String(selectedDate)], { type: "application/json" }));
             }
@@ -335,6 +341,22 @@ const DiaryUploadPage = () => {
 
             // --- Prepare Next State & Navigate ---
             // We strictly overwrite the session storage with the RESULT now
+
+            // [CHANGED] 과거 날짜인 경우 백엔드가 반환한 위치 사용
+            const finalLocationCoords = isPastDate && previewData.latitude && previewData.longitude
+                ? { lat: previewData.latitude, lng: previewData.longitude }
+                : (location ? { lat: location.lat, lng: location.lng } : null);
+
+            const finalLocationName = isPastDate && previewData.locationName
+                ? previewData.locationName
+                : (resolvedLocationName || previewData.locationName);
+
+            console.log('[DiaryUpload] Final Location:', {
+                isPastDate,
+                coords: finalLocationCoords,
+                name: finalLocationName
+            });
+
             const nextState = {
                 step: 'edit',
                 selectedDate, // Persist date
@@ -344,8 +366,8 @@ const DiaryUploadPage = () => {
                 editedDiary: previewData.content || "AI가 일기를 생성하지 못했습니다.",
                 weather: previewData.weather || "맑음",
                 mood: previewData.mood || "행복",
-                locationName: previewData.locationName || resolvedLocationName,
-                locationCoords: location ? { lat: location.lat, lng: location.lng } : null,
+                locationName: finalLocationName,
+                locationCoords: finalLocationCoords,
                 selectedImages: selectedImages, // Keep original images for display
                 mainImageIndex: mainImageIndex, // ✅ 대표 이미지 인덱스 저장
 
