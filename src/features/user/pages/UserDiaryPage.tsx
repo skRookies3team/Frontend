@@ -107,13 +107,19 @@ export default function UserDiaryPage() {
                 const res = await getUserRecapsApi(Number(user.id));
                 console.log('[UserDiaryPage] Recap API Response:', res);
 
-                const mappedRecaps = res.map((r: any) => ({
-                    id: r.recapId,
-                    period: `${r.periodStart.split('-')[1]}-${r.periodEnd.split('-')[1]}월`,
-                    year: r.periodStart.split('-')[0],
-                    coverImage: r.mainImageUrl || 'https://placehold.co/600x400/e2e8f0/94a3b8?text=Recap',
-                    totalMoments: r.momentCount || 0
-                }));
+                const mappedRecaps = res.map((r: any) => {
+                    const startMonth = parseInt(r.periodStart.split('-')[1]);
+                    const endMonth = parseInt(r.periodEnd.split('-')[1]);
+                    const period = startMonth === endMonth ? `${endMonth}월` : `${startMonth}월~${endMonth}월`;
+
+                    return {
+                        id: r.recapId,
+                        period,
+                        year: r.periodStart.split('-')[0],
+                        coverImage: r.mainImageUrl || 'https://placehold.co/600x400/e2e8f0/94a3b8?text=Recap',
+                        totalMoments: r.momentCount || 0
+                    };
+                });
 
                 setUserRecaps(mappedRecaps);
             } catch (error) {

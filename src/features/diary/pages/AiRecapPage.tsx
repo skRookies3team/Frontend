@@ -152,6 +152,22 @@ export default function AiRecapPage() {
     return `${startYear}년 ${startMonth}월 ~ ${endYear}년 ${endMonth}월`
   }
 
+  const formatRecapTitle = (title: string) => {
+    // Transform "02-02월 리캡" → "2월 리캡"
+    // Transform "01-02월 리캡" → "1월~2월 리캡"
+    const match = title.match(/(\d+)-(\d+)월 리캡/);
+    if (match) {
+      const month1 = parseInt(match[1]);
+      const month2 = parseInt(match[2]);
+      if (month1 === month2) {
+        return `${month2}월 리캡`;
+      } else {
+        return `${month1}월~${month2}월 리캡`;
+      }
+    }
+    return title; // Return original if doesn't match pattern
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-pink-50 pb-20 md:pb-0">
       <header className="sticky top-0 z-40 border-b border-purple-100 bg-white/95 backdrop-blur-sm">
@@ -256,7 +272,7 @@ export default function AiRecapPage() {
                       AI 리캡
                     </Badge>
                     <div className="absolute bottom-6 left-6 text-white">
-                      <h3 className="text-lg font-bold">{recap.title}</h3>
+                      <h3 className="text-lg font-bold">{formatRecapTitle(recap.title)}</h3>
                       <p className="mt-1 text-sm text-white/80">
                         {formatPeriod(recap.periodStart, recap.periodEnd)}
                       </p>
