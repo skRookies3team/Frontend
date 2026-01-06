@@ -4,7 +4,7 @@ import {
     startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay,
     parseISO
 } from 'date-fns';
-import { ChevronLeft, ChevronRight, Sparkles, BookOpen, Dog, X, ArrowRight, Lightbulb, Cloud, Sun, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles, Dog, X, Cloud, Sun } from 'lucide-react';
 
 import { useDiaryAuth } from "../hooks/useDiaryAuth";
 import { getDiariesByDate } from "../api/diary-api";
@@ -12,11 +12,10 @@ import { getDiariesByDate } from "../api/diary-api";
 interface DiaryCalendarProps {
     selectedDate: string; // YYYY-MM-DD
     onDateSelect: (date: string) => void;
-    onRecapClick?: () => void;
     diaryEntries?: any[]; // Keep for prop compatibility if needed
 }
 
-const DiaryCalendar = ({ selectedDate, onDateSelect, onRecapClick }: DiaryCalendarProps) => {
+const DiaryCalendar = ({ selectedDate, onDateSelect }: DiaryCalendarProps) => {
     const { user } = useDiaryAuth();
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [entries, setEntries] = useState<any[]>([]);

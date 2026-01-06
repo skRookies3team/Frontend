@@ -17,9 +17,7 @@ const DiaryCalendarPage = () => {
         navigate('/ai-studio/diary/upload', { state: { date } });
     };
 
-    const handleRecapClick = () => {
-        navigate('/ai-studio/recap');
-    };
+
 
     const handleBack = () => {
         navigate(-1);
@@ -43,7 +41,6 @@ const DiaryCalendarPage = () => {
                 <DiaryCalendar
                     selectedDate={selectedDate}
                     onDateSelect={handleDateSelect}
-                    onRecapClick={handleRecapClick}
                 />
             </main>
         </div>
