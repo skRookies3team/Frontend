@@ -9,14 +9,10 @@ import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
 import {
   PawPrint,
-  Heart,
   Settings,
-  ChevronRight,
   Edit,
-  MessageCircle,
   ImageIcon,
   Plus,
-  LogOut,
 } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import { useAuth } from "@/features/auth/context/auth-context"
@@ -34,7 +30,7 @@ import UserDiaryPage from "./UserDiaryPage"
 export default function ProfilePage() {
   const navigate = useNavigate()
 
-  const { user, logout, updateUser, addPet, updatePet, deletePet } = useAuth()
+  const { user, updateUser, addPet, updatePet, deletePet } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
 
@@ -196,14 +192,7 @@ export default function ProfilePage() {
     setNewPetAge("")
   }
 
-  const handleEditPet = (pet: any) => {
-    setEditingPetId(pet.id)
-    setNewPetName(pet.name)
-    setNewPetBreed(pet.breed)
-    setNewPetAge(pet.age.toString())
-    setShowManagePetsDialog(false)
-    setShowAddPetDialog(true)
-  }
+
 
   const handleDeletePet = async (id: string, event?: React.MouseEvent) => {
     // Prevent event bubbling if triggered from a button inside another clickable element
