@@ -183,6 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: response.username,
         username: response.social,
         email: response.email,
+        avatar: response.profileImage || "/placeholder-user.jpg",
         petCoin: coinDto.petCoin, // 실시간 코인 정보 반영
         profileCompleted: true
       };

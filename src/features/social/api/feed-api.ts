@@ -1,13 +1,14 @@
 import { httpClient } from '@/shared/api/http-client';
-import { 
-  CreateFeedRequest, 
-  FeedSliceResponse, 
-  UpdateFeedRequest, 
-  FeedDto, 
-  CommentDto, 
+import {
+  CreateFeedRequest,
+  FeedSliceResponse,
+  UpdateFeedRequest,
+  FeedDto,
+  CommentDto,
   CreateCommentRequest,
   SearchResponse,
-  SearchUserDto
+  SearchUserDto,
+  ToggleLikeResponse
 } from '../types/feed';
 
 // 해시태그 검색 결과 타입 정의
@@ -73,10 +74,10 @@ export const feedApi = {
     try {
       const cleanQuery = query.replace(/^#/, '');
       if (!cleanQuery) return [];
-      
+
       const params = new URLSearchParams({ query: cleanQuery });
       const response = await httpClient.get<SearchHashtagDto[]>(`/search/hashtags?${params.toString()}`);
-      return response || []; 
+      return response || [];
     } catch (e) {
       console.error("Hashtag Search API Error:", e);
       return [];
@@ -88,9 +89,9 @@ export const feedApi = {
   getTrendingFeeds: async (viewerId: number, page: number = 0) => {
     const response = await httpClient.get<FeedSliceResponse>(`${FEED_BASE_URL}/popular`, {
       params: { page, size: 20 },
-      headers: { "X-User-Id": viewerId.toString() } 
+      headers: { "X-User-Id": viewerId.toString() }
     });
-    return response; 
+    return response;
   },
 
   // [추가] 해시태그 피드 검색 (알고리즘 정렬)
@@ -106,7 +107,7 @@ export const feedApi = {
   getFeedDetail: async (feedId: number, userId: number) => {
     return await httpClient.get<FeedDto>(`${FEED_BASE_URL}/${feedId}/viewer/${userId}`);
   },
-  
+
   updateFeed: async (feedId: number, data: UpdateFeedRequest) => {
     return await httpClient.put<void>(`${FEED_BASE_URL}/${feedId}`, data);
   },
@@ -133,9 +134,9 @@ export const feedApi = {
 
   toggleLike: async (feedId: number, userId: number) => {
     const params = new URLSearchParams({ userId: String(userId) });
-    return await httpClient.post<string>(
-        `${FEED_BASE_URL}/${feedId}/likes?${params.toString()}`, 
-        null
+    return await httpClient.post<ToggleLikeResponse>(
+      `${FEED_BASE_URL}/${feedId}/likes?${params.toString()}`,
+      null
     );
   },
 
@@ -159,10 +160,10 @@ export const feedApi = {
 
   checkFollow: async (followerId: number, followingId: number) => {
     try {
-        const followings = await feedApi.getFollowings(followerId);
-        return followings.some(f => f.userId === followingId);
+      const followings = await feedApi.getFollowings(followerId);
+      return followings.some(f => f.userId === followingId);
     } catch {
-        return false;
+      return false;
     }
   },
 
@@ -177,20 +178,20 @@ export const feedApi = {
   searchUsers: async (query: string, viewerId: number = 0): Promise<SearchUserDto[]> => {
     try {
       if (query.startsWith('#')) return [];
-      const response = await feedApi.search(query, viewerId); 
-      return response?.users || []; 
+      const response = await feedApi.search(query, viewerId);
+      return response?.users || [];
     } catch (e) {
       console.error("Search API Error:", e);
-      return []; 
+      return [];
     }
   },
 
   report: async (reporterId: number, targetId: number, type: "FEED" | "USER" | "COMMENT", reason: string) => {
-    const params = new URLSearchParams({ 
-        reporterId: String(reporterId), 
-        targetId: String(targetId), 
-        type, 
-        reason 
+    const params = new URLSearchParams({
+      reporterId: String(reporterId),
+      targetId: String(targetId),
+      type,
+      reason
     });
     return await httpClient.post<void>(`/reports?${params.toString()}`, {});
   },

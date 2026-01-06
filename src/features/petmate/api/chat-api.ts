@@ -33,12 +33,26 @@ export const chatApi = {
   sendMessage: async (data: MessageRequest): Promise<ChatMessage> => {
     return httpClient.post<ChatMessage>(`${BASE_URL}/send`, data);
   },
-  
+
   // 5. 채팅방 생성 또는 조회 (매칭 시 사용)
   // POST /api/messages/room?userId1={id}&userId2={id}
   createOrGetChatRoom: async (userId1: number, userId2: number) => {
     return httpClient.post(`${BASE_URL}/room`, null, {
-        params: { userId1, userId2 }
+      params: { userId1, userId2 }
+    });
+  },
+
+  // 6. 안 읽은 메시지 전체 개수 조회
+  // GET /api/messages/unread/{userId}
+  getTotalUnreadCount: async (userId: number): Promise<number> => {
+    return httpClient.get<number>(`${BASE_URL}/unread/${userId}`);
+  },
+
+  // 7. 채팅방 나가기 (삭제)
+  // DELETE /api/messages/room/{chatRoomId}?userId={userId}
+  deleteChatRoom: async (chatRoomId: number, userId: number): Promise<void> => {
+    return httpClient.delete(`${BASE_URL}/room/${chatRoomId}`, {
+      params: { userId }
     });
   }
 };

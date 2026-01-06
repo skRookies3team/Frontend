@@ -5,10 +5,10 @@ export interface FeedDto {
   writerNickname: string;
   writerSocialId: string;
   writerProfileImage: string | null;
-  
+
   content: string;
-  imageUrls: string[]; 
-  
+  imageUrls: string[];
+
   likeCount: number;
   isLiked: boolean;
   commentCount: number;
@@ -38,14 +38,14 @@ export interface UpdateFeedRequest {
   userId: number;
   content: string;
   location?: string;
-  imageUrls: string[]; 
+  imageUrls: string[];
 }
 
 // 3. 댓글 관련 타입
 export interface CommentDto {
   commentId: number;
   content: string;
-  writerId: number; 
+  writerId: number;
   userId?: number;
   writerNickname: string;
   writerProfileImage: string | null;
@@ -65,9 +65,9 @@ export interface CreateCommentRequest {
 // 4. 검색 결과 타입
 export interface SearchUserDto {
   userId: number;
-  username: string; 
-  social: string;   
-  profileImage: string | null; 
+  username: string;
+  social: string;
+  profileImage: string | null;
   statusMessage?: string;
   // [수정] pets 필드 추가 (UserPage 오류 해결)
   pets?: {
@@ -100,4 +100,10 @@ export interface LikerDto {
   userId: number;
   nickname: string;
   profileImageUrl: string | null;
+  profileImage?: string | null; // 백엔드 응답 대응 (프사 표시용)
+}
+
+export interface ToggleLikeResponse {
+  isLiked: boolean;
+  likeCount: number;
 }
