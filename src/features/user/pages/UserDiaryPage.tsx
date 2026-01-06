@@ -18,9 +18,8 @@ import { Card, CardContent } from "@/shared/ui/card"
 import { Badge } from "@/shared/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs"
 
-import { RECAPS } from "@/features/diary/data/recap-data"
 import { getAllArchivesApi } from "@/features/auth/api/auth-api"
-import { getAiDiariesApi } from "@/features/diary/api/diary-api"
+import { getAiDiariesApi, getUserRecapsApi } from "@/features/diary/api/diary-api"
 import { useAuth } from "@/features/auth/context/auth-context"
 
 export default function UserDiaryPage() {
@@ -33,6 +32,10 @@ export default function UserDiaryPage() {
 
     // [NEW] Real Diary State
     const [userDiaries, setUserDiaries] = useState<any[]>([])
+
+    // ✅ [NEW] Real Recap State
+    const [userRecaps, setUserRecaps] = useState<any[]>([])
+
     const { user } = useAuth()
 
 
@@ -97,9 +100,32 @@ export default function UserDiaryPage() {
         }
     };
 
+    // ✅ [NEW] Fetch User Recaps
+    const fetchRecaps = async () => {
+        if (user?.id) {
+            try {
+                const res = await getUserRecapsApi(Number(user.id));
+                console.log('[UserDiaryPage] Recap API Response:', res);
+
+                const mappedRecaps = res.map((r: any) => ({
+                    id: r.recapId,
+                    period: `${r.periodStart.split('-')[1]}-${r.periodEnd.split('-')[1]}월`,
+                    year: r.periodStart.split('-')[0],
+                    coverImage: r.mainImageUrl || 'https://placehold.co/600x400/e2e8f0/94a3b8?text=Recap',
+                    totalMoments: r.momentCount || 0
+                }));
+
+                setUserRecaps(mappedRecaps);
+            } catch (error) {
+                console.error('[UserDiaryPage] Failed to fetch recaps:', error);
+            }
+        }
+    };
+
     useEffect(() => {
         fetchArchives()
         fetchDiaries()
+        fetchRecaps()
     }, [user])
 
     useEffect(() => {
@@ -202,32 +228,41 @@ export default function UserDiaryPage() {
                         </Button>
                     </Link>
 
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {RECAPS.map((recap) => (
-                            <Card
-                                key={recap.id}
-                                className="group cursor-pointer overflow-hidden border-0 shadow-md transition-all hover:scale-105 hover:shadow-xl"
-                                onClick={() => navigate(`/recap/${recap.id}`)}
-                            >
-                                <div className="relative aspect-video overflow-hidden">
-                                    <img
-                                        src={recap.coverImage}
-                                        alt={recap.period}
-                                        className="h-full w-full object-cover transition-transform group-hover:scale-110"
-                                    />
-                                    <div className="absolute inset-0 bg-black/20 transition-colors group-hover:bg-black/10" />
-                                    <Badge className="absolute right-2 top-2 bg-black/50 text-white backdrop-blur-sm">
-                                        {recap.year}
-                                    </Badge>
-                                </div>
-                                <CardContent className="p-4">
-                                    <h3 className="mb-1 text-lg font-bold">{recap.period} 리캡</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        {recap.totalMoments}개의 소중한 순간들
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        ))}
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-h-[900px] overflow-y-auto">
+                        {userRecaps.length === 0 ? (
+                            <div className="col-span-full py-10 text-center text-gray-400">
+                                아직 생성된 AI 리캡이 없습니다.
+                            </div>
+                        ) : (
+                            userRecaps.map((recap) => (
+                                <Card
+                                    key={recap.id}
+                                    className="group cursor-pointer overflow-hidden border-0 shadow-md transition-all hover:scale-105 hover:shadow-xl"
+                                    onClick={() => navigate(`/recap/${recap.id}`)}
+                                >
+                                    <div className="relative aspect-video overflow-hidden">
+                                        <img
+                                            src={recap.coverImage}
+                                            alt={recap.period}
+                                            className="h-full w-full object-cover transition-transform group-hover:scale-110"
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/e2e8f0/94a3b8?text=Recap';
+                                            }}
+                                        />
+                                        <div className="absolute inset-0 bg-black/20 transition-colors group-hover:bg-black/10" />
+                                        <Badge className="absolute right-2 top-2 bg-black/50 text-white backdrop-blur-sm">
+                                            {recap.year}
+                                        </Badge>
+                                    </div>
+                                    <CardContent className="p-4">
+                                        <h3 className="mb-1 text-lg font-bold">{recap.period} 리캡</h3>
+                                        <p className="text-sm text-muted-foreground">
+                                            {recap.totalMoments}개의 소중한 순간들
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            ))
+                        )}
                     </div>
                 </TabsContent>
 
