@@ -9,14 +9,10 @@ import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
 import {
   PawPrint,
-  Heart,
   Settings,
-  ChevronRight,
   Edit,
-  MessageCircle,
   ImageIcon,
   Plus,
-  LogOut,
 } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import { useAuth } from "@/features/auth/context/auth-context"
@@ -34,7 +30,7 @@ import UserDiaryPage from "./UserDiaryPage"
 export default function ProfilePage() {
   const navigate = useNavigate()
 
-  const { user, logout, updateUser, addPet, updatePet, deletePet } = useAuth()
+  const { user, updateUser, addPet, updatePet, deletePet } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
 
@@ -196,14 +192,7 @@ export default function ProfilePage() {
     setNewPetAge("")
   }
 
-  const handleEditPet = (pet: any) => {
-    setEditingPetId(pet.id)
-    setNewPetName(pet.name)
-    setNewPetBreed(pet.breed)
-    setNewPetAge(pet.age.toString())
-    setShowManagePetsDialog(false)
-    setShowAddPetDialog(true)
-  }
+
 
   const handleDeletePet = async (id: string, event?: React.MouseEvent) => {
     // Prevent event bubbling if triggered from a button inside another clickable element
@@ -272,7 +261,7 @@ export default function ProfilePage() {
       <main className="mx-auto max-w-5xl pb-20 md:pb-8 md:px-6 md:py-6">
         <div className="space-y-6 p-4 md:p-0">
           <Card className="border-0 shadow-lg">
-            <CardContent className="p-6 md:p-8">
+            <CardContent className="p-6">
               <div className="flex flex-col items-center gap-6 md:flex-row md:items-start">
                 <div className="relative">
                   <Avatar className="h-24 w-24 border-4 border-border md:h-32 md:w-32">
@@ -302,21 +291,12 @@ export default function ProfilePage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 gap-1 hover:bg-red-50 "
+                          className="h-8 gap-1 text-muted-foreground"
                         >
-                          <Settings className="h-3.5 w-3.5" />
+                          <Settings className="h-4 w-4" />
                           {/* 설정 */}
                         </Button>
                       </Link>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={logout}
-                        className="h-8 text-red-600 hover:bg-red-50"
-                      >
-                        <LogOut className="mr-1 h-4 w-4" />
-                        {/* 로그아웃 */}
-                      </Button>
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground">@{apiUserData?.social || user?.username || user?.email?.split('@')[0] || "user"}</p>
@@ -372,34 +352,6 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Menu Items */}
-          <div className="grid grid-cols-2 gap-4">
-            <Card className="border-0 shadow-md transition-all hover:shadow-lg">
-              <CardContent className="flex items-center gap-4 p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                  <Heart className="h-5 w-5" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-foreground">좋아요한 글</p>
-                  <p className="text-xs text-muted-foreground">128개</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-md transition-all hover:shadow-lg">
-              <CardContent className="flex items-center gap-4 p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600">
-                  <MessageCircle className="h-5 w-5" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-foreground">내 댓글</p>
-                  <p className="text-xs text-muted-foreground">45개</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </CardContent>
-            </Card>
-          </div>
 
           <UserDiaryPage />
         </div>
@@ -562,7 +514,6 @@ export default function ProfilePage() {
                   >
                     {pet.isMemorial ? "추모 해제" : "추모 모드"}
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleEditPet(pet)}>수정</Button>
                   <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={(e) => handleDeletePet(pet.id, e)}>삭제</Button>
                 </div>
               </div>
