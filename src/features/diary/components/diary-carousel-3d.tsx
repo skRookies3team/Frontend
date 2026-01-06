@@ -138,7 +138,7 @@ export function DiaryCarousel3D({ diaries = [], isLoading = false }: DiaryCarous
   }, [isReady, displayCards])
 
   return (
-    <div className="w-full h-[380px] bg-gradient-to-b from-pink-50/50 to-white flex items-center justify-center overflow-hidden relative rounded-2xl">
+    <div className="w-full h-[500px] bg-gradient-to-b from-pink-50/50 to-white flex items-center justify-center overflow-hidden relative rounded-2xl">
       {/* Subtle glow effects */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-pink-200/30 rounded-full blur-3xl" />
 
@@ -155,14 +155,14 @@ export function DiaryCarousel3D({ diaries = [], isLoading = false }: DiaryCarous
           style={{ transformStyle: "preserve-3d" }}
         >
           {isLoading ? (
-            <div className="diary-card absolute left-0 top-0 w-[200px] h-[300px] -ml-[100px] -mt-[150px] rounded-2xl bg-pink-100 animate-pulse border border-pink-200">
+            <div className="diary-card absolute left-0 top-0 w-[240px] h-[360px] -ml-[120px] -mt-[180px] rounded-2xl bg-pink-100 animate-pulse border border-pink-200">
               <div className="absolute bottom-6 left-6 right-6">
                 <div className="h-6 bg-pink-200 rounded mb-2"></div>
                 <div className="h-4 bg-pink-200 rounded w-2/3"></div>
               </div>
             </div>
           ) : displayCards.length === 0 ? (
-            <div className="diary-card absolute left-0 top-0 w-[200px] h-[300px] -ml-[100px] -mt-[150px] rounded-2xl border border-pink-200 bg-gradient-to-br from-pink-50 to-white flex items-center justify-center">
+            <div className="diary-card absolute left-0 top-0 w-[240px] h-[360px] -ml-[120px] -mt-[180px] rounded-2xl border border-pink-200 bg-gradient-to-br from-pink-50 to-white flex items-center justify-center shadow-lg">
               <div className="text-center p-6">
                 <p className="text-pink-400 text-sm">아직 일기가 없어요</p>
                 <p className="text-pink-300 text-xs mt-2">AI와 함께<br />첫 일기를 작성해보세요</p>
@@ -174,7 +174,7 @@ export function DiaryCarousel3D({ diaries = [], isLoading = false }: DiaryCarous
               return (
                 <div
                   key={diary.diaryId}
-                  className={`diary-card absolute left-0 top-0 w-[200px] h-[300px] -ml-[100px] -mt-[150px] rounded-2xl overflow-hidden shadow-xl ${isPlaceholder
+                  className={`diary-card absolute left-0 top-0 w-[240px] h-[360px] -ml-[120px] -mt-[180px] rounded-2xl overflow-hidden shadow-xl ${isPlaceholder
                     ? 'border-2 border-dashed border-pink-200 bg-gradient-to-br from-pink-50/80 to-white'
                     : 'border border-pink-200 bg-white cursor-pointer hover:border-pink-400 transition-colors'
                     }`}
