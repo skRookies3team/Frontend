@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import {
     earnCoin,
     createSocialFeed,
+    createNotification,
 } from "../api/diary-api";
 
 import StyleStep from '../components/StyleStep';
@@ -190,6 +191,17 @@ const DiaryStylePage = () => {
                 }
             }
             console.log("=== [Frontend] Diary Saved & Process Completed ===");
+
+            // ✅ [NEW] 일기 생성 알림 전송
+            if (finalDiaryId && user) {
+                await createNotification({
+                    type: 'DIARY',
+                    senderId: Number(user.id),
+                    receiverId: Number(user.id),
+                    targetId: finalDiaryId
+                });
+            }
+
             setStep("complete");
 
         } catch (error: any) {
@@ -221,6 +233,7 @@ const DiaryStylePage = () => {
             if (coinResult) {
                 setEarnedReward(prev => (prev || 0) + FEED_REWARD);
             }
+
             return feedId;
         } catch (error: any) {
             alert(`피드 공유 실패: ${error.message}`);

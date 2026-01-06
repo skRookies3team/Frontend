@@ -51,6 +51,7 @@ import DiaryEditPage from "@/features/diary/pages/DiaryEditPage"
 import DiaryStylePage from "@/features/diary/pages/DiaryStylePage"
 import AiStudioPage from "@/features/diary/pages/AiStudioPage"
 import AiRecapPage from "@/features/diary/pages/AiRecapPage"
+import RecapDetailPage from "@/features/diary/pages/RecapDetailPage"
 import AiBiographyPage from "@/features/diary/pages/AiBiographyPage"
 import GalleryPage from "@/features/diary/pages/GalleryPage"
 import PortfolioPage from "@/features/diary/pages/PortfolioPage"
@@ -109,6 +110,7 @@ function App() {
                                         <Route path="ai-studio/diary/edit" element={<DiaryEditPage />} />
                                         <Route path="ai-studio/diary/style-edit" element={<DiaryStylePage />} />
                                         <Route path="ai-studio/recap" element={<AiRecapPage />} />
+                                        <Route path="recap/:recapId" element={<RecapDetailPage />} />
                                         <Route
                                             path="ai-studio/biography"
                                             element={<AiBiographyPage />}

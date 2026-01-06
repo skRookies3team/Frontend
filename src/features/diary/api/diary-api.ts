@@ -300,3 +300,129 @@ export const getWeatherApi = async (latitude: number, longitude: number, date: s
         return null; // Return null on error, let UI handle fallback
     }
 };
+// ============================================================
+// Recap API Functions
+// ============================================================
+
+import {
+    RecapAutoGenerateRequest,
+    RecapManualGenerateRequest,
+    RecapDetailResponse,
+    RecapSimpleResponse,
+    GenerateRecapResponse
+} from '../types/recap';
+
+/**
+ * Schedule auto recap for next month (WAITING status)
+ * POST /api/recaps/schedule/auto
+ * Server schedules recap for next month
+ */
+export const scheduleAutoRecapApi = async (data: RecapAutoGenerateRequest): Promise<GenerateRecapResponse> => {
+    try {
+        // Send as query parameters
+        const params = new URLSearchParams({
+            petId: data.petId.toString(),
+            userId: data.userId.toString(),
+        });
+
+        if (data.petName) {
+            params.append('petName', data.petName);
+        }
+
+        const response = await httpClient.post<GenerateRecapResponse>(
+            `/recaps/schedule/auto?${params.toString()}`,
+            null // No body for scheduling
+        );
+        console.log('[scheduleAutoRecapApi] Success:', response);
+        return response;
+    } catch (error) {
+        console.error('[scheduleAutoRecapApi] Failed to schedule auto recap:', error);
+        throw error;
+    }
+};
+
+/**
+ * Generate AI-powered monthly recap manually with custom date range
+ * POST /api/recaps/generate/manual
+ */
+export const generateManualRecapApi = async (data: RecapManualGenerateRequest): Promise<GenerateRecapResponse> => {
+    try {
+        const response = await httpClient.post<GenerateRecapResponse>('/recaps/generate/manual', data);
+        console.log('[generateManualRecapApi] Success:', response);
+        return response;
+    } catch (error) {
+        console.error('[generateManualRecapApi] Failed to generate manual recap:', error);
+        throw error;
+    }
+};
+
+/**
+ * Get recap detail by ID (with authorization)
+ * GET /api/recaps/{recapId}?userId={userId}
+ */
+export const getRecapDetailApi = async (recapId: number): Promise<RecapDetailResponse> => {
+    try {
+        const userStr = localStorage.getItem('petlog_user');
+        const userId = userStr ? JSON.parse(userStr).id : 0;
+        const response = await httpClient.get<RecapDetailResponse>(`/recaps/${recapId}?userId=${userId}`);
+        console.log('[getRecapDetailApi] Success:', response);
+        return response;
+    } catch (error) {
+        console.error('[getRecapDetailApi] Failed to get recap detail:', error);
+        throw error;
+    }
+};
+
+/**
+ * Get all recaps for a user
+ * GET /api/recaps/user/{userId}
+ */
+export const getUserRecapsApi = async (userId: number): Promise<RecapSimpleResponse[]> => {
+    try {
+        const response = await httpClient.get<RecapSimpleResponse[]>(`/recaps/user/${userId}`);
+        console.log('[getUserRecapsApi] Success:', response);
+        return response;
+    } catch (error) {
+        console.error('[getUserRecapsApi] Failed to get user recaps:', error);
+        // Return empty array as fallback
+        return [];
+    }
+};
+
+/**
+ * Get recaps by pet ID
+ * GET /api/recaps/pet/{petId}
+ */
+export const getPetRecapsApi = async (petId: number): Promise<RecapSimpleResponse[]> => {
+    try {
+        const response = await httpClient.get<RecapSimpleResponse[]>(`/recaps/pet/${petId}`);
+        console.log('[getPetRecapsApi] Success:', response);
+        return response;
+    } catch (error) {
+        console.error('[getPetRecapsApi] Failed to get pet recaps:', error);
+        // Return empty array as fallback
+        return [];
+    }
+};
+
+/**
+ * Create notification
+ * POST /api/notifications/create
+ */
+export interface NotificationRequest {
+    type: string;        // "DIARY", "RECAP", "FEED"
+    senderId: number;    // 사용자 ID
+    receiverId: number;  // 알림 받을 사용자 ID
+    targetId: number;    // 일기/리캡/피드 ID
+    coin?: number;       // 선택 (코인 적립 시)
+}
+
+export const createNotification = async (request: NotificationRequest): Promise<void> => {
+    try {
+        await httpClient.post('/notifications/create', request);
+        console.log('[createNotification] Notification sent:', request.type);
+    } catch (error) {
+        console.error('[createNotification] Failed to send notification:', error);
+        // 알림 전송 실패해도 무시 (비즈니스 로직에 영향 없음)
+    }
+};
