@@ -140,15 +140,27 @@ export default function PortfolioPage() {
               else if (d.images[0].imageUrl) firstImage = d.images[0].imageUrl;
             }
 
-            // Use proxy in development, direct S3 URL in production
+            // Use proxy in development, direct S3 URL with cache-bust in production
             if (firstImage.includes('petlog-images-bucket.s3.ap-northeast-2.amazonaws.com')) {
               // In development, use proxy to bypass CORS
               if (import.meta.env.DEV) {
                 firstImage = firstImage.replace('https://petlog-images-bucket.s3.ap-northeast-2.amazonaws.com', '/s3-images');
+              } else {
+                // In production, add cache-bust to force fresh CORS request
+                firstImage = `${firstImage}?cors=${Date.now()}`;
               }
-              // In production, S3 URLs work directly with proper CORS settings
             }
 
+
+            // Process images array for CORS in production
+            const processedImages = (d.images || []).map((img: any) => {
+              if (typeof img === 'string' && img.includes('petlog-images-bucket') && !import.meta.env.DEV) {
+                return `${img}?cors=${Date.now()}`;
+              } else if (img?.imageUrl && img.imageUrl.includes('petlog-images-bucket') && !import.meta.env.DEV) {
+                return { ...img, imageUrl: `${img.imageUrl}?cors=${Date.now()}` };
+              }
+              return img;
+            });
 
             return {
               id: d.diaryId,
@@ -159,7 +171,7 @@ export default function PortfolioPage() {
               content: d.content,
               likes: 0,
               weather: d.weather || "맑음 ☀️",
-              images: d.images || [], // [NEW] Include images array
+              images: processedImages,
               isPlaceholder: false
             }
           })
