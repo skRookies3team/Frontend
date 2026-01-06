@@ -117,10 +117,10 @@ const EditStep = ({
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setShowLocationModal(true)}
-                                className="flex items-center gap-1 bg-green-50 px-3 py-1 rounded-full text-green-600 text-sm hover:bg-green-100 transition-colors"
+                                className="flex items-start gap-1 bg-green-50 px-3 py-1.5 rounded-lg text-green-600 text-sm hover:bg-green-100 transition-colors"
                             >
-                                <MapPin className="w-3 h-3" />
-                                <span className="truncate max-w-[150px] inline-block align-middle">{locationName || "위치 추가"}</span>
+                                <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                                <span className="whitespace-normal break-words leading-tight text-left">{locationName || "위치 추가"}</span>
                             </button>
                             <div className="flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full text-blue-600 text-sm">
                                 <Sun className="w-3 h-3" />
