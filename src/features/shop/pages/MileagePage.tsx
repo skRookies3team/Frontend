@@ -1,68 +1,85 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import { Button } from "@/shared/ui/button"
 import { Card, CardContent } from "@/shared/ui/card"
 import { ChevronLeft, TrendingUp, TrendingDown, Coins } from "lucide-react"
-
-const MILEAGE_HISTORY = [
-  {
-    id: "1",
-    type: "earned",
-    amount: 100,
-    description: "AI 다이어리 작성",
-    date: "2024-01-15T10:30:00",
-    balance: 1250,
-  },
-  {
-    id: "2",
-    type: "used",
-    amount: -50,
-    description: "구매 할인 사용",
-    date: "2024-01-14T15:20:00",
-    balance: 1150,
-  },
-  {
-    id: "3",
-    type: "earned",
-    amount: 100,
-    description: "AI 다이어리 작성",
-    date: "2024-01-13T09:15:00",
-    balance: 1200,
-  },
-  {
-    id: "4",
-    type: "earned",
-    amount: 50,
-    description: "게시물 공유",
-    date: "2024-01-12T18:45:00",
-    balance: 1100,
-  },
-  {
-    id: "5",
-    type: "earned",
-    amount: 100,
-    description: "AI 다이어리 작성",
-    date: "2024-01-11T14:30:00",
-    balance: 1050,
-  },
-]
+import { useAuth } from "@/features/auth/context/auth-context"
+import {
+  getCoinLogsApi,
+  getCoinAddLogsApi,
+  getCoinUseLogsApi,
+  getUserCoinApi,
+  CreateCoinLogDto
+} from "@/features/auth/api/auth-api"
 
 export default function MileagePage() {
+  const { user } = useAuth()
   const [filter, setFilter] = useState<"all" | "earned" | "used">("all")
+  const [logs, setLogs] = useState<CreateCoinLogDto[]>([])
+  const [balance, setBalance] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const filteredHistory = MILEAGE_HISTORY.filter((item) => {
-    if (filter === "all") return true
-    return item.type === filter
-  })
+  // Fetch Balance
+  useEffect(() => {
+    const fetchBalance = async () => {
+      if (user?.id) {
+        try {
+          const coinData = await getUserCoinApi(Number(user.id))
+          setBalance(coinData.petCoin)
+        } catch (error) {
+          console.error("Failed to fetch coin balance:", error)
+        }
+      }
+    }
+    fetchBalance()
+  }, [user?.id])
 
-  const totalEarned = MILEAGE_HISTORY.filter((item) => item.type === "earned").reduce(
-    (sum, item) => sum + item.amount,
-    0,
-  )
+  // Fetch Logs based on Filter
+  useEffect(() => {
+    const fetchLogs = async () => {
+      if (!user) return
+      setIsLoading(true)
+      try {
+        let response
+        if (filter === "all") {
+          response = await getCoinLogsApi()
+        } else if (filter === "earned") {
+          response = await getCoinAddLogsApi()
+        } else {
+          response = await getCoinUseLogsApi()
+        }
+        setLogs(response.coins)
+      } catch (error) {
+        console.error("Failed to fetch coin logs:", error)
+        setLogs([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchLogs()
+  }, [filter, user]) // Re-fetch when filter changes
 
-  const totalUsed = Math.abs(
-    MILEAGE_HISTORY.filter((item) => item.type === "used").reduce((sum, item) => sum + item.amount, 0),
-  )
+  // Stats calculation (based on currently fetched logs - simpler approach as per requirements)
+  // For precise total-lifetime stats, backend aggregation is preferred, but here we sum the list.
+  const totalEarned = logs
+    .filter(item => item.type === 'WRITEDIARY' || item.type === 'WIRTEFEED' || item.type === 'RECAP')
+    .reduce((sum, item) => sum + item.amount, 0)
+
+  const totalUsed = logs
+    .filter(item => item.type === 'BUY')
+    .reduce((sum, item) => sum + item.amount, 0)
+
+  const getDescription = (type: string) => {
+    switch (type) {
+      case 'WRITEDIARY': return "AI 다이어리 작성"
+      case 'WIRTEFEED': return "게시물 공유"
+      case 'RECAP': return "AI 리캡 생성"
+      case 'BUY': return "구매 할인 사용"
+      default: return "기타"
+    }
+  }
+
+  const isEarned = (type: string) => type === 'WRITEDIARY' || type === 'WIRTEFEED' || type === 'RECAP'
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-rose-50">
@@ -85,20 +102,20 @@ export default function MileagePage() {
               <Coins className="h-6 w-6 md:h-7 md:w-7" />
               <p className="text-sm font-medium opacity-90 md:text-base">내 잔액</p>
             </div>
-            <p className="text-5xl font-bold md:text-6xl">1,250</p>
+            <p className="text-5xl font-bold md:text-6xl">{balance.toLocaleString()}</p>
             <p className="mt-1 text-sm opacity-75 md:text-base">마일리지 포인트</p>
           </CardContent>
         </Card>
 
-        {/* Stats */}
+        {/* Stats - Shows stats for the CURRENT VIEW (Filtered) */}
         <div className="grid grid-cols-2 gap-3 md:gap-4">
           <Card className="border-pink-100 shadow-md">
             <CardContent className="p-4 md:p-6">
               <div className="flex items-center gap-2 text-green-500">
                 <TrendingUp className="h-5 w-5 md:h-6 md:w-6" />
-                <p className="text-sm font-medium md:text-base">적립</p>
+                <p className="text-sm font-medium md:text-base">목록 내 적립</p>
               </div>
-              <p className="mt-2 text-2xl font-bold text-pink-600 md:text-3xl">+{totalEarned}</p>
+              <p className="mt-2 text-2xl font-bold text-pink-600 md:text-3xl">+{totalEarned.toLocaleString()}</p>
             </CardContent>
           </Card>
 
@@ -106,9 +123,9 @@ export default function MileagePage() {
             <CardContent className="p-4 md:p-6">
               <div className="flex items-center gap-2 text-red-500">
                 <TrendingDown className="h-5 w-5 md:h-6 md:w-6" />
-                <p className="text-sm font-medium md:text-base">사용</p>
+                <p className="text-sm font-medium md:text-base">목록 내 사용</p>
               </div>
-              <p className="mt-2 text-2xl font-bold text-pink-600 md:text-3xl">-{totalUsed}</p>
+              <p className="mt-2 text-2xl font-bold text-pink-600 md:text-3xl">-{totalUsed.toLocaleString()}</p>
             </CardContent>
           </Card>
         </div>
@@ -117,31 +134,28 @@ export default function MileagePage() {
         <div className="flex gap-2">
           <button
             onClick={() => setFilter("all")}
-            className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-all md:text-base ${
-              filter === "all"
+            className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-all md:text-base ${filter === "all"
                 ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md"
                 : "bg-white text-pink-600 hover:bg-pink-100"
-            }`}
+              }`}
           >
             전체
           </button>
           <button
             onClick={() => setFilter("earned")}
-            className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-all md:text-base ${
-              filter === "earned"
+            className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-all md:text-base ${filter === "earned"
                 ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md"
                 : "bg-white text-pink-600 hover:bg-pink-100"
-            }`}
+              }`}
           >
             적립
           </button>
           <button
             onClick={() => setFilter("used")}
-            className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-all md:text-base ${
-              filter === "used"
+            className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-all md:text-base ${filter === "used"
                 ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md"
                 : "bg-white text-pink-600 hover:bg-pink-100"
-            }`}
+              }`}
           >
             사용
           </button>
@@ -150,40 +164,49 @@ export default function MileagePage() {
         {/* History */}
         <Card className="border-pink-100 shadow-lg">
           <CardContent className="divide-y divide-pink-100 p-0">
-            {filteredHistory.map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-4 md:p-5">
-                <div className="flex items-center gap-3 md:gap-4">
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full md:h-12 md:w-12 ${
-                      item.type === "earned" ? "bg-green-500/20 text-green-500" : "bg-red-500/20 text-red-500"
-                    }`}
-                  >
-                    {item.type === "earned" ? (
-                      <TrendingUp className="h-5 w-5 md:h-6 md:w-6" />
-                    ) : (
-                      <TrendingDown className="h-5 w-5 md:h-6 md:w-6" />
-                    )}
+            {isLoading ? (
+              <div className="p-8 text-center text-muted-foreground">로딩 중...</div>
+            ) : logs.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">내역이 없습니다.</div>
+            ) : (
+              logs.map((item, index) => {
+                const earned = isEarned(item.type)
+                return (
+                  <div key={index} className="flex items-center justify-between p-4 md:p-5">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div
+                        className={`flex h-10 w-10 items-center justify-center rounded-full md:h-12 md:w-12 ${earned ? "bg-green-500/20 text-green-500" : "bg-red-500/20 text-red-500"
+                          }`}
+                      >
+                        {earned ? (
+                          <TrendingUp className="h-5 w-5 md:h-6 md:w-6" />
+                        ) : (
+                          <TrendingDown className="h-5 w-5 md:h-6 md:w-6" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium text-pink-600 md:text-lg">{getDescription(item.type)}</p>
+                        <p className="text-xs text-muted-foreground md:text-sm">
+                          {new Date(item.createdAt).toLocaleDateString("ko-KR")}{" "}
+                          {new Date(item.createdAt).toLocaleTimeString("ko-KR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={`font-bold md:text-lg ${earned ? "text-green-500" : "text-red-500"}`}>
+                        {earned ? "+" : "-"}
+                        {item.amount.toLocaleString()}
+                      </p>
+                      {/* Balance per transaction not available in this API, hiding it */}
+                      {/* <p className="text-xs text-muted-foreground md:text-sm">{item.balance} 포인트</p> */}
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-pink-600 md:text-lg">{item.description}</p>
-                    <p className="text-xs text-muted-foreground md:text-sm">
-                      {new Date(item.date).toLocaleDateString("ko-KR")}{" "}
-                      {new Date(item.date).toLocaleTimeString("ko-KR", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className={`font-bold md:text-lg ${item.type === "earned" ? "text-green-500" : "text-red-500"}`}>
-                    {item.amount > 0 ? "+" : ""}
-                    {item.amount}
-                  </p>
-                  <p className="text-xs text-muted-foreground md:text-sm">{item.balance} 포인트</p>
-                </div>
-              </div>
-            ))}
+                )
+              })
+            )}
           </CardContent>
         </Card>
       </main>
