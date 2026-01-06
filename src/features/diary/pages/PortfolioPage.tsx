@@ -140,27 +140,14 @@ export default function PortfolioPage() {
               else if (d.images[0].imageUrl) firstImage = d.images[0].imageUrl;
             }
 
-            // Use proxy in development, direct S3 URL with cache-bust in production
+            // Use proxy in development, direct S3 URL in production
             if (firstImage.includes('petlog-images-bucket.s3.ap-northeast-2.amazonaws.com')) {
               // In development, use proxy to bypass CORS
               if (import.meta.env.DEV) {
                 firstImage = firstImage.replace('https://petlog-images-bucket.s3.ap-northeast-2.amazonaws.com', '/s3-images');
-              } else {
-                // In production, add cache-bust to force fresh CORS request
-                firstImage = `${firstImage}?cors=${Date.now()}`;
               }
+              // In production, S3 URLs work directly with proper CORS settings
             }
-
-
-            // Process images array for CORS in production
-            const processedImages = (d.images || []).map((img: any) => {
-              if (typeof img === 'string' && img.includes('petlog-images-bucket') && !import.meta.env.DEV) {
-                return `${img}?cors=${Date.now()}`;
-              } else if (img?.imageUrl && img.imageUrl.includes('petlog-images-bucket') && !import.meta.env.DEV) {
-                return { ...img, imageUrl: `${img.imageUrl}?cors=${Date.now()}` };
-              }
-              return img;
-            });
 
             return {
               id: d.diaryId,
@@ -171,7 +158,7 @@ export default function PortfolioPage() {
               content: d.content,
               likes: 0,
               weather: d.weather || "맑음 ☀️",
-              images: processedImages,
+              images: d.images || [],
               isPlaceholder: false
             }
           })
@@ -303,8 +290,22 @@ export default function PortfolioPage() {
     // --- 5. Objects (Golden Spiral) ---
     const radius = 8
     const sphereMeshes: THREE.Mesh[] = []
-    const textureLoader = new THREE.TextureLoader()
-    textureLoader.crossOrigin = 'anonymous'; // [FIX] Allow CORS for S3 images
+
+    // Helper function to load texture with explicit CORS
+    const loadTextureWithCORS = (url: string): THREE.Texture => {
+      const texture = new THREE.Texture();
+      const img = new Image();
+      img.crossOrigin = 'anonymous'; // Set BEFORE src
+      img.onload = () => {
+        texture.image = img;
+        texture.needsUpdate = true;
+      };
+      img.onerror = () => {
+        console.warn('[Portfolio] Failed to load image:', url);
+      };
+      img.src = url;
+      return texture;
+    };
 
     // [MODIFIED] Use dynamic 'diaries' instead of static 'diaryPhotos'
     // If empty, maybe show nothing or wait? For now if empty, it just renders nothing but scene setup works.
@@ -316,8 +317,8 @@ export default function PortfolioPage() {
       const y = radius * Math.sin(phi) * Math.sin(theta)
       const z = radius * Math.cos(phi)
 
-      // [FIX] Load standard texture (Data URL works here too)
-      const texture = textureLoader.load(photo.src || "/placeholder.svg");
+      // [FIX] Load texture with explicit CORS setting
+      const texture = loadTextureWithCORS(photo.src || "/placeholder.svg");
 
       const geometry = new THREE.PlaneGeometry(2, 2.5)
       const material = new THREE.MeshBasicMaterial({
