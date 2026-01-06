@@ -28,6 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/shared/ui/badge"
 import { Input } from "@/shared/ui/input"
 import { toast } from "sonner"
+import { Spinner } from "@/shared/ui/spinner"
 
 export default function PetMatePage() {
   const { user } = useAuth()
@@ -81,6 +82,7 @@ export default function PetMatePage() {
     updateOnlineStatus,
     unfriend,
     cancelRequest,
+    loading,
   } = usePetMate({
     userId: user?.id ? Number(user.id) : 1,
     initialFilter: userCoords ? {
@@ -145,7 +147,9 @@ export default function PetMatePage() {
           },
           (error) => {
             console.error('Geolocation error:', error)
-            setUserCoords({ latitude: 37.5007, longitude: 127.0365 })
+            toast.error("위치 권한이 차단되었습니다. 기본 위치(서울)로 설정합니다.")
+            setUserCoords({ latitude: 37.5665, longitude: 126.9780 })
+            setCurrentLocation("서울 중구")
           }
         )
       }
@@ -529,16 +533,21 @@ export default function PetMatePage() {
                 온라인으로 전환하기
               </Button>
             </Card>
+          ) : loading ? (
+            <div className="flex flex-col items-center justify-center min-h-[600px] gap-4">
+              <Spinner className="w-12 h-12 text-pink-500" />
+              <p className="text-gray-500 font-medium animate-pulse">주변 펫메이트를 찾고 있어요...</p>
+            </div>
           ) : hasNoCandidates ? (
             <Card className="p-12 text-center shadow-2xl border-2 border-pink-200 bg-white h-full flex flex-col items-center justify-center min-h-[600px]">
               <div className="mb-6 mx-auto w-24 h-24 rounded-full bg-gradient-to-br from-pink-100 via-rose-100 to-orange-100 flex items-center justify-center shadow-lg">
                 <Sparkles className="h-12 w-12 text-pink-500" />
               </div>
               <h2 className="mb-4 text-3xl font-bold bg-gradient-to-r from-pink-600 via-rose-600 to-orange-600 bg-clip-text text-transparent">
-                조건에 맞는 펫메이트가 없어요
+                조건에 맞는 펫메이트가 없어요 😭
               </h2>
               <p className="mb-8 text-gray-600 text-lg leading-relaxed">
-                필터 조건을 조정하거나<br />잠시 후 다시 확인해보세요!
+                검색 반경을 넓히거나<br />다른 조건으로 찾아보세요!
               </p>
               <Button
                 size="lg"
@@ -706,7 +715,7 @@ export default function PetMatePage() {
                       // [수정] 채팅방 경로 /messages로 이동 (ID가 아직 없으므로 그냥 이동하거나 UserID로 조회)
                       // 여기선 단순히 채팅 페이지로 이동. 만약 방을 즉시 생성하고 싶다면 별도 API 호출 필요.
                       // 일단 목록 페이지로 이동합니다.
-                      navigate(`/messages`) 
+                      navigate(`/messages`)
                     }}
                   >
                     <MessageCircle className="mr-2 h-5 w-5" />
@@ -757,7 +766,7 @@ export default function PetMatePage() {
                   // [수정] 올바른 경로 (/messages?roomId=...)로 이동
                   navigate(chatRoomIdFromMatch
                     ? `/messages?roomId=${chatRoomIdFromMatch}`
-                    : `/messages`) 
+                    : `/messages`)
                 }}
                 className="h-14 px-8 text-lg font-bold bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
               >
