@@ -1,13 +1,13 @@
-import { 
-  useInfiniteQuery, 
-  useMutation, 
-  useQuery, 
-  useQueryClient, 
-  InfiniteData 
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  InfiniteData
 } from '@tanstack/react-query';
 import { feedApi, SearchHashtagDto } from '../api/feed-api'; // SearchHashtagDto import 추가
 import { FeedSliceResponse, FeedDto, FollowStatResponse, LikerDto } from '../types/feed';
-import { useToast } from '@/shared/hooks/use-toast';
+import { toast } from "sonner";
 import { useState, useEffect } from 'react';
 
 // [추가] 디바운스 훅 (파일 내에 포함 요청 반영)
@@ -53,9 +53,9 @@ export const useFeeds = (userId: number = 0) => {
     queryKey: FEED_KEYS.grid(userId),
     queryFn: async () => {
       const response = await feedApi.getFeeds(userId, 0, 50);
-      return response.content; 
+      return response.content;
     },
-    staleTime: 1000 * 60 * 5, 
+    staleTime: 1000 * 60 * 5,
   });
 };
 
@@ -107,7 +107,7 @@ export const useUserSearch = (keyword: string, viewerId: number = 0) => {
     queryFn: () => feedApi.searchUsers(debouncedKeyword, viewerId),
     // '#'으로 시작하지 않고 검색어가 있을 때만 실행
     enabled: !!debouncedKeyword && debouncedKeyword.trim().length > 0 && !debouncedKeyword.startsWith('#'),
-    initialData: [], 
+    initialData: [],
   });
 };
 
@@ -132,7 +132,7 @@ export const useFeedLike = (userId: number) => {
 
   return useMutation({
     mutationFn: (feedId: number) => feedApi.toggleLike(feedId, userId),
-    
+
     onMutate: async (feedId) => {
       await queryClient.cancelQueries({ queryKey: FEED_KEYS.all });
 
@@ -146,7 +146,8 @@ export const useFeedLike = (userId: number) => {
           return {
             ...feed,
             isLiked: newIsLiked,
-            likeCount: newIsLiked ? feed.likeCount + 1 : feed.likeCount - 1,
+            // [수정] 음수 방지
+            likeCount: newIsLiked ? feed.likeCount + 1 : Math.max(0, feed.likeCount - 1),
           };
         }
         return feed;
@@ -154,7 +155,7 @@ export const useFeedLike = (userId: number) => {
 
       // Infinite Query 데이터 업데이트
       queryClient.setQueriesData<InfiniteData<FeedSliceResponse>>(
-        { queryKey: FEED_KEYS.all }, 
+        { queryKey: FEED_KEYS.all },
         (oldData) => {
           if (!oldData) return oldData;
           return {
@@ -184,7 +185,7 @@ export const useFeedLike = (userId: number) => {
 
       return { previousFeeds, previousGrid, previousDetail };
     },
-    
+
     onError: (_err, feedId, context) => {
       if (context?.previousFeeds) {
         context.previousFeeds.forEach(([key, data]) => queryClient.setQueryData(key, data));
@@ -197,9 +198,48 @@ export const useFeedLike = (userId: number) => {
       }
     },
 
-    onSuccess: (_, feedId) => {
-      queryClient.invalidateQueries({ queryKey: FEED_KEYS.all });
-      queryClient.invalidateQueries({ queryKey: FEED_KEYS.detail(feedId) });
+    onSuccess: (data, feedId) => {
+      // [중요] 서버 응답(data)으로 캐시를 "확정" 업데이트합니다. 
+      // 낙관적 업데이트가 실패하거나, 서버와 동기화가 필요할 때 정확한 값으로 보정해줍니다.
+
+      const updateFeedLike = (feed: FeedDto) => {
+        if (feed.feedId === feedId) {
+          return {
+            ...feed,
+            isLiked: data.isLiked,
+            likeCount: data.likeCount,
+          };
+        }
+        return feed;
+      };
+
+      // 1. Infinite Query (피드 목록) 업데이트
+      queryClient.setQueriesData<InfiniteData<FeedSliceResponse>>(
+        { queryKey: FEED_KEYS.all },
+        (oldData) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              content: page.content.map(updateFeedLike),
+            })),
+          };
+        }
+      );
+
+      // 2. Grid Query (그리드 뷰) 업데이트
+      queryClient.setQueryData<FeedDto[]>(
+        FEED_KEYS.grid(userId),
+        (old) => old ? old.map(updateFeedLike) : old
+      );
+
+      // 3. Detail Query (상세 보기) 업데이트
+      // 상세 모달이 열려있을 때 이 부분이 업데이트 되어야 하트 색깔이 정확히 반영됩니다.
+      queryClient.setQueryData<FeedDto>(
+        FEED_KEYS.detail(feedId),
+        (old) => old ? updateFeedLike(old) : old
+      );
     }
   });
 };
@@ -209,17 +249,17 @@ export const useFeedLike = (userId: number) => {
  */
 export const useDeleteFeed = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
+  // const { toast } = useToast(); -> Removed
 
   return useMutation({
     mutationFn: ({ feedId, userId }: { feedId: number; userId: number }) =>
       feedApi.deleteFeed(feedId, userId),
     onSuccess: () => {
-      toast({ title: "피드가 삭제되었습니다." });
+      toast.success("피드가 삭제되었습니다.");
       queryClient.invalidateQueries({ queryKey: FEED_KEYS.all });
     },
     onError: () => {
-      toast({ title: "삭제 실패", description: "잠시 후 다시 시도해주세요.", variant: "destructive" });
+      toast.error("삭제 실패", { description: "잠시 후 다시 시도해주세요." });
     }
   });
 };
@@ -229,13 +269,13 @@ export const useDeleteFeed = () => {
  */
 export const useUpdateFeed = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
+  // const { toast } = useToast();
 
   return useMutation({
     mutationFn: ({ feedId, data }: { feedId: number; data: any }) =>
       feedApi.updateFeed(feedId, data),
     onSuccess: () => {
-      toast({ title: "피드가 수정되었습니다." });
+      toast.success("피드가 수정되었습니다.");
       queryClient.invalidateQueries({ queryKey: FEED_KEYS.all });
     },
   });
@@ -259,6 +299,6 @@ export const useLikers = (feedId: number, isOpen: boolean) => {
   return useQuery<LikerDto[]>({
     queryKey: FEED_KEYS.likes(feedId),
     queryFn: () => feedApi.getLikers(feedId),
-    enabled: !!feedId && isOpen, 
+    enabled: !!feedId && isOpen,
   });
 };

@@ -69,7 +69,7 @@ import UserPage from "@/features/social/pages/UserPage"
 import ProfilePage from "@/features/user/pages/ProfilePage"
 
 // Feature: Chatbot
-import { FloatingChatbotWidget } from "@/features/chatbot/components/floating-chatbot-widget"
+
 import ChatbotPage from "@/features/chatbot/pages/ChatbotPage"
 
 // Feature: Home
@@ -85,7 +85,6 @@ const AppLayout = () => {
             <main className="bg-background text-foreground">
                 <Outlet />
             </main>
-            <FloatingChatbotWidget />
         </>
     );
 };
