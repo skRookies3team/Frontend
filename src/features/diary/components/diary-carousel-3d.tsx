@@ -138,9 +138,9 @@ export function DiaryCarousel3D({ diaries = [], isLoading = false }: DiaryCarous
   }, [isReady, displayCards])
 
   return (
-    <div className="w-full h-[380px] bg-gradient-to-b from-zinc-900 via-zinc-800 to-zinc-900 flex items-center justify-center overflow-hidden relative rounded-2xl">
+    <div className="w-full h-[380px] bg-gradient-to-b from-pink-50/50 to-white flex items-center justify-center overflow-hidden relative rounded-2xl">
       {/* Subtle glow effects */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-pink-200/30 rounded-full blur-3xl" />
 
       {/* Perspective Container */}
       <div
@@ -174,9 +174,9 @@ export function DiaryCarousel3D({ diaries = [], isLoading = false }: DiaryCarous
               return (
                 <div
                   key={diary.diaryId}
-                  className={`diary-card absolute left-0 top-0 w-[200px] h-[300px] -ml-[100px] -mt-[150px] rounded-2xl overflow-hidden shadow-2xl ${isPlaceholder
-                    ? 'border border-zinc-700 bg-zinc-800/80'
-                    : 'border border-zinc-700 bg-zinc-900 cursor-pointer hover:border-pink-500/50 transition-colors'
+                  className={`diary-card absolute left-0 top-0 w-[200px] h-[300px] -ml-[100px] -mt-[150px] rounded-2xl overflow-hidden shadow-xl ${isPlaceholder
+                    ? 'border-2 border-dashed border-pink-200 bg-gradient-to-br from-pink-50/80 to-white'
+                    : 'border border-pink-200 bg-white cursor-pointer hover:border-pink-400 transition-colors'
                     }`}
                   style={{
                     transformStyle: "preserve-3d",
@@ -186,12 +186,12 @@ export function DiaryCarousel3D({ diaries = [], isLoading = false }: DiaryCarous
                   {isPlaceholder ? (
                     <div className="w-full h-full flex items-center justify-center">
                       <div className="text-center p-6">
-                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-zinc-700 flex items-center justify-center">
-                          <svg className="w-8 h-8 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-pink-100 flex items-center justify-center">
+                          <svg className="w-8 h-8 text-pink-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                           </svg>
                         </div>
-                        <p className="text-zinc-500 text-xs">더 많은 추억을<br />기록해보세요</p>
+                        <p className="text-pink-300 text-xs">더 많은 추억을<br />기록해보세요</p>
                       </div>
                     </div>
                   ) : (
