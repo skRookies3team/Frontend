@@ -169,13 +169,35 @@ export function DiaryCarousel3D({ diaries = [], isLoading = false }: DiaryCarous
               </div>
             </div>
           ) : (
-            displayCards.map((diary: any) => {
+            displayCards.map((diary: any, index: number) => {
               const isPlaceholder = diary.isPlaceholder
+              // Colorful gradients for placeholder cards
+              const placeholderColors = [
+                'from-pink-100 to-pink-200',
+                'from-purple-100 to-purple-200',
+                'from-blue-100 to-blue-200',
+                'from-cyan-100 to-cyan-200',
+                'from-green-100 to-green-200',
+                'from-yellow-100 to-yellow-200',
+                'from-orange-100 to-orange-200',
+                'from-rose-100 to-rose-200',
+              ]
+              const pawColors = [
+                'text-pink-300',
+                'text-purple-300',
+                'text-blue-300',
+                'text-cyan-300',
+                'text-green-300',
+                'text-yellow-400',
+                'text-orange-300',
+                'text-rose-300',
+              ]
+              const colorIndex = index % placeholderColors.length
               return (
                 <div
                   key={diary.diaryId}
                   className={`diary-card absolute left-0 top-0 w-[240px] h-[360px] -ml-[120px] -mt-[180px] rounded-2xl overflow-hidden shadow-xl ${isPlaceholder
-                    ? 'border-2 border-dashed border-pink-200 bg-gradient-to-br from-pink-50/80 to-white'
+                    ? `border-2 border-dashed border-white/70 bg-gradient-to-br ${placeholderColors[colorIndex]}`
                     : 'border border-pink-200 bg-white cursor-pointer hover:border-pink-400 transition-colors'
                     }`}
                   style={{
@@ -185,13 +207,15 @@ export function DiaryCarousel3D({ diaries = [], isLoading = false }: DiaryCarous
                 >
                   {isPlaceholder ? (
                     <div className="w-full h-full flex items-center justify-center">
-                      <div className="text-center p-6">
-                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-pink-100 flex items-center justify-center">
-                          <svg className="w-8 h-8 text-pink-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                        </div>
-                        <p className="text-pink-300 text-xs">더 많은 추억을<br />기록해보세요</p>
+                      <div className="text-center">
+                        {/* Cute paw icon */}
+                        <svg className={`w-16 h-16 mx-auto ${pawColors[colorIndex]}`} viewBox="0 0 24 24" fill="currentColor">
+                          <ellipse cx="12" cy="17" rx="3.5" ry="3" />
+                          <circle cx="6" cy="10" r="2.5" />
+                          <circle cx="18" cy="10" r="2.5" />
+                          <circle cx="8.5" cy="5.5" r="2" />
+                          <circle cx="15.5" cy="5.5" r="2" />
+                        </svg>
                       </div>
                     </div>
                   ) : (

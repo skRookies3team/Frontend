@@ -110,30 +110,6 @@ const DiaryCalendar = ({ selectedDate, onDateSelect, onRecapClick }: DiaryCalend
     const renderHeader = () => {
         return (
             <div className="flex flex-col gap-6 mb-8 animate-fade-in-down">
-                {/* Vintage Recap Button Area - Restored */}
-                <div className="flex justify-center mb-2">
-                    <button
-                        onClick={onRecapClick}
-                        className="relative group cursor-pointer transition-transform hover:scale-105"
-                    >
-                        {/* Tape Effect */}
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-32 h-8 bg-yellow-100/90 rotate-1 shadow-sm border-l border-r border-white/60 z-20 backdrop-blur-[1px]" />
-
-                        <div className="relative z-10 bg-[#fff9f0] border-2 border-[#e6dcc8] px-8 py-4 rounded-xl shadow-lg flex items-center gap-4 min-w-[320px]">
-                            <div className="bg-violet-100 p-2 rounded-lg text-violet-600">
-                                <BookOpen className="w-6 h-6" />
-                            </div>
-                            <div className="text-left flex-1">
-                                <h3 className="text-gray-800 font-serif font-bold text-lg flex items-center gap-2">
-                                    월간 리캡 보기 <Sparkles className="w-4 h-4 text-yellow-500" />
-                                </h3>
-                                <p className="text-xs text-gray-500 font-medium">지난달의 소중한 추억을 모아봤어요</p>
-                            </div>
-                            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-violet-500 transition-colors" />
-                        </div>
-                    </button>
-                </div>
-
                 {/* Modern Simple Header */}
                 <div className="flex items-center justify-between px-2 mt-4">
                     <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-2 hover:bg-gray-50 rounded-full text-gray-500 hover:text-gray-900 transition-colors">
@@ -316,23 +292,6 @@ const DiaryCalendar = ({ selectedDate, onDateSelect, onRecapClick }: DiaryCalend
 
     return (
         <div className="relative w-full max-w-[1400px] mx-auto px-4 md:px-8 animate-fade-in bg-white/50 min-h-[600px]">
-            {/* Info Modal Trigger - Prominent CTA */}
-            <button
-                onClick={() => setShowInfoModal(true)}
-                className="absolute top-6 right-4 md:right-8 bg-white/90 backdrop-blur-sm border border-pink-200 px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all hover:scale-105 flex items-center gap-2 group z-20"
-            >
-                <div className="bg-yellow-100 p-1 rounded-full group-hover:rotate-12 transition-transform">
-                    <Sparkles className="w-4 h-4 text-yellow-500" />
-                </div>
-                <span className="text-sm font-bold text-gray-700 font-['Jua'] group-hover:text-pink-500 transition-colors">
-                    펫 코인 받기
-                </span>
-                <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-pink-500"></span>
-                </span>
-            </button>
-
             {renderHeader()}
             {renderDays()}
             {/* Swipable content area could go here, but for now just grid */}
@@ -384,10 +343,6 @@ const DiaryCalendar = ({ selectedDate, onDateSelect, onRecapClick }: DiaryCalend
                                         <div className="w-2 h-2 rounded-full bg-[#FD4776]" />
                                         AI가 자동으로 일기 작성
                                     </li>
-                                    <li className="flex items-center gap-3 text-[#FD4776] font-bold">
-                                        <div className="w-2 h-2 rounded-full bg-[#FD4776]" />
-                                        100 펫코인 획득
-                                    </li>
                                 </ul>
                                 <div className="mt-auto w-full z-10">
                                     <button
@@ -421,10 +376,6 @@ const DiaryCalendar = ({ selectedDate, onDateSelect, onRecapClick }: DiaryCalend
                                     <li className="flex items-center gap-3 text-gray-600 font-medium">
                                         <div className="w-2 h-2 rounded-full bg-[#AF52DE]" />
                                         주요 순간 자동 선택
-                                    </li>
-                                    <li className="flex items-center gap-3 text-[#AF52DE] font-bold">
-                                        <div className="w-2 h-2 rounded-full bg-[#AF52DE]" />
-                                        500 펫코인 획득
                                     </li>
                                 </ul>
                                 <div className="mt-auto w-full z-10">
