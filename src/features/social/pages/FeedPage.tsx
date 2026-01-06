@@ -6,7 +6,7 @@ import { PopularFeedGrid } from "@/features/social/components/PopularFeedGrid"
 import { HashtagFeedGrid } from "@/features/social/components/HashtagFeedGrid" // [필수] import 확인
 import { PostDetailModal } from "@/features/social/components/PostDetailModal"
 import { FeedCreateModal } from "@/features/social/components/FeedCreateModal"
-import { Heart } from 'lucide-react'
+import { Heart, Pen } from 'lucide-react'
 import { useAuth } from "@/features/auth/context/auth-context"
 import { useFeedLike } from "../hooks/use-feed-query"
 import { FeedDto } from "../types/feed"
@@ -16,11 +16,11 @@ import { SocialRightSidebar } from "../components/layout/SocialRightSidebar"
 export default function FeedPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  
+
   // 1. URL에서 파라미터 가져오기
   const searchTag = searchParams.get("tag");
   const filterParam = searchParams.get("filter");
-  
+
   // filter가 없으면 'home', 있으면 그 값 (popular 등)
   const activePage = filterParam === "popular" ? "popular" : "home";
 
@@ -37,35 +37,35 @@ export default function FeedPage() {
     if (searchTag) {
       return <HashtagFeedGrid tag={searchTag} />;
     }
-    
+
     // 2순위: 인기 탭이면 인기 그리드 보여주기
     if (activePage === 'popular') {
       return <PopularFeedGrid />;
     }
-    
+
     // 3순위: 기본 피드 리스트 (홈)
     return <FeedList filter="all" onPostClick={setSelectedPost} />;
   };
 
   return (
     <div className="flex justify-between w-full min-h-screen bg-[#FDFBFD] text-slate-800 font-sans selection:bg-[#FF69B4] selection:text-white pt-0 relative">
-      
+
       {/* 왼쪽 사이드바 */}
-      <SocialSidebar 
+      <SocialSidebar
         activePage={activePage}
         onSearchToggle={setIsSearchOpen}
         onCreateClick={() => setIsCreateOpen(true)}
       />
 
       {/* 메인 영역 */}
-      <main 
-        className="flex-1 flex justify-center min-w-0 bg-[#FDFBFD] pt-5 px-4 pb-20" 
+      <main
+        className="flex-1 flex justify-center min-w-0 bg-[#FDFBFD] pt-5 px-4 pb-20"
         onClick={() => isSearchOpen && setIsSearchOpen(false)}
       >
         <div className="w-full max-w-[680px] md:max-w-[900px]">
           {/* 모바일 헤더 */}
           <div className="md:hidden w-full fixed top-0 left-0 bg-white/95 backdrop-blur-md z-50 flex items-center justify-between px-5 py-3 border-b border-gray-100 shadow-sm">
-            <span 
+            <span
               className="font-black text-xl italic text-[#FF69B4] tracking-tighter cursor-pointer"
               onClick={() => navigate('/feed')}
             >
@@ -85,11 +85,12 @@ export default function FeedPage() {
 
       {/* 오른쪽 사이드바 */}
       <SocialRightSidebar />
-      
+
       {/* 모바일 하단 탭 */}
       <div className="md:hidden"><TabNavigation /></div>
 
       {/* 게시물 상세 모달 */}
+
       {selectedPost && (
         <PostDetailModal
           isOpen={!!selectedPost}
@@ -98,6 +99,15 @@ export default function FeedPage() {
           onLikeToggle={() => toggleLike(selectedPost.feedId)}
         />
       )}
+
+      {/* 플로팅 글쓰기 버튼 */}
+      <button
+        onClick={() => setIsCreateOpen(true)}
+        className="fixed bottom-20 right-4 md:bottom-10 md:right-10 w-14 h-14 bg-[#FF69B4] hover:bg-[#FF1493] text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 z-50 focus:outline-none focus:ring-2 focus:ring-[#FF69B4] focus:ring-offset-2"
+        aria-label="피드 작성"
+      >
+        <Pen className="w-7 h-7" />
+      </button>
 
       {/* 글쓰기 모달 */}
       <FeedCreateModal

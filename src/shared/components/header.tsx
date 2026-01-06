@@ -6,9 +6,9 @@ import { useState, useEffect } from "react";
 import { cn } from "@/shared/lib/utils";
 import { useAuth } from "@/features/auth/context/auth-context";
 import { Badge } from "@/shared/ui/badge";
-import { NotificationsDropdown } from "@/features/social/components/notifications-dropdown";
+import { NotificationsDropdown } from "@/features/dashboard/notifications/components/notifications-dropdown";
 import { motion, AnimatePresence } from "framer-motion";
-
+import { chatApi } from "@/features/petmate/api/chat-api";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +20,7 @@ export function Header() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth();
-
+  const [unreadCount, setUnreadCount] = useState(0);
   const [currentPetIndex, setCurrentPetIndex] = useState(0);
 
   const hasFinalConsonant = (name: string) => {
@@ -59,6 +59,15 @@ export function Header() {
       return () => clearInterval(interval);
     }
   }, [pets.length]);
+
+  // 안 읽은 메시지 개수 조회
+  useEffect(() => {
+    if (user) {
+      chatApi.getTotalUnreadCount(parseInt(user.id))
+        .then(setUnreadCount)
+        .catch((err) => console.error("Failed to fetch unread count:", err));
+    }
+  }, [user]);
 
   const navItems = [
     ...(user ? [{ href: "/dashboard", label: "홈" }] : []),
@@ -126,9 +135,11 @@ export function Header() {
               <Link to="/messages">
                 <Button variant="ghost" size="icon" className="relative">
                   <MessageSquare className="h-5 w-5" />
-                  <Badge className="absolute -right-1 -top-1 h-5 w-5 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 p-0 text-xs flex items-center justify-center">
-                    3
-                  </Badge>
+                  {unreadCount > 0 && (
+                    <Badge className="absolute -right-1 -top-1 h-5 w-5 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 p-0 text-xs flex items-center justify-center">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </Badge>
+                  )}
                 </Button>
               </Link>
               <DropdownMenu>
@@ -173,14 +184,16 @@ export function Header() {
               <Link to="/messages">
                 <Button variant="ghost" size="icon" className="relative h-9 w-9">
                   <MessageSquare className="h-5 w-5" />
-                  <Badge className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 p-0 text-[10px] flex items-center justify-center">
-                    3
-                  </Badge>
+                  {unreadCount > 0 && (
+                    <Badge className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 p-0 text-[10px] flex items-center justify-center">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </Badge>
+                  )}
                 </Button>
               </Link>
               <Link to="/profile">
                 <img
-                  src={user.avatar || "/placeholder.svg"}
+                  src={user.avatar || "/placeholder-user.jpg"}
                   alt={user.name}
                   className="h-8 w-8 rounded-full object-cover border-2 border-pink-200"
                 />

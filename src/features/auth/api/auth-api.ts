@@ -8,6 +8,7 @@ interface LoginResponse {
     email: string;
     username: string; // 사용자 이름 (Name)
     social: string;   // 소셜 ID/핸들 (Username)
+    profileImage?: string;
 }
 
 // 회원가입 응답 타입

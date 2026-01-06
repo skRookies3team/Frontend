@@ -58,9 +58,9 @@ export function NotificationsDropdown() {
     } else if (notification.alarmType === 'MATCH') {
       navigate(`/pet-mate?modal=requests`);
     } else if (notification.alarmType === 'DIARY') {
-      navigate(`/ai-studio/diary/calendar`);
+      navigate(`/diary/${notification.targetId}`);
     } else if (notification.alarmType === 'RECAP') {
-      navigate(`/ai-studio/recap`);
+      navigate(`/recap/${notification.targetId}`);
     } else if (notification.alarmType === 'COIN') {
       navigate(`/dashboard`);
     }
