@@ -62,7 +62,7 @@ export default function MileagePage() {
   // Stats calculation (based on currently fetched logs - simpler approach as per requirements)
   // For precise total-lifetime stats, backend aggregation is preferred, but here we sum the list.
   const totalEarned = logs
-    .filter(item => item.type === 'WRITEDIARY' || item.type === 'WIRTEFEED')
+    .filter(item => item.type === 'WRITEDIARY' || item.type === 'WRITEFEED' || item.type === 'WRITERECAP')
     .reduce((sum, item) => sum + item.amount, 0)
 
   const totalUsed = logs
@@ -72,13 +72,14 @@ export default function MileagePage() {
   const getDescription = (type: string) => {
     switch (type) {
       case 'WRITEDIARY': return "AI 다이어리 작성"
-      case 'WIRTEFEED': return "게시물 공유"
+      case 'WRITEFEED': return "게시물 공유"
+      case 'WRITERECAP': return "AI 리캡 생성"
       case 'BUY': return "구매 할인 사용"
       default: return "기타"
     }
   }
 
-  const isEarned = (type: string) => type === 'WRITEDIARY' || type === 'WIRTEFEED'
+  const isEarned = (type: string) => type === 'WRITEDIARY' || type === 'WRITEFEED' || type === 'WRITERECAP'
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-rose-50">

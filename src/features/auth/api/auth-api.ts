@@ -260,7 +260,7 @@ export const readNotificationApi = async (userNotificationId: number): Promise<G
 };
 
 // 마일리지 내역 타입
-export type CoinType = 'WRITEDIARY' | 'WIRTEFEED' | 'BUY';
+export type CoinType = 'WRITEDIARY' | 'WRITEFEED' | 'BUY' | 'WRITERECAP' ;
 
 // 마일리지 내역 DTO
 export interface CreateCoinLogDto {
