@@ -164,33 +164,40 @@ export function PostCard({ post, onClickPost }: PostCardProps) {
           </DropdownMenu>
         </div>
 
-        {/* 2. 이미지 영역 */}
+        {/* 2. 이미지 영역 (이미지가 없으면 텍스트 강조 표시) */}
         <div
-          className="relative aspect-square w-full bg-gray-100 cursor-pointer group overflow-hidden"
+          className={`relative aspect-square w-full cursor-pointer group overflow-hidden ${images.length === 0 ? 'bg-gradient-to-br from-[#FFF0F5] to-white flex items-center justify-center p-8' : 'bg-gray-100'
+            }`}
           onClick={() => onClickPost?.(post)}
         >
-          {images.length > 0 && (
-            <img
-              src={images[currentImageIndex]}
-              alt="feed"
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-          )}
-
-          {hasMultipleImages && (
+          {images.length > 0 ? (
             <>
-              <button onClick={handlePrevClick} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-black/20 text-white/80 rounded-full opacity-0 group-hover:opacity-100 hover:bg-black/50 transition-all backdrop-blur-[2px] z-10">
-                <ChevronLeft className="w-6 h-6" strokeWidth={2.5} />
-              </button>
-              <button onClick={handleNextClick} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-black/20 text-white/80 rounded-full opacity-0 group-hover:opacity-100 hover:bg-black/50 transition-all backdrop-blur-[2px] z-10">
-                <ChevronRight className="w-6 h-6" strokeWidth={2.5} />
-              </button>
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 p-1.5 rounded-full bg-black/10 backdrop-blur-[2px]">
-                {images.map((_, idx) => (
-                  <div key={idx} className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentImageIndex ? "bg-white w-4 shadow-sm" : "bg-white/60 w-1.5"}`} />
-                ))}
-              </div>
+              <img
+                src={images[currentImageIndex]}
+                alt="feed"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+
+              {hasMultipleImages && (
+                <>
+                  <button onClick={handlePrevClick} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-black/20 text-white/80 rounded-full opacity-0 group-hover:opacity-100 hover:bg-black/50 transition-all backdrop-blur-[2px] z-10">
+                    <ChevronLeft className="w-6 h-6" strokeWidth={2.5} />
+                  </button>
+                  <button onClick={handleNextClick} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-black/20 text-white/80 rounded-full opacity-0 group-hover:opacity-100 hover:bg-black/50 transition-all backdrop-blur-[2px] z-10">
+                    <ChevronRight className="w-6 h-6" strokeWidth={2.5} />
+                  </button>
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 p-1.5 rounded-full bg-black/10 backdrop-blur-[2px]">
+                    {images.map((_, idx) => (
+                      <div key={idx} className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentImageIndex ? "bg-white w-4 shadow-sm" : "bg-white/60 w-1.5"}`} />
+                    ))}
+                  </div>
+                </>
+              )}
             </>
+          ) : (
+            <div className="text-xl font-medium text-gray-800 text-center leading-relaxed break-keep line-clamp-6">
+              {post.content}
+            </div>
           )}
         </div>
 
@@ -240,7 +247,8 @@ export function PostCard({ post, onClickPost }: PostCardProps) {
             <Link to={`/user/${post.writerId}`} className="font-bold mr-2 hover:text-[#FF69B4] transition-colors">
               {post.writerNickname}
             </Link>
-            {post.content}
+            {/* 이미지가 있을 때만 하단에 텍스트 표시 (없으면 위에서 크게 보여줌) */}
+            {images.length > 0 && post.content}
           </div>
           {post.commentCount > 0 && (
             <button onClick={() => onClickPost?.(post)} className="text-sm text-gray-500 mt-2 hover:text-gray-700 font-medium">

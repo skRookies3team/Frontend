@@ -13,10 +13,10 @@ interface HashtagFeedGridProps {
 export function HashtagFeedGrid({ tag }: HashtagFeedGridProps) {
   const { user } = useAuth();
   const currentUserId = user ? Number(user.id) : 0;
-  
+
   // 해시태그 검색 데이터 조회 (알고리즘 정렬)
   const { data, isLoading } = useFeedsByHashtag(tag, currentUserId);
-  
+
   const [selectedPost, setSelectedPost] = useState<FeedDto | null>(null);
   const { mutate: toggleLike } = useFeedLike(currentUserId);
 
@@ -24,10 +24,10 @@ export function HashtagFeedGrid({ tag }: HashtagFeedGridProps) {
   const getGridSpan = (index: number) => {
     const pattern = index % 10;
     switch (pattern) {
-      case 0: return "col-span-2 row-span-2"; 
-      case 5: return "col-span-1 row-span-2"; 
-      case 6: return "col-span-2 row-span-1"; 
-      default: return "col-span-1 row-span-1"; 
+      case 0: return "col-span-2 row-span-2";
+      case 5: return "col-span-1 row-span-2";
+      case 6: return "col-span-2 row-span-1";
+      default: return "col-span-1 row-span-1";
     }
   };
 
@@ -75,8 +75,8 @@ export function HashtagFeedGrid({ tag }: HashtagFeedGridProps) {
         {/* 벤토 그리드 레이아웃 */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 auto-rows-[180px] md:auto-rows-[280px] grid-flow-dense">
           {feeds.map((feed, index) => (
-            <div 
-              key={feed.feedId} 
+            <div
+              key={feed.feedId}
               className={cn(
                 "relative group cursor-pointer overflow-hidden rounded-2xl bg-white shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl hover:-translate-y-1",
                 getGridSpan(index)
@@ -85,15 +85,14 @@ export function HashtagFeedGrid({ tag }: HashtagFeedGridProps) {
             >
               {/* 이미지 */}
               {feed.imageUrls && feed.imageUrls.length > 0 ? (
-                <img 
-                  src={feed.imageUrls[0]} 
-                  alt="feed" 
+                <img
+                  src={feed.imageUrls[0]}
+                  alt="feed"
                   className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
                 />
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-slate-50">
-                  <span className="text-4xl mb-3">📝</span>
-                  <p className="text-sm text-gray-500 font-medium line-clamp-3 leading-relaxed">
+                <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-br from-[#FFF0F5] to-white">
+                  <p className="text-gray-800 font-medium line-clamp-4 leading-relaxed break-keep">
                     {feed.content}
                   </p>
                 </div>
@@ -111,7 +110,7 @@ export function HashtagFeedGrid({ tag }: HashtagFeedGridProps) {
                     <span className="drop-shadow-md">{feed.commentCount}</span>
                   </div>
                 </div>
-                
+
                 {/* 큰 타일일 경우 작성자 표시 */}
                 {(index % 10 === 0 || index % 10 === 6) && (
                   <p className="text-white/80 text-sm font-medium mt-2 line-clamp-1 translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-100">

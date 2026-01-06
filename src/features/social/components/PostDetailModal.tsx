@@ -9,11 +9,11 @@ import { Heart, MessageCircle, MoreHorizontal, X, ChevronLeft, ChevronRight, Cor
 import { FeedDto, CommentDto } from "../types/feed";
 import { useAuth } from "@/features/auth/context/auth-context";
 import { useComments, useCreateComment, useDeleteComment } from "../hooks/use-comment-query";
-import { FEED_KEYS } from "../hooks/use-feed-query";
+import { FEED_KEYS, useFeedLike } from "../hooks/use-feed-query"; // [수정] useFeedLike 추가
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { feedApi } from "../api/feed-api";
-import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 
 interface PostDetailModalProps {
   post: FeedDto;
@@ -122,38 +122,16 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
     enabled: isOpen && !!currentUserId,
   });
 
-  const [isLiked, setIsLiked] = useState(post.isLiked);
-  const [likeCount, setLikeCount] = useState(post.likeCount);
+  // [수정] 통합 Like Hook 사용
+  const { mutate: toggleLike } = useFeedLike(currentUserId);
 
-  useEffect(() => {
-    setIsLiked(post.isLiked);
-    setLikeCount(post.likeCount);
-  }, [post]);
+  // 로컬 상태 제거 (React Query 데이터 직접 사용)
+  // const [isLiked, setIsLiked] = useState(post.isLiked);
+  // const [likeCount, setLikeCount] = useState(post.likeCount);
 
   const { data: comments, isLoading: isCommentsLoading } = useComments(post.feedId);
   const createCommentMutation = useCreateComment(post.feedId);
   const deleteCommentMutation = useDeleteComment(post.feedId);
-
-  const likeMutation = useMutation({
-    mutationFn: () => feedApi.toggleLike(post.feedId, currentUserId),
-    onMutate: async () => {
-      const prevLiked = isLiked;
-      const prevCount = likeCount;
-      setIsLiked(!prevLiked);
-      setLikeCount(prevLiked ? prevCount - 1 : prevCount + 1);
-      return { prevLiked, prevCount };
-    },
-    onError: (_err, _vars, context) => {
-      if (context) {
-        setIsLiked(context.prevLiked);
-        setLikeCount(context.prevCount);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: FEED_KEYS.all });
-      queryClient.invalidateQueries({ queryKey: FEED_KEYS.detail(post.feedId) });
-    }
-  });
 
   const images = post.imageUrls || [];
   const hasMultipleImages = images.length > 1;
@@ -233,7 +211,8 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
         {/* [삭제] 기존의 fixed DialogClose 제거됨 */}
 
         {/* 왼쪽: 이미지 영역 */}
-        <div className="relative bg-black flex items-center justify-center w-full h-[45vh] md:h-full md:flex-[1.5_1_0%] overflow-hidden border-r border-[#FFF0F5] group">
+        <div className={`relative flex items-center justify-center w-full h-[45vh] md:h-full md:flex-[1.5_1_0%] overflow-hidden border-r border-[#FFF0F5] group ${images.length === 0 ? 'bg-gradient-to-br from-[#FFF0F5] to-white' : 'bg-black'
+          }`}>
           {images.length > 0 ? (
             <>
               <img src={images[currentImageIndex]} alt={`Post-${currentImageIndex}`} className="w-full h-full object-contain" />
@@ -254,8 +233,8 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
               )}
             </>
           ) : (
-            <div className="flex items-center justify-center h-full w-full p-10 bg-[#FFF9FB]">
-              <p className="text-2xl text-gray-800 font-bold text-center leading-relaxed whitespace-pre-wrap font-sans">{post.content}</p>
+            <div className="flex items-center justify-center h-full w-full p-10">
+              <p className="text-2xl text-gray-800 font-medium text-center leading-relaxed whitespace-pre-wrap font-sans break-keep">{post.content}</p>
             </div>
           )}
         </div>
@@ -349,13 +328,13 @@ export function PostDetailModal({ post: initialPost, isOpen, onClose }: PostDeta
           <div className="p-5 border-t border-gray-50 bg-white">
             <div className="flex items-center justify-between mb-4">
               <div className="flex gap-5">
-                <button onClick={() => likeMutation.mutate()} className="group transition-transform active:scale-90 focus:outline-none">
-                  <Heart className={`h-[28px] w-[28px] transition-colors duration-200 ${isLiked ? "fill-red-600 text-red-600" : "text-gray-800 group-hover:text-red-600"}`} />
+                <button onClick={() => toggleLike(post.feedId)} className="group transition-transform active:scale-90 focus:outline-none">
+                  <Heart className={`h-[28px] w-[28px] transition-colors duration-200 ${post.isLiked ? "fill-red-600 text-red-600" : "text-gray-800 group-hover:text-red-600"}`} />
                 </button>
                 <button className="hover:opacity-60 transition-opacity"><MessageCircle className="h-[28px] w-[28px] text-gray-800 -rotate-90 group-hover:text-[#FF69B4]" /></button>
               </div>
             </div>
-            <div className="font-extrabold text-sm mb-1 text-gray-900">좋아요 {likeCount.toLocaleString()}개</div>
+            <div className="font-extrabold text-sm mb-1 text-gray-900">좋아요 {post.likeCount.toLocaleString()}개</div>
             <div className="text-[11px] text-gray-400 uppercase tracking-widest font-bold">
               {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ko })}
             </div>
