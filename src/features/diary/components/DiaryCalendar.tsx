@@ -204,7 +204,24 @@ const DiaryCalendar = ({ selectedDate, onDateSelect, onRecapClick }: DiaryCalend
                             ${!isCurrentMonth ? 'opacity-30' : ''}
                         `}
                         onClick={() => {
-                            if (isCurrentMonth) onDateSelect(isoDateStr);
+                            if (isCurrentMonth) {
+                                // If diary exists, navigate to detail page
+                                if (entry) {
+                                    console.log('[Calendar Click] Entry:', entry);
+                                    const diaryId = entry.id || entry.diaryId || entry.diary_id;
+                                    if (diaryId) {
+                                        console.log('[Calendar Click] Navigating to diary:', diaryId);
+                                        window.location.href = `/diary/${diaryId}`;
+                                    } else {
+                                        console.log('[Calendar Click] No diary ID found, selecting date');
+                                        onDateSelect(isoDateStr);
+                                    }
+                                } else {
+                                    // If no diary, just select the date (for creating new diary)
+                                    console.log('[Calendar Click] No entry, selecting date');
+                                    onDateSelect(isoDateStr);
+                                }
+                            }
                         }}
                     >
                         {/* Visual Square Container */}

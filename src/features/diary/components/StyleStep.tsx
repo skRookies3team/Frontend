@@ -79,7 +79,7 @@ const StyleStep = ({
     }, [preset, setBackgroundColor, setThemeStyle, setLayoutStyle]);
 
     const getPreviewContainerStyle = () => {
-        let baseStyle = "w-full lg:flex-1 rounded-2xl shadow-xl overflow-hidden border border-gray-100 sticky top-24 transition-all duration-300 relative";
+        let baseStyle = "w-full lg:flex-1 rounded-2xl shadow-xl overflow-y-auto border border-gray-100 sticky top-24 max-h-[calc(100vh-8rem)] transition-all duration-300 relative";
 
         if (themeStyle === 'vintage') {
             return `${baseStyle} border-4 border-[#d4c5b0]`;
@@ -409,8 +409,8 @@ const StyleStep = ({
                     </div>
                 </div>
 
-                {/* Actions */}
-                <div className="space-y-3">
+                {/* Actions - Fixed at Bottom */}
+                <div className="sticky bottom-0 pt-4 pb-4 space-y-3">
                     <button onClick={handleShareToFeed} disabled={isSubmitting} className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 transition-all transform hover:-translate-y-0.5">
                         {isSubmitting ? <Loader2 className="animate-spin" /> : <Save />} <span>일기 저장하고 공유하기</span>
                     </button>
