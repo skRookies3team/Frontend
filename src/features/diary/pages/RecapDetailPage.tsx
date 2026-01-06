@@ -225,8 +225,8 @@ export default function RecapDetailPage() {
                     </div>
 
                     <div className="mt-8 rounded-2xl bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/20 p-6 text-center">
-                        <p className="text-3xl font-bold text-purple-600">+500</p>
-                        <p className="text-sm text-muted-foreground">펫코인 획득</p>
+                        <p className="text-3xl font-bold text-purple-600">+30</p>
+                        <p className="text-sm text-muted-foreground">펫코인 적립됨</p>
                     </div>
                 </div>
             </main>
