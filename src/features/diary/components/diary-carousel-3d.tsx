@@ -61,70 +61,50 @@ export function DiaryCarousel3D({ diaries = [], isLoading = false }: DiaryCarous
     if (cards.length === 0) return;
 
 
-    // Configuration
-    const radius = 340 // Reduced radius for tighter spacing
+    // Configuration - Convex style (center forward, sides back)
     const totalCards = cards.length
-    // Calculate angle per card based on circumference or fixed step
-    // Using fixed step for specific "Concave" look
     const angleStep = 360 / totalCards
+    const radius = 280 // Distance from center
 
-    // Setup initial 3D positions
+    // Setup initial 3D positions - Convex style
     const updateCards = () => {
       const rotationY = gsap.getProperty(proxy, "x") as number
 
       cards.forEach((card, i) => {
         // Calculate the angle for this card
-        // We add the global rotation (proxy.x) to the card's base angle
         const baseAngle = i * angleStep
         const currentAngle = baseAngle + rotationY
 
-        // Normalize angle to -180 to 180 for shortest path calculation if needed
-        // But for simple rotation, we just use sin/cos
-
-        // Convert to radians
-        const theta = (currentAngle * Math.PI) / 180
-
-        // Cylinder coordinates
-        // x = R * sin(theta)
-        // z = R * cos(theta)
-
-        // To make the center card (0 degrees) closest to viewer:
-        // At 0 deg: sin(0)=0, cos(0)=1. z should be max (closest).
-        // So z = radius * cos(theta).
-        // But we want the "Concave" feel where it wraps around.
-        // Let's position them relative to the center of rotation.
-
-        const x = radius * Math.sin(theta)
-        const z = radius * Math.cos(theta)
-
-        // Rotation of the card itself to face the center (or viewer)
-        // If card is at angle theta, it should rotate by theta to face outward, or -theta to face inward?
-        // At 0 deg (front), rotation should be 0.
-        // At 90 deg (right), it should face left (-90?).
-        // Let's try rotationY = currentAngle.
-
-        const cardRotation = -currentAngle // Face center (Concave)
-
-        // Opacity/Dimming based on angle from "front" (0 deg)
-        // We need the angle relative to the viewport center.
-        // Normalize currentAngle to [-180, 180]
+        // Normalize angle to -180 to 180
         const normalizedAngle = gsap.utils.wrap(-180, 180, currentAngle)
         const absAngle = Math.abs(normalizedAngle)
 
-        // Dimming: 0 deg = 1, 90 deg = 0.2
-        const opacity = 1 - Math.min(absAngle / 120, 0.8)
+        // Convex: Center card (0°) is closest, sides go back
+        // X position: sin for horizontal spread
+        const x = Math.sin((normalizedAngle * Math.PI) / 180) * radius * 0.8
 
-        // Scale: Center biggest
-        const scale = 1 // No scaling effect
+        // Z position: Center is forward (higher z), sides go back
+        const z = Math.cos((normalizedAngle * Math.PI) / 180) * 100 - 50
+
+        // Card rotation: Cards tilt away from center
+        const cardRotation = normalizedAngle * 0.3 // Subtle tilt
+
+        // Scale: Center biggest, sides smaller
+        const scale = 1 - (absAngle / 180) * 0.4
+
+        // Opacity: Center brightest
+        const opacity = 1 - (absAngle / 180) * 0.7
+
+        // Z-index: Center on top
+        const zIndex = 1000 - Math.floor(absAngle)
 
         gsap.set(card, {
           x: x,
-          z: radius - z, // Inverted Z: Sides come forward (Concave)
+          z: z,
           rotationY: cardRotation,
-          opacity: opacity,
           scale: scale,
-          // Ensure z-index handles layering correctly (closest on top)
-          zIndex: 1000 + Math.floor(absAngle), // Sides are closer, so higher z-index
+          opacity: opacity,
+          zIndex: zIndex,
         })
       })
     }
@@ -149,18 +129,7 @@ export function DiaryCarousel3D({ diaries = [], isLoading = false }: DiaryCarous
           onUpdate: updateCards
         })
       },
-      // Remove built-in snap if we handle it manually or keep it for inertia if available
-      // snap: { x: ... } // We'll rely on our manual tween for guaranteed centering
     })
-
-    // Auto rotation (optional, slow drift)
-    // gsap.to(proxy, {
-    //   x: "+=360",
-    //   duration: 60,
-    //   repeat: -1,
-    //   ease: "none",
-    //   onUpdate: updateCards
-    // })
 
     // Cleanup
     return () => {
@@ -169,12 +138,15 @@ export function DiaryCarousel3D({ diaries = [], isLoading = false }: DiaryCarous
   }, [isReady, displayCards])
 
   return (
-    <div className="w-full h-[350px] bg-gradient-to-b from-pink-50/50 to-white flex items-center justify-center overflow-hidden relative">
+    <div className="w-full h-[380px] bg-gradient-to-b from-zinc-900 via-zinc-800 to-zinc-900 flex items-center justify-center overflow-hidden relative rounded-2xl">
+      {/* Subtle glow effects */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl" />
+
       {/* Perspective Container */}
       <div
         ref={containerRef}
-        className="relative w-full h-full flex items-center justify-center"
-        style={{ perspective: "1000px" }}
+        className="relative w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing"
+        style={{ perspective: "1200px" }}
       >
         {/* Carousel Anchor */}
         <div
@@ -202,9 +174,9 @@ export function DiaryCarousel3D({ diaries = [], isLoading = false }: DiaryCarous
               return (
                 <div
                   key={diary.diaryId}
-                  className={`diary-card absolute left-0 top-0 w-[200px] h-[300px] -ml-[100px] -mt-[150px] rounded-2xl overflow-hidden ${isPlaceholder
-                    ? 'border-2 border-dashed border-pink-200 bg-gradient-to-br from-pink-50/30 to-white/30'
-                    : 'border border-zinc-800 bg-zinc-900 cursor-pointer'
+                  className={`diary-card absolute left-0 top-0 w-[200px] h-[300px] -ml-[100px] -mt-[150px] rounded-2xl overflow-hidden shadow-2xl ${isPlaceholder
+                    ? 'border border-zinc-700 bg-zinc-800/80'
+                    : 'border border-zinc-700 bg-zinc-900 cursor-pointer hover:border-pink-500/50 transition-colors'
                     }`}
                   style={{
                     transformStyle: "preserve-3d",
@@ -214,12 +186,12 @@ export function DiaryCarousel3D({ diaries = [], isLoading = false }: DiaryCarous
                   {isPlaceholder ? (
                     <div className="w-full h-full flex items-center justify-center">
                       <div className="text-center p-6">
-                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-pink-100 flex items-center justify-center">
-                          <svg className="w-8 h-8 text-pink-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-zinc-700 flex items-center justify-center">
+                          <svg className="w-8 h-8 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                           </svg>
                         </div>
-                        <p className="text-pink-300 text-xs">더 많은 추억을<br />기록해보세요</p>
+                        <p className="text-zinc-500 text-xs">더 많은 추억을<br />기록해보세요</p>
                       </div>
                     </div>
                   ) : (
