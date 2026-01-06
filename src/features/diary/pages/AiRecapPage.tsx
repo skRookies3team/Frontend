@@ -181,7 +181,7 @@ export default function AiRecapPage() {
         </div>
       </header>
 
-      <main className="container mx-auto max-w-4xl p-4 md:p-8">
+      <main className="container mx-auto max-w-6xl p-4 md:p-8">
         <div className="mb-10 text-center relative">
           {/* Decor Icons */}
           <div className="absolute top-0 right-10 animate-bounce-slow text-yellow-400 hidden md:block"><Star className="w-8 h-8 fill-yellow-200" /></div>
@@ -243,73 +243,75 @@ export default function AiRecapPage() {
             </p>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2">
-            {recaps.map((recap) =>
-              recap.status === "WAITING" ? (
-                <div key={recap.recapId} className="relative bg-white/40 border-4 border-dashed border-purple-200/50 rounded-[2rem] p-8 flex flex-col items-center justify-center min-h-[300px] text-center">
-                  <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-purple-100 animate-pulse">
-                    <Loader2 className="h-10 w-10 text-purple-500 animate-spin" />
-                  </div>
-                  <h3 className="mb-2 text-xl font-bold text-purple-600 font-['Jua']">
-                    {formatPeriod(recap.periodStart, recap.periodEnd)}
-                  </h3>
-                  <p className="mb-4 text-purple-400 font-medium">
-                    {formatDate(recap.createdAt.split('T')[0])}에 생성 예정
-                  </p>
-                  <Badge variant="secondary" className="bg-purple-100 text-purple-600 px-4 py-1 rounded-full">
-                    열심히 만드는 중... 🔨
-                  </Badge>
-                </div>
-              ) : (
-                <div
-                  key={recap.recapId}
-                  onClick={() => handleRecapClick(recap.recapId)}
-                  className="group cursor-pointer relative bg-white rounded-[2rem] overflow-hidden shadow-[4px_4px_16px_rgba(0,0,0,0.08)] transition-all hover:-translate-y-2 hover:shadow-xl border-4 border-white transform hover:rotate-1"
-                >
-                  <div className="relative aspect-video overflow-hidden rounded-t-[1.5rem]">
-                    <img
-                      src={recap.mainImageUrl || "/placeholder.svg"}
-                      alt={recap.title}
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-purple-900/60 via-transparent to-transparent opactiy-60" />
-                    <Badge className="absolute right-4 top-4 bg-purple-500/80 backdrop-blur-md text-white border-none shadow-sm px-3 py-1">
-                      <Sparkles className="mr-1 h-3 w-3" />
-                      AI 리캡
+          <div className="max-h-[1200px] overflow-y-auto pr-2 pb-10 scrollbar-hide">
+            <div className="grid gap-6 md:grid-cols-3">
+              {recaps.map((recap) =>
+                recap.status === "WAITING" ? (
+                  <div key={recap.recapId} className="relative bg-white/40 border-4 border-dashed border-purple-200/50 rounded-[2rem] p-8 flex flex-col items-center justify-center min-h-[300px] text-center">
+                    <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-purple-100 animate-pulse">
+                      <Loader2 className="h-10 w-10 text-purple-500 animate-spin" />
+                    </div>
+                    <h3 className="mb-2 text-xl font-bold text-purple-600 font-['Jua']">
+                      {formatPeriod(recap.periodStart, recap.periodEnd)}
+                    </h3>
+                    <p className="mb-4 text-purple-400 font-medium">
+                      {formatDate(recap.createdAt.split('T')[0])}에 생성 예정
+                    </p>
+                    <Badge variant="secondary" className="bg-purple-100 text-purple-600 px-4 py-1 rounded-full">
+                      열심히 만드는 중... 🔨
                     </Badge>
-                    <div className="absolute bottom-4 left-6 text-white">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-2xl font-bold font-['Jua'] drop-shadow-md">{formatRecapTitle(recap.title)}</h3>
+                  </div>
+                ) : (
+                  <div
+                    key={recap.recapId}
+                    onClick={() => handleRecapClick(recap.recapId)}
+                    className="group cursor-pointer relative bg-white rounded-[2rem] overflow-hidden shadow-[4px_4px_16px_rgba(0,0,0,0.08)] transition-all hover:-translate-y-2 hover:shadow-xl border-4 border-white transform hover:rotate-1"
+                  >
+                    <div className="relative aspect-video overflow-hidden rounded-t-[1.5rem]">
+                      <img
+                        src={recap.mainImageUrl || "/placeholder.svg"}
+                        alt={recap.title}
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-purple-900/60 via-transparent to-transparent opactiy-60" />
+                      <Badge className="absolute right-4 top-4 bg-purple-500/80 backdrop-blur-md text-white border-none shadow-sm px-3 py-1">
+                        <Sparkles className="mr-1 h-3 w-3" />
+                        AI 리캡
+                      </Badge>
+                      <div className="absolute bottom-4 left-6 text-white">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-xl font-bold font-['Jua'] drop-shadow-md">{formatRecapTitle(recap.title)}</h3>
+                        </div>
+                        <p className="text-xs text-purple-100 font-medium bg-purple-900/40 px-3 py-1 rounded-full backdrop-blur-sm inline-block">
+                          {formatPeriod(recap.periodStart, recap.periodEnd)}
+                        </p>
                       </div>
-                      <p className="text-sm text-purple-100 font-medium bg-purple-900/40 px-3 py-1 rounded-full backdrop-blur-sm inline-block">
-                        {formatPeriod(recap.periodStart, recap.periodEnd)}
-                      </p>
+                    </div>
+                    <div className="p-5 bg-white relative">
+                      {/* Decorative tape on bottom */}
+                      {/* <div className="absolute top-0 right-10 w-8 h-12 bg-purple-100/50 -mt-6 rounded-b"></div> */}
+
+                      <div className="flex items-center justify-between text-xs font-medium text-gray-500">
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="w-3 h-3 text-purple-300" />
+                          <span>{formatDate(recap.createdAt.split('T')[0])}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <BookOpen className="w-3 h-3 text-purple-300" />
+                          <span>{recap.momentCount}개의 순간</span>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-4 border-t border-purple-50 flex justify-center">
+                        <span className="text-purple-500 font-bold group-hover:text-purple-600 transition-colors flex items-center gap-2 text-sm">
+                          추억 보러가기 <ArrowLeft className="w-3 h-3 rotate-180" />
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="p-6 bg-white relative">
-                    {/* Decorative tape on bottom */}
-                    {/* <div className="absolute top-0 right-10 w-8 h-12 bg-purple-100/50 -mt-6 rounded-b"></div> */}
-
-                    <div className="flex items-center justify-between text-sm font-medium text-gray-500">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="w-4 h-4 text-purple-300" />
-                        <span>{formatDate(recap.createdAt.split('T')[0])}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <BookOpen className="w-4 h-4 text-purple-300" />
-                        <span>{recap.momentCount}개의 순간</span>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 pt-4 border-t border-purple-50 flex justify-center">
-                      <span className="text-purple-500 font-bold group-hover:text-purple-600 transition-colors flex items-center gap-2">
-                        추억 보러가기 <ArrowLeft className="w-4 h-4 rotate-180" />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ),
-            )}
+                ),
+              )}
+            </div>
           </div>
         )}
 
