@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, MoreVertical, Phone, Video, Send, ArrowLeft, Image as ImageIcon } from "lucide-react";
+import { Search, MoreVertical, Send, ArrowLeft, Image as ImageIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
