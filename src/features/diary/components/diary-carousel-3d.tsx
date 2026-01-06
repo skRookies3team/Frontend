@@ -83,8 +83,8 @@ export function DiaryCarousel3D({ diaries = [], isLoading = false }: DiaryCarous
         // X position: sin for horizontal spread
         const x = Math.sin((normalizedAngle * Math.PI) / 180) * radius * 0.8
 
-        // Z position: Center is forward (higher z), sides go back
-        const z = Math.cos((normalizedAngle * Math.PI) / 180) * 100 - 50
+        // Z position: Center is forward (higher z), sides go back significantly more to avoid clipping
+        const z = Math.cos((normalizedAngle * Math.PI) / 180) * 400 - 200
 
         // Card rotation: Cards tilt away from center
         const cardRotation = normalizedAngle * 0.3 // Subtle tilt
