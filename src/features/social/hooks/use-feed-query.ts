@@ -73,6 +73,8 @@ export const useFeedList = (userId: number, filter: string = 'all') => {
       return lastPage.last ? undefined : lastPage.number + 1;
     },
     enabled: !!userId,
+    // [추가] 5초마다 자동으로 데이터를 다시 가져옴 (실시간 업데이트 효과)
+    refetchInterval: 5000,
   });
 };
 
@@ -84,6 +86,8 @@ export const useTrendingFeeds = (viewerId: number = 0) => {
     queryKey: FEED_KEYS.trending(viewerId),
     queryFn: () => feedApi.getTrendingFeeds(viewerId, 0), // 0번 페이지 조회
     staleTime: 1000 * 60 * 5, // 5분 캐싱
+    // [추가] 5초마다 자동으로 데이터를 다시 가져옴
+    refetchInterval: 5000,
   });
 };
 
@@ -95,6 +99,8 @@ export const useFeedsByHashtag = (tag: string, userId: number) => {
     queryKey: FEED_KEYS.hashtag(tag, userId),
     queryFn: () => feedApi.searchFeedsByHashtag(tag, userId, 0),
     enabled: !!tag,
+    // [추가] 5초마다 자동으로 데이터를 다시 가져옴
+    refetchInterval: 5000,
   });
 };
 

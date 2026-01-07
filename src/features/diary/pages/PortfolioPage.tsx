@@ -149,6 +149,7 @@ export default function PortfolioPage() {
               // In production, S3 URLs work directly with proper CORS settings
             }
 
+
             return {
               id: d.diaryId,
               src: firstImage,
@@ -158,7 +159,7 @@ export default function PortfolioPage() {
               content: d.content,
               likes: 0,
               weather: d.weather || "맑음 ☀️",
-              images: d.images || [],
+              images: d.images || [], // [NEW] Include images array
               isPlaceholder: false
             }
           })
@@ -290,22 +291,8 @@ export default function PortfolioPage() {
     // --- 5. Objects (Golden Spiral) ---
     const radius = 8
     const sphereMeshes: THREE.Mesh[] = []
-
-    // Helper function to load texture with explicit CORS
-    const loadTextureWithCORS = (url: string): THREE.Texture => {
-      const texture = new THREE.Texture();
-      const img = new Image();
-      img.crossOrigin = 'anonymous'; // Set BEFORE src
-      img.onload = () => {
-        texture.image = img;
-        texture.needsUpdate = true;
-      };
-      img.onerror = () => {
-        console.warn('[Portfolio] Failed to load image:', url);
-      };
-      img.src = url;
-      return texture;
-    };
+    const textureLoader = new THREE.TextureLoader()
+    textureLoader.crossOrigin = 'anonymous'; // [FIX] Allow CORS for S3 images
 
     // [MODIFIED] Use dynamic 'diaries' instead of static 'diaryPhotos'
     // If empty, maybe show nothing or wait? For now if empty, it just renders nothing but scene setup works.
@@ -317,8 +304,8 @@ export default function PortfolioPage() {
       const y = radius * Math.sin(phi) * Math.sin(theta)
       const z = radius * Math.cos(phi)
 
-      // [FIX] Load texture with explicit CORS setting
-      const texture = loadTextureWithCORS(photo.src || "/placeholder.svg");
+      // [FIX] Load standard texture (Data URL works here too)
+      const texture = textureLoader.load(photo.src || "/placeholder.svg");
 
       const geometry = new THREE.PlaneGeometry(2, 2.5)
       const material = new THREE.MeshBasicMaterial({

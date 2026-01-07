@@ -114,7 +114,7 @@ const DiaryEditPage = () => {
                 </div>
             </header>
 
-            <main className="container mx-auto max-w-7xl p-4 md:p-6">
+            <main className="max-w-[1600px] w-full mx-auto p-8 md:p-12">
                 <EditStep
                     userId={Number(user?.id)}
                     selectedImages={selectedImages}

@@ -403,20 +403,30 @@ const DiaryUploadPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-pink-50 to-rose-50 pb-20 font-sans text-gray-800">
-            <header className="sticky top-0 z-40 border-b border-pink-100 bg-white/95 backdrop-blur-sm shadow-sm">
+        <div className="min-h-screen pb-20 font-sans text-gray-800"
+            style={{
+                backgroundColor: '#ffeef2',
+                backgroundImage: `
+                  linear-gradient(90deg, rgba(255,255,255,0.6) 50%, transparent 50%),
+                  linear-gradient(rgba(255,255,255,0.6) 50%, transparent 50%)
+                `,
+                backgroundSize: '80px 80px'
+            }}
+        >
+            <header className="sticky top-0 z-40 border-b-2 border-dashed border-pink-200 bg-white/90 backdrop-blur-md shadow-[0_4px_20px_rgba(255,192,203,0.1)]">
                 <div className="container mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-                    <button onClick={handleBack} className="text-pink-600 hover:text-pink-700 transition-colors p-1"><ChevronLeft className="w-6 h-6" /></button>
-                    <h1 className="text-2xl md:text-3xl font-bold text-[#FF6B8B] font-['Jua'] tracking-wider flex items-center gap-3">
-                        <PawPrint className="w-6 h-6 animate-bounce text-[#FF8FAB] delay-100" />
+                    <button onClick={handleBack} className="text-pink-400 hover:text-pink-600 transition-colors p-2 hover:bg-pink-50 rounded-full"><ChevronLeft className="w-7 h-7" /></button>
+                    <h1 className="text-2xl md:text-3xl font-bold text-pink-500 font-['Jua'] tracking-wider flex items-center gap-3 drop-shadow-sm">
+                        <PawPrint className="w-6 h-6 animate-bounce text-yellow-400 delay-100" />
                         <span>너와 나의 이야기</span>
-                        <PawPrint className="w-6 h-6 animate-bounce text-[#FF8FAB] delay-300" />
+                        <PawPrint className="w-6 h-6 animate-bounce text-yellow-400 delay-300" />
                     </h1>
-                    <div className="flex items-center gap-2"></div>
+                    <div className="w-10"></div> {/* Spacer for center alignment */}
                 </div>
             </header>
 
-            <main className="container mx-auto max-w-7xl p-4 md:p-6">
+            <main className="container mx-auto max-w-5xl p-4 md:p-8 relative">
+                {/* Decorative background elements if needed */}
                 {step === 'upload' && (
                     <UploadStep
                         selectedImages={selectedImages}
