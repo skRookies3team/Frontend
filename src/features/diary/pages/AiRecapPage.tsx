@@ -229,9 +229,10 @@ export default function AiRecapPage() {
             <Link to="/ai-studio" className="text-amber-400 hover:text-amber-600 transition-colors p-2 hover:bg-yellow-50 rounded-full">
               <ArrowLeft className="h-7 w-7" />
             </Link>
-            <h1 className="text-2xl font-bold text-amber-500 font-['Jua'] flex items-center gap-2 drop-shadow-sm">
-              <BookOpen className="h-6 w-6" />
-              AI 리캡
+            <h1 className="text-3xl font-bold text-orange-400 font-['Jua'] flex items-center gap-3 drop-shadow-sm">
+              <PawPrint className="h-7 w-7 text-yellow-400 animate-bounce" />
+              추억 보관함
+              <PawPrint className="h-7 w-7 text-yellow-400 animate-bounce delay-75" />
             </h1>
             <div className="w-10" />
           </div>
@@ -243,7 +244,7 @@ export default function AiRecapPage() {
             <div className="absolute top-0 right-10 animate-bounce-slow text-orange-400 hidden md:block"><Star className="w-8 h-8 fill-orange-200" /></div>
             <div className="absolute top-10 left-10 animate-pulse-slow text-yellow-300 hidden md:block"><Moon className="w-8 h-8 fill-yellow-100" /></div>
 
-            <h2 className="text-3xl md:text-4xl font-bold text-amber-600 font-['Jua'] drop-shadow-sm mb-3">반려동물과의 특별한 순간들</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-amber-700 font-['Jua'] drop-shadow-sm mb-3">반려동물과의 특별한 순간들</h2>
             <div className="inline-block bg-white/60 backdrop-blur-sm px-6 py-2 rounded-full border border-yellow-100 shadow-sm transform -rotate-1">
               <p className="text-amber-500 font-medium md:text-lg">
                 1달마다 자동으로 생성되는 감동적인 리캡을 확인하세요 📼
