@@ -254,7 +254,7 @@ export default function AiRecapPage() {
           {/* Generate Button Area - Sticky Note Style */}
           <div className="mb-10 relative bg-[#FFF9C4]/40 p-8 rounded-[2.5rem] shadow-[8px_8px_0px_rgba(255,200,100,0.2)] border-4 border-amber-300 max-w-2xl mx-auto transform rotate-1 transition-transform hover:rotate-0 hover:scale-[1.01] duration-300 group">
             {/* Tape */}
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-32 h-8 bg-white/80 -rotate-2 backdrop-blur-sm shadow-sm z-10 border border-orange-200"></div>
+            <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-40 h-10 bg-white/60 -rotate-1 backdrop-blur-sm shadow-sm z-10"></div>
 
             <div className="flex items-center justify-between gap-6 relative z-10">
               <div className="flex items-start gap-4 flex-1">
