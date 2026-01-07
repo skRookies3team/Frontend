@@ -234,7 +234,7 @@ export default function UserDiaryPage() {
                         </Button>
                     </Link>
 
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-h-[900px] overflow-y-auto">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-h-[900px] overflow-y-auto overflow-x-hidden pr-1">
                         {userRecaps.length === 0 ? (
                             <div className="col-span-full py-10 text-center text-gray-400">
                                 아직 생성된 AI 리캡이 없습니다.
