@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 
-import { Card, CardContent } from "@/shared/ui/card"
+
 import { ChevronLeft, TrendingUp, TrendingDown, Coins } from "lucide-react"
 import { useAuth } from "@/features/auth/context/auth-context"
 import {
@@ -85,11 +85,6 @@ export default function MileagePage() {
     <div className="min-h-screen p-4 md:p-8"
       style={{
         backgroundColor: '#FFF0F5',
-        backgroundImage: `
-          linear-gradient(90deg, rgba(255, 182, 193, 0.3) 50%, transparent 50%),
-          linear-gradient(rgba(255, 182, 193, 0.3) 50%, transparent 50%)
-        `,
-        backgroundSize: '60px 60px'
       }}
     >
       <div className="mx-auto max-w-md space-y-6">
