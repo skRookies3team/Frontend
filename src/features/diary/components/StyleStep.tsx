@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Calendar, MapPin, Sun, Smile, Edit3, Save, Loader2, LayoutGrid, Layers, Columns, Grid, Maximize2, Minimize2, Type, Palette, Sparkles } from 'lucide-react';
+import { Calendar, MapPin, Sun, Smile, Edit3, Save, Loader2, LayoutGrid, Layers, Columns, Grid, Maximize2, Minimize2, Type, Palette, Sparkles, ImageIcon, BookOpen, ArrowUpRight } from 'lucide-react';
 import KakaoMap from './KakaoMap';
 
 interface StyleStepProps {
@@ -42,7 +42,21 @@ const StyleStep = ({
     handleShareToFeed, isSubmitting, onBack, title
 }: StyleStepProps) => {
 
-    const backgroundColors = ["#ffffff", "#fff5f5", "#fef2f2", "#fdf4ff", "#f0f9ff"];
+    // 확장된 배경 색상 팔레트
+    const backgroundColors = [
+        "#ffffff", // 화이트
+        "#fff5f5", // 연핑크
+        "#fef2f2", // 로즈
+        "#fdf4ff", // 라벤더
+        "#f0f9ff", // 스카이블루
+        "#fdf6e3", // 웜베이지
+        "#f5f9f0", // 민트그린
+        "#fef9e7", // 레몬옐로우
+        "#f8f0ff", // 드림퍼플
+        "#f7f3e9", // 빈티지아이보리
+        "#f0f8ff", // 오션블루
+        "#1a1a2e", // 다크모드
+    ];
     const [activeTab, setActiveTab] = useState<'layout' | 'detail'>('layout');
 
     // 프리셋/테마 변경 시 스타일 적용 로직
@@ -70,16 +84,52 @@ const StyleStep = ({
                 setThemeStyle('basic');
                 setLayoutStyle('masonry');
                 break;
-            case 'vintage_scrapbook': // 빈티지 스크랩북 (New)
+            case 'vintage_scrapbook': // 빈티지 스크랩북
                 setBackgroundColor('#fdfbf7');
                 setThemeStyle('vintage');
+                setLayoutStyle('masonry');
+                break;
+            // 새로운 프리셋 테마들
+            case 'cute_planner': // 큐트 플래너 (이미지1 참고)
+                setBackgroundColor('#fff5f8');
+                setThemeStyle('kawaii');
+                setLayoutStyle('grid');
+                break;
+            case 'abstract_organic': // 추상 오가닉 (이미지2 참고)
+                setBackgroundColor('#fdf2f0');
+                setThemeStyle('artistic');
+                setLayoutStyle('slide');
+                break;
+            case 'memphis_pop': // 멤피스 팝 (이미지3 참고)
+                setBackgroundColor('#fef9e7');
+                setThemeStyle('playful');
+                setLayoutStyle('classic');
+                break;
+            case 'botanical_calm': // 보타니컬 (이미지4 참고)
+                setBackgroundColor('#f5f9f0');
+                setThemeStyle('natural');
+                setLayoutStyle('masonry');
+                break;
+            case 'dreamy_pastel': // 몽환 파스텔
+                setBackgroundColor('#f8f0ff');
+                setThemeStyle('dreamy');
+                setLayoutStyle('slide');
+                break;
+            case 'retro_film': // 레트로 필름
+                setBackgroundColor('#f7f3e9');
+                setThemeStyle('retro');
+                setLayoutStyle('grid');
+                break;
+            case 'ocean_breeze': // 오션 브리즈
+                setBackgroundColor('#f0f8ff');
+                setThemeStyle('fresh');
                 setLayoutStyle('masonry');
                 break;
         }
     }, [preset, setBackgroundColor, setThemeStyle, setLayoutStyle]);
 
     const getPreviewContainerStyle = () => {
-        let baseStyle = "w-full lg:flex-1 rounded-2xl shadow-xl overflow-y-auto border border-gray-100 sticky top-24 max-h-[calc(100vh-8rem)] transition-all duration-300 relative";
+        let baseStyle = "w-full flex-1 rounded-2xl shadow-xl overflow-y-auto border border-gray-100 relative h-full transition-all duration-300";
 
         if (themeStyle === 'vintage') {
             return `${baseStyle} border-4 border-[#d4c5b0]`;
@@ -97,6 +147,71 @@ const StyleStep = ({
                     linear-gradient(90deg, #e5e7eb 1px, transparent 1px)
                 `,
                 backgroundSize: '20px 20px'
+            };
+        }
+        // 카와이 스타일 - 도트 패턴
+        if (themeStyle === 'kawaii') {
+            return {
+                backgroundColor: backgroundColor,
+                backgroundImage: `radial-gradient(circle, #ffb6c1 1px, transparent 1px)`,
+                backgroundSize: '15px 15px'
+            };
+        }
+        // 아티스틱 스타일 - 추상 블롭
+        if (themeStyle === 'artistic') {
+            return {
+                backgroundColor: backgroundColor,
+                backgroundImage: `
+                    radial-gradient(ellipse at 20% 30%, rgba(255,182,193,0.3) 0%, transparent 50%),
+                    radial-gradient(ellipse at 80% 70%, rgba(173,216,230,0.3) 0%, transparent 50%)
+                `
+            };
+        }
+        // 플레이풀 스타일 - 기하학 패턴
+        if (themeStyle === 'playful') {
+            return {
+                backgroundColor: backgroundColor,
+                backgroundImage: `
+                    linear-gradient(135deg, rgba(255,215,0,0.1) 25%, transparent 25%),
+                    linear-gradient(225deg, rgba(255,105,180,0.1) 25%, transparent 25%)
+                `,
+                backgroundSize: '30px 30px'
+            };
+        }
+        // 자연 스타일 - 부드러운 그라데이션
+        if (themeStyle === 'natural') {
+            return {
+                backgroundColor: backgroundColor,
+                backgroundImage: `linear-gradient(180deg, rgba(144,238,144,0.1) 0%, transparent 100%)`
+            };
+        }
+        // 몽환 스타일 - 드리미 글로우
+        if (themeStyle === 'dreamy') {
+            return {
+                backgroundColor: backgroundColor,
+                backgroundImage: `
+                    radial-gradient(circle at 30% 20%, rgba(199,125,255,0.15) 0%, transparent 40%),
+                    radial-gradient(circle at 70% 80%, rgba(255,182,255,0.15) 0%, transparent 40%)
+                `
+            };
+        }
+        // 레트로 스타일 - 필름 그레인
+        if (themeStyle === 'retro') {
+            return {
+                backgroundColor: backgroundColor,
+                backgroundImage: `
+                    repeating-linear-gradient(0deg, rgba(0,0,0,0.02) 0px, rgba(0,0,0,0.02) 1px, transparent 1px, transparent 2px)
+                `
+            };
+        }
+        // 프레쉬 스타일 - 파도 패턴
+        if (themeStyle === 'fresh') {
+            return {
+                backgroundColor: backgroundColor,
+                backgroundImage: `
+                    linear-gradient(180deg, rgba(135,206,250,0.15) 0%, transparent 30%),
+                    linear-gradient(0deg, rgba(135,206,250,0.1) 0%, transparent 20%)
+                `
             };
         }
         return { backgroundColor };
@@ -118,16 +233,19 @@ const StyleStep = ({
         { id: 'masonry', label: 'Masonry', icon: <Layers className="w-5 h-5" />, desc: '빈틈없는 배치' },
         { id: 'slide', label: '슬라이드', icon: <Columns className="w-5 h-5" />, desc: '가로 스크롤' },
         { id: 'classic', label: '클래식', icon: <LayoutGrid className="w-5 h-5" />, desc: '세로 나열' },
+        { id: 'collage', label: '콜라주', icon: <ImageIcon className="w-5 h-5" />, desc: '자유 배치' },
+        { id: 'magazine', label: '매거진', icon: <BookOpen className="w-5 h-5" />, desc: '잡지 스타일' },
     ];
 
     const sizeOptions = [
-        { id: 'small', label: 'Small', icon: <Minimize2 className="w-4 h-4" /> },
-        { id: 'medium', label: 'Medium', icon: <span>M</span> },
-        { id: 'large', label: 'Large', icon: <Maximize2 className="w-4 h-4" /> },
+        { id: 'small', label: 'Small', icon: <Minimize2 className="w-5 h-5" />, desc: '작게 (영상비율)' },
+        { id: 'medium', label: 'Medium', icon: <span>M</span>, desc: '중간 (정방형)' },
+        { id: 'large', label: 'Large', icon: <Maximize2 className="w-5 h-5" />, desc: '크게 (1.2배)' },
+        { id: 'full', label: 'Full', icon: <ArrowUpRight className="w-5 h-5" />, desc: '꽉찬 화면' },
     ];
 
     return (
-        <div className="flex flex-col lg:flex-row gap-8 items-start animate-fade-in">
+        <div className="flex flex-col lg:flex-row gap-6 items-stretch animate-fade-in h-[calc(100vh-120px)]">
             {/* Left Panel: Preview */}
             <div className={getPreviewContainerStyle()} style={getBackgroundStyle()}>
 
@@ -215,15 +333,23 @@ const StyleStep = ({
 
                     {/* Images with Layout Preview */}
                     <div className={`mb-10 gap-4 transition-all duration-500
-                        ${layoutStyle === 'grid' ? 'grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3' : ''}
-                        ${layoutStyle === 'masonry' ? 'columns-2 md:columns-3 gap-6 space-y-6' : ''}
+                        ${(layoutStyle === 'grid' || layoutStyle === 'collage')
+                            ? (sizeOption === 'large' || sizeOption === 'full')
+                                ? 'grid grid-cols-1 md:grid-cols-1 xl:grid-cols-2' // Large/Full: 1-2 columns (Bigger items)
+                                : 'grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3' // Normal: 2-3 columns
+                            : ''}
+                        ${(layoutStyle === 'masonry' || layoutStyle === 'magazine')
+                            ? (sizeOption === 'large' || sizeOption === 'full')
+                                ? 'columns-1 md:columns-2 gap-6 space-y-6'
+                                : 'columns-2 md:columns-3 gap-6 space-y-6'
+                            : ''}
                         ${layoutStyle === 'slide' ? 'flex overflow-x-auto pb-8 snap-x scrollbar-hide px-2' : ''}
                         ${layoutStyle === 'classic' ? 'flex flex-col space-y-8' : ''}
                     `}>
                         {selectedImages.map((img: any, idx: number) => (
-                            <div key={idx} className={`relative group transition-transform hover:scale-[1.02] duration-300
+                            <div key={idx} className={`relative group transition-all duration-300
                                 ${layoutStyle === 'slide' ? 'min-w-[80%] md:min-w-[70%] snap-center' : 'w-full'}
-                                ${sizeOption === 'small' ? 'aspect-[3/4]' : sizeOption === 'large' ? 'aspect-video' : 'aspect-square'}
+                                ${sizeOption === 'small' ? 'aspect-video' : sizeOption === 'large' ? 'aspect-auto min-h-[400px]' : sizeOption === 'full' ? 'aspect-[9/16]' : 'aspect-square'}
                                 ${themeStyle === 'vintage'
                                     ? 'bg-white p-3 shadow-lg rotate-1 even:-rotate-2 border border-gray-100/50'
                                     : 'rounded-2xl overflow-hidden shadow-md border border-gray-100'}
@@ -256,9 +382,9 @@ const StyleStep = ({
             </div>
 
             {/* Right Panel: Style Controls */}
-            <div className="w-full lg:w-96 space-y-6 flex-shrink-0">
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden sticky top-24">
-                    <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+            <div className="w-[450px] flex-shrink-0 flex flex-col h-full">
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden flex flex-col h-full">
+                    <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between flex-shrink-0 z-10">
                         <h3 className="font-bold text-gray-800 flex items-center gap-2"><Edit3 className="w-4 h-4 text-pink-500" /> 디자인 편집</h3>
                         <div className="flex bg-white rounded-lg p-1 border border-gray-200">
                             <button onClick={() => setActiveTab('layout')} className={`p-1.5 rounded transition-colors ${activeTab === 'layout' ? 'bg-pink-100 text-pink-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}><LayoutGrid className="w-4 h-4" /></button>
@@ -266,7 +392,7 @@ const StyleStep = ({
                         </div>
                     </div>
 
-                    <div className="p-6 space-y-6">
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
                         {/* Tab: Layout */}
                         {activeTab === 'layout' && (
                             <div className="space-y-6 animate-fade-in">
@@ -295,16 +421,22 @@ const StyleStep = ({
 
                                 <section>
                                     <label className="text-xs font-bold text-gray-400 uppercase mb-3 block">이미지 크기 옵션</label>
-                                    <div className="flex bg-gray-100 p-1 rounded-xl">
+                                    <div className="grid grid-cols-2 gap-3">
                                         {sizeOptions.map(opt => (
                                             <button
                                                 key={opt.id}
                                                 onClick={() => setSizeOption(opt.id)}
-                                                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all
-                                                    ${sizeOption === opt.id ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}
-                                                `}
+                                                className={`group flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200
+                                                    ${sizeOption === opt.id
+                                                        ? 'border-pink-500 bg-pink-50 text-pink-600 shadow-sm scale-[1.02]'
+                                                        : 'border-gray-100 bg-white text-gray-500 hover:border-pink-200 hover:bg-gray-50'
+                                                    }`}
                                             >
-                                                {opt.icon} {opt.label}
+                                                <div className={`mb-2 p-2 rounded-full ${sizeOption === opt.id ? 'bg-pink-200' : 'bg-gray-100 group-hover:bg-white'}`}>
+                                                    {opt.icon}
+                                                </div>
+                                                <span className="text-sm font-bold">{opt.label}</span>
+                                                <span className="text-[10px] opacity-70">{opt.desc}</span>
                                             </button>
                                         ))}
                                     </div>
@@ -314,7 +446,7 @@ const StyleStep = ({
 
                         {/* Tab: Detail Style (Text, Color, Theme, Preset) */}
                         {activeTab === 'detail' && (
-                            <div className="space-y-6 animate-fade-in overflow-y-auto max-h-[500px] pr-2 scrollbar-hide">
+                            <div className="space-y-6 animate-fade-in">
                                 {/* Preset */}
                                 <section>
                                     <label className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2"><Sparkles className="w-3 h-3 text-yellow-500" /> 프리셋 테마</label>
@@ -324,35 +456,58 @@ const StyleStep = ({
                                         className="w-full p-3 rounded-xl border border-gray-200 text-sm focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none bg-white font-medium text-gray-700 cursor-pointer hover:bg-gray-50 transition-colors"
                                     >
                                         <option value="">프리셋 선택 안함 (사용자 정의)</option>
-                                        <option value="cozy_morning">🧸 포근한 아침 (Grid + Vintage)</option>
-                                        <option value="vintage_scrapbook">📸 빈티지 스크랩북 (Masonry + Tape)</option>
-                                        <option value="romantic_picnic">🌸 로맨틱 피크닉 (Pink + Slide)</option>
-                                        <option value="city_night">🌃 도시의 밤 (Dark + Classic)</option>
-                                        <option value="minimal_white">🏳️ 미니멀 화이트 (Clean)</option>
+                                        <optgroup label="✨ 인기 테마">
+                                            <option value="cozy_morning">🧸 포근한 아침</option>
+                                            <option value="romantic_picnic">🌸 로맨틱 피크닉</option>
+                                            <option value="minimal_white">🏳️ 미니멀 화이트</option>
+                                        </optgroup>
+                                        <optgroup label="🎨 아티스틱">
+                                            <option value="vintage_scrapbook">📸 빈티지 스크랩북</option>
+                                            <option value="abstract_organic">🌀 추상 오가닉</option>
+                                            <option value="retro_film">🎬 레트로 필름</option>
+                                        </optgroup>
+                                        <optgroup label="🎈 플레이풀">
+                                            <option value="cute_planner">🐰 큐트 플래너</option>
+                                            <option value="memphis_pop">🎉 멤피스 팝</option>
+                                            <option value="dreamy_pastel">🪄 몽환 파스텔</option>
+                                        </optgroup>
+                                        <optgroup label="🌿 자연">
+                                            <option value="botanical_calm">🪴 보타니컬 카페</option>
+                                            <option value="ocean_breeze">🌊 오션 브리즈</option>
+                                            <option value="city_night">🌃 도시의 밤</option>
+                                        </optgroup>
                                     </select>
                                 </section>
 
                                 {/* Theme Style */}
                                 <section>
                                     <label className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">스타일 무드</label>
-                                    <div className="grid grid-cols-3 gap-2">
+                                    <div className="grid grid-cols-4 gap-2">
                                         {[
-                                            { id: 'basic', label: 'Basic', desc: '심플' },
-                                            { id: 'romantic', label: 'Romantic', desc: '러블리' },
-                                            { id: 'vintage', label: 'Vintage', desc: '레트로' },
-                                            { id: 'modern', label: 'Modern', desc: '모던' }
+                                            { id: 'basic', label: 'Basic', desc: '심플', emoji: '⬜' },
+                                            { id: 'romantic', label: 'Romantic', desc: '러블리', emoji: '💗' },
+                                            { id: 'vintage', label: 'Vintage', desc: '빈티지', emoji: '📜' },
+                                            { id: 'modern', label: 'Modern', desc: '모던', emoji: '🔳' },
+                                            { id: 'kawaii', label: 'Kawaii', desc: '귀여움', emoji: '🐰' },
+                                            { id: 'artistic', label: 'Artistic', desc: '예술적', emoji: '🎨' },
+                                            { id: 'playful', label: 'Playful', desc: '유쾌', emoji: '🎈' },
+                                            { id: 'natural', label: 'Natural', desc: '자연', emoji: '🌿' },
+                                            { id: 'dreamy', label: 'Dreamy', desc: '몽환', emoji: '✨' },
+                                            { id: 'retro', label: 'Retro', desc: '레트로', emoji: '📼' },
+                                            { id: 'fresh', label: 'Fresh', desc: '상쾌', emoji: '🌊' },
                                         ].map(theme => (
                                             <button
                                                 key={theme.id}
                                                 onClick={() => setThemeStyle(theme.id)}
-                                                className={`py-3 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all
+                                                className={`py-2 px-1 rounded-xl border flex flex-col items-center justify-center gap-0.5 transition-all
                                                     ${themeStyle === theme.id
                                                         ? 'border-pink-500 bg-pink-50 text-pink-600 shadow-sm'
                                                         : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                                                     }`}
                                             >
-                                                <span className="text-xs font-bold">{theme.label}</span>
-                                                <span className="text-[10px] text-gray-400">{theme.desc}</span>
+                                                <span className="text-base">{theme.emoji}</span>
+                                                <span className="text-[10px] font-bold">{theme.label}</span>
+                                                <span className="text-[8px] text-gray-400">{theme.desc}</span>
                                             </button>
                                         ))}
                                     </div>
@@ -409,13 +564,13 @@ const StyleStep = ({
                     </div>
                 </div>
 
-                {/* Actions - Fixed at Bottom */}
-                <div className="sticky bottom-0 pt-4 pb-4 space-y-3">
-                    <button onClick={handleShareToFeed} disabled={isSubmitting} className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 transition-all transform hover:-translate-y-0.5">
-                        {isSubmitting ? <Loader2 className="animate-spin" /> : <Save />} <span>일기 저장하고 공유하기</span>
+                {/* Actions - Floating Footer Outside Panel */}
+                <div className="pt-2 space-y-3 flex-shrink-0 z-10">
+                    <button onClick={handleShareToFeed} disabled={isSubmitting} className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3.5 rounded-xl shadow-md flex items-center justify-center gap-2 disabled:opacity-70 transition-all active:scale-[0.98]">
+                        {isSubmitting ? <Loader2 className="animate-spin" /> : <Save className="w-5 h-5" />} <span>일기 저장하고 공유하기</span>
                     </button>
-                    <button onClick={onBack} className="w-full bg-white hover:bg-gray-50 text-gray-600 font-bold py-3 rounded-xl border border-gray-200 transition-colors">
-                        이전으로 (내용 수정)
+                    <button onClick={onBack} className="w-full bg-white hover:bg-gray-50 text-gray-600 font-bold py-3 rounded-xl border border-gray-200 transition-colors shadow-sm">
+                        이전으로
                     </button>
                 </div>
             </div>
