@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
-import { Button } from "@/shared/ui/button"
-import { Card, CardContent } from "@/shared/ui/card"
+
+
 import { ChevronLeft, TrendingUp, TrendingDown, Coins } from "lucide-react"
 import { useAuth } from "@/features/auth/context/auth-context"
 import {
@@ -82,134 +82,135 @@ export default function MileagePage() {
   const isEarned = (type: string) => type === 'WRITEDIARY' || type === 'WIRTEFEED' || type === 'RECAP'
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 to-rose-50">
-      <header className="sticky top-0 z-40 border-b border-pink-100 bg-white/95 backdrop-blur-sm">
-        <div className="container mx-auto flex max-w-4xl items-center gap-4 px-4 py-4">
-          <Link to="/profile">
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <ChevronLeft className="h-6 w-6 text-pink-600" />
-            </Button>
+    <div className="min-h-screen p-4 md:p-8"
+      style={{
+        backgroundColor: '#FFF0F5',
+      }}
+    >
+      <div className="mx-auto max-w-md space-y-6">
+        {/* Header - Transparent & Cute */}
+        <header className="flex items-center py-2">
+          <Link to="/shop" className="flex items-center gap-2 rounded-full bg-white/90 px-6 py-3 shadow-sm transition-all hover:bg-white hover:scale-105 active:scale-95">
+            <ChevronLeft className="h-6 w-6 text-[#FF92A0]" strokeWidth={3} />
+            <span className="text-2xl font-black tracking-tight text-[#FF92A0]">
+              마일리지
+            </span>
           </Link>
-          <h1 className="text-xl font-bold text-pink-600 md:text-2xl">마일리지</h1>
-        </div>
-      </header>
+        </header>
 
-      <main className="container mx-auto max-w-4xl space-y-6 p-4 md:p-6">
-        {/* Balance Card */}
-        <Card className="overflow-hidden border-0 bg-gradient-to-br from-pink-500 to-rose-500 shadow-xl">
-          <CardContent className="p-6 text-white md:p-8">
-            <div className="mb-2 flex items-center gap-2">
-              <Coins className="h-6 w-6 md:h-7 md:w-7" />
-              <p className="text-sm font-medium opacity-90 md:text-base">내 잔액</p>
+        {/* Balance Card - Pink Sticky Note Style */}
+        <div className="relative overflow-hidden rounded-[2rem] bg-[#FF92A0] p-8 text-white shadow-[8px_8px_0px_0px_rgba(255,255,255,0.5)] transition-transform hover:-translate-y-1">
+          {/* Decorative visual element (tape/circle) */}
+          <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white/20" />
+          <div className="absolute -left-4 -bottom-4 h-16 w-16 rounded-full bg-white/20" />
+
+          <div className="relative z-10 flex items-center gap-2 mb-2">
+            <div className="rounded-full bg-white/20 p-2">
+              <Coins className="h-6 w-6 text-white" />
             </div>
-            <p className="text-5xl font-bold md:text-6xl">{balance.toLocaleString()}</p>
-            <p className="mt-1 text-sm opacity-75 md:text-base">마일리지 포인트</p>
-          </CardContent>
-        </Card>
+            <span className="text-lg font-bold">마일리지 포인트</span>
+          </div>
 
-        {/* Stats - Shows stats for the CURRENT VIEW (Filtered) */}
-        <div className="grid grid-cols-2 gap-3 md:gap-4">
-          <Card className="border-pink-100 shadow-md">
-            <CardContent className="p-4 md:p-6">
-              <div className="flex items-center gap-2 text-green-500">
-                <TrendingUp className="h-5 w-5 md:h-6 md:w-6" />
-                <p className="text-sm font-medium md:text-base">목록 내 적립</p>
-              </div>
-              <p className="mt-2 text-2xl font-bold text-pink-600 md:text-3xl">+{totalEarned.toLocaleString()}</p>
-            </CardContent>
-          </Card>
+          <p className="relative z-10 text-4xl font-black tracking-tight">{balance.toLocaleString()} P</p>
 
-          <Card className="border-pink-100 shadow-md">
-            <CardContent className="p-4 md:p-6">
-              <div className="flex items-center gap-2 text-red-500">
-                <TrendingDown className="h-5 w-5 md:h-6 md:w-6" />
-                <p className="text-sm font-medium md:text-base">목록 내 사용</p>
+          <div className="relative z-10 my-4 border-t-2 border-dashed border-white/40" />
+
+          <div className="relative z-10 space-y-2">
+            <div className="flex items-center justify-between rounded-xl bg-white/10 px-4 py-2">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                <span className="font-bold opacity-90">적립</span>
               </div>
-              <p className="mt-2 text-2xl font-bold text-pink-600 md:text-3xl">-{totalUsed.toLocaleString()}</p>
-            </CardContent>
-          </Card>
+              <span className="font-black">+{totalEarned.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center justify-between rounded-xl bg-white/10 px-4 py-2">
+              <div className="flex items-center gap-2">
+                <TrendingDown className="h-4 w-4" />
+                <span className="font-bold opacity-90">사용</span>
+              </div>
+              <span className="font-black">-{totalUsed.toLocaleString()}</span>
+            </div>
+          </div>
         </div>
 
-        {/* Filter */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => setFilter("all")}
-            className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-all md:text-base ${filter === "all"
-                ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md"
-                : "bg-white text-pink-600 hover:bg-pink-100"
-              }`}
-          >
-            전체
-          </button>
-          <button
-            onClick={() => setFilter("earned")}
-            className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-all md:text-base ${filter === "earned"
-                ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md"
-                : "bg-white text-pink-600 hover:bg-pink-100"
-              }`}
-          >
-            적립
-          </button>
-          <button
-            onClick={() => setFilter("used")}
-            className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-all md:text-base ${filter === "used"
-                ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md"
-                : "bg-white text-pink-600 hover:bg-pink-100"
-              }`}
-          >
-            사용
-          </button>
-        </div>
+        {/* Filter & History Section - Notepad Style */}
+        <div className="overflow-hidden rounded-[2rem] border-4 border-white bg-[#FFFDF5] shadow-lg">
+          {/* Tabs */}
+          <div className="flex border-b-4 border-white bg-[#FFF9C4]">
+            <button
+              onClick={() => setFilter("all")}
+              className={`flex-1 py-4 text-center font-bold transition-colors ${filter === "all"
+                ? "bg-[#FFFDF5] text-[#FF92A0]"
+                : "text-gray-400 hover:bg-white/50"
+                }`}
+            >
+              전체
+            </button>
+            <button
+              onClick={() => setFilter("earned")}
+              className={`flex-1 py-4 text-center font-bold transition-colors ${filter === "earned"
+                ? "bg-[#FFFDF5] text-[#FF92A0]"
+                : "text-gray-400 hover:bg-white/50"
+                }`}
+            >
+              적립
+            </button>
+            <button
+              onClick={() => setFilter("used")}
+              className={`flex-1 py-4 text-center font-bold transition-colors ${filter === "used"
+                ? "bg-[#FFFDF5] text-[#FF92A0]"
+                : "text-gray-400 hover:bg-white/50"
+                }`}
+            >
+              사용
+            </button>
+          </div>
 
-        {/* History */}
-        <Card className="border-pink-100 shadow-lg">
-          <CardContent className="divide-y divide-pink-100 p-0">
+          {/* List Content */}
+          <div className="min-h-[300px] p-2">
             {isLoading ? (
-              <div className="p-8 text-center text-muted-foreground">로딩 중...</div>
+              <div className="py-20 text-center text-gray-400 font-bold">로딩 중...</div>
             ) : logs.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground">내역이 없습니다.</div>
+              <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                <div className="mb-4 rounded-full bg-gray-100 p-6">
+                  <Coins className="h-8 w-8 opacity-20" />
+                </div>
+                <p className="font-bold">내역이 없어요!</p>
+              </div>
             ) : (
               logs.map((item, index) => {
                 const earned = isEarned(item.type)
                 return (
-                  <div key={index} className="flex items-center justify-between p-4 md:p-5">
-                    <div className="flex items-center gap-3 md:gap-4">
+                  <div key={index} className="mb-2 flex items-center justify-between rounded-2xl border-2 border-transparent bg-white p-4 transition-all hover:border-[#FF92A0]/20 hover:shadow-sm">
+                    <div className="flex items-center gap-4">
                       <div
-                        className={`flex h-10 w-10 items-center justify-center rounded-full md:h-12 md:w-12 ${earned ? "bg-green-500/20 text-green-500" : "bg-red-500/20 text-red-500"
+                        className={`flex h-12 w-12 items-center justify-center rounded-2xl ${earned ? "bg-[#E6F9F0] text-[#00C896]" : "bg-[#FFE8E8] text-[#FF6B6B]"
                           }`}
                       >
                         {earned ? (
-                          <TrendingUp className="h-5 w-5 md:h-6 md:w-6" />
+                          <TrendingUp className="h-6 w-6" />
                         ) : (
-                          <TrendingDown className="h-5 w-5 md:h-6 md:w-6" />
+                          <TrendingDown className="h-6 w-6" />
                         )}
                       </div>
                       <div>
-                        <p className="font-medium text-pink-600 md:text-lg">{getDescription(item.type)}</p>
-                        <p className="text-xs text-muted-foreground md:text-sm">
-                          {new Date(item.createdAt).toLocaleDateString("ko-KR")}{" "}
-                          {new Date(item.createdAt).toLocaleTimeString("ko-KR", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                        <p className="text-lg font-bold text-gray-700">{getDescription(item.type)}</p>
+                        <p className="text-xs font-medium text-gray-400">
+                          {new Date(item.createdAt).toLocaleDateString("ko-KR")}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className={`font-bold md:text-lg ${earned ? "text-green-500" : "text-red-500"}`}>
-                        {earned ? "+" : "-"}
-                        {item.amount.toLocaleString()}
-                      </p>
-                      {/* Balance per transaction not available in this API, hiding it */}
-                      {/* <p className="text-xs text-muted-foreground md:text-sm">{item.balance} 포인트</p> */}
-                    </div>
+                    <p className={`text-xl font-black ${earned ? "text-[#00C896]" : "text-[#FF6B6B]"}`}>
+                      {earned ? "+" : "-"}
+                      {item.amount.toLocaleString()}
+                    </p>
                   </div>
                 )
               })
             )}
-          </CardContent>
-        </Card>
-      </main>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

@@ -79,7 +79,8 @@ export default function ProfilePage() {
     gender: pet.genderType === 'MALE' ? '남아' : '여아',
     neutered: pet.is_neutered,
     birthday: pet.birth,
-    isMemorial: false, // Default to false for API pets
+    status: pet.status,
+    // Using status directly for memorial logic (LOST/DEAD)
   })) || user?.pets || []
   const [showAddPetDialog, setShowAddPetDialog] = useState(false)
   const [showAddPetConfirmDialog, setShowAddPetConfirmDialog] = useState(false)
@@ -229,18 +230,19 @@ export default function ProfilePage() {
 
 
   const handleToggleMemorial = async (pet: any) => {
-    if (pet.isMemorial) {
-      // Already memorial (dead), user wants to revert (alive)?
-      // Current API `lostPetApi` only sets status to 'DEAD'.
-      // Assuming there isn't an easy way to revert via this specific API or user instructions imply one-way for 'lostPet'.
-      // However, existing UI code tried to toggle locally. 
-      // We will warn or just toggle locally if functionality is not supported by API, 
-      // BUT user asked to "call memorial api" when clicking the button.
-      // It's safer to only call it when turning ON memorial.
+    if (pet.status === 'LOST') {
+      // Already memorial (lost), user wants to revert (alive)?
+      updatePet(pet.id, { status: 'ALIVE' });
 
-      // For now, let's assume we can only set it to memorial via API. Reverting might just be local or not supported.
-      // But to keep UI responsive, let's just toggle local state if it's already memorial (maybe mis-click).
-      updatePet(pet.id, { isMemorial: !pet.isMemorial });
+      // Update local apiUserData to reflect change immediately
+      if (apiUserData) {
+        setApiUserData({
+          ...apiUserData,
+          pets: apiUserData.pets.map(p =>
+            p.petId.toString() === pet.id ? { ...p, status: 'ALIVE' } : p
+          )
+        });
+      }
       return;
     }
 
@@ -248,7 +250,18 @@ export default function ProfilePage() {
 
     try {
       await lostPetApi(parseInt(pet.id));
-      updatePet(pet.id, { isMemorial: true });
+      updatePet(pet.id, { status: 'LOST' });
+
+      // Update local apiUserData
+      if (apiUserData) {
+        setApiUserData({
+          ...apiUserData,
+          pets: apiUserData.pets.map(p =>
+            p.petId.toString() === pet.id ? { ...p, status: 'LOST' } : p
+          )
+        });
+      }
+
       alert("반려동물이 추모 상태로 변경되었습니다.");
     } catch (error) {
       console.error("Failed to set memorial status:", error);
@@ -326,7 +339,7 @@ export default function ProfilePage() {
                     <div className="relative">
                       <Avatar className={cn(
                         "h-16 w-16 border-2 border-primary/20 transition-transform hover:scale-105",
-                        pet.isMemorial && "grayscale opacity-70"
+                        pet.status === 'LOST' && "grayscale opacity-70"
                       )}>
                         <AvatarImage src={pet.photo} alt={pet.name} />
                         <AvatarFallback>{pet.name[0]}</AvatarFallback>
@@ -335,7 +348,9 @@ export default function ProfilePage() {
                         <PawPrint className="h-3 w-3" />
                       </Badge>
                     </div>
-                    <span className="text-sm font-medium">{pet.name}</span>
+                    <span className="text-sm font-medium flex items-center gap-1">
+                      {pet.name}
+                    </span>
                   </Link>
                 ))}
 
@@ -487,19 +502,21 @@ export default function ProfilePage() {
             {pets.map(pet => (
               <div key={pet.id} className={cn(
                 "flex items-center justify-between p-3 rounded-lg border",
-                pet.isMemorial ? "bg-gray-50 border-gray-200" : "border-border"
+                pet.status === 'LOST' ? "bg-gray-50 border-gray-200" : "border-border"
               )}>
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "h-10 w-10 rounded-full overflow-hidden",
-                    pet.isMemorial && "grayscale opacity-70"
+                    pet.status === 'LOST' && "grayscale opacity-70"
                   )}>
                     <img src={pet.photo} alt={pet.name} className="h-full w-full object-cover" />
                   </div>
                   <div>
-                    <span className="font-medium">{pet.name}</span>
-                    {pet.isMemorial && (
-                      <span className="ml-2 text-xs text-muted-foreground">🕊️ 추모</span>
+                    <span className="font-medium flex items-center gap-1">
+                      {pet.name}
+                    </span>
+                    {pet.status === 'LOST' && (
+                      <span className="ml-2 text-xs text-muted-foreground"> 추모</span>
                     )}
                   </div>
                 </div>
@@ -509,10 +526,10 @@ export default function ProfilePage() {
                     size="sm"
                     onClick={() => handleToggleMemorial(pet)}
                     className={cn(
-                      pet.isMemorial && "bg-gray-100"
+                      pet.status === 'LOST' && "bg-gray-100"
                     )}
                   >
-                    {pet.isMemorial ? "추모 해제" : "추모 모드"}
+                    {pet.status === 'LOST' ? "추모 해제" : "추모 모드"}
                   </Button>
                   <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={(e) => handleDeletePet(pet.id, e)}>삭제</Button>
                 </div>

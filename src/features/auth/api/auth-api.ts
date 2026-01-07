@@ -31,7 +31,7 @@ export interface GetPetDto {
     profileImage: string;
     age: number;
     birth: string; // LocalDate as string (YYYY-MM-DD)
-    status: string;
+    status: 'LOST' | 'ALIVE' | 'DEAD';
     vaccinated: boolean;
 }
 

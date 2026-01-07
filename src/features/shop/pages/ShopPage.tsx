@@ -1,4 +1,6 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { getUserCoinApi } from "@/features/auth/api/auth-api"
+import { useAuth } from "@/features/auth/context/auth-context"
 import { Link, Outlet, useLocation } from "react-router-dom"
 import { TabNavigation } from "@/shared/components/tab-navigation"
 import { ProductCard } from "@/features/shop/components/product-card"
@@ -136,6 +138,22 @@ export default function ShopPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [currentBanner, setCurrentBanner] = useState(0)
   const { cartCount } = useCart()
+  const { user } = useAuth()
+  const [petCoin, setPetCoin] = useState(0)
+
+  useEffect(() => {
+    const fetchCoin = async () => {
+      if (user?.id) {
+        try {
+          const data = await getUserCoinApi(Number(user.id))
+          setPetCoin(data.petCoin)
+        } catch (error) {
+          console.error("Failed to fetch pet coin:", error)
+        }
+      }
+    }
+    fetchCoin()
+  }, [user?.id])
 
   const filteredProducts = PRODUCTS.filter((product) => {
     const matchesCategory = activeCategory === "all" || product.category === activeCategory
@@ -172,7 +190,7 @@ export default function ShopPage() {
                     alt={SHOP_BANNERS[currentBanner].title}
                     className="w-full h-full object-cover"
                   />
-                  <div className={`absolute inset-0 bg-gradient-to-r ${SHOP_BANNERS[currentBanner].gradient}`} />
+                  {/* Gradient overlay removed as per user request */}
                 </div>
                 <div className="relative container mx-auto max-w-6xl h-full flex items-center px-4">
                   <div className="text-white max-w-2xl">
@@ -267,7 +285,7 @@ export default function ShopPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-pink-600 md:text-base mb-1">내 마일리지</p>
-                  <p className="text-2xl font-bold text-pink-600 md:text-3xl">1,250 P</p>
+                  <p className="text-2xl font-bold text-pink-600 md:text-3xl">{petCoin.toLocaleString()} P</p>
                 </div>
                 <Link to="/profile/mileage">
                   <Button
