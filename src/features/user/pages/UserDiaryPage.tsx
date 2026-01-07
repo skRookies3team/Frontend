@@ -144,12 +144,21 @@ export default function UserDiaryPage() {
 
 
 
+    // Tab State
+    const [currentTab, setCurrentTab] = useState(location.state?.activeTab || "calendar")
+
+    useEffect(() => {
+        if (location.state?.activeTab) {
+            setCurrentTab(location.state.activeTab)
+        }
+    }, [location.state])
+
     // --- Helpers ---
 
 
     return (
         <>
-            <Tabs defaultValue="calendar" className="w-full">
+            <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-3 rounded-none border-b bg-transparent p-0">
                     <TabsTrigger
                         value="calendar"
