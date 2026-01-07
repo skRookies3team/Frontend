@@ -5,12 +5,13 @@ import { Textarea } from "@/shared/ui/textarea";
 import { Input } from "@/shared/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Badge } from "@/shared/ui/badge";
-import { ImagePlus, MapPin, X, ChevronLeft, ChevronRight, Loader2, Hash } from "lucide-react";
+import { ImagePlus, MapPin, X, ChevronLeft, ChevronRight, Loader2, Hash, Search } from "lucide-react";
 import { useAuth } from "@/features/auth/context/auth-context";
 import { feedApi } from "../api/feed-api";
 import { FeedDto } from "../types/feed";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FEED_KEYS } from "../hooks/use-feed-query";
+import { LocationSearchModal } from "@/shared/components/LocationSearchModal";
 
 interface FeedCreateModalProps {
   isOpen: boolean;
@@ -22,17 +23,25 @@ interface FeedCreateModalProps {
 export function FeedCreateModal({ isOpen, onClose, mode = "create", initialData }: FeedCreateModalProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  
+
   const [content, setContent] = useState(initialData?.content || "");
   const [location, setLocation] = useState(initialData?.location || "");
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>(initialData?.imageUrls || []);
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const [extractedTags, setExtractedTags] = useState<string[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // [수정] 위치 검색 모달 상태
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+
+  // 위치 선택 핸들러
+  const handleSelectLocation = (selectedLocation: string) => {
+    setLocation(selectedLocation);
+  };
 
   useEffect(() => {
     if (isOpen && mode === 'create') {
@@ -112,7 +121,7 @@ export function FeedCreateModal({ isOpen, onClose, mode = "create", initialData 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
+      <DialogContent
         className="max-w-full md:max-w-[1200px] w-full p-0 gap-0 bg-white rounded-none sm:rounded-[2.5rem] overflow-hidden h-full md:h-[90vh] flex flex-col md:flex-row border-none shadow-2xl transition-all"
         showCloseButton={false} // [수정] 기본 닫기 버튼 숨김 (중복 방지)
       >
@@ -120,7 +129,7 @@ export function FeedCreateModal({ isOpen, onClose, mode = "create", initialData 
         <DialogDescription className="sr-only">
           사진을 업로드하고 내용을 작성하여 새로운 게시물을 등록하는 팝업창입니다.
         </DialogDescription>
-        
+
         {/* 왼쪽 이미지 영역 */}
         <div className="relative w-full md:flex-[1.5] h-[45vh] md:h-full bg-black flex flex-col items-center justify-center border-r border-gray-100 group">
           {previewUrls.length > 0 ? (
@@ -163,18 +172,18 @@ export function FeedCreateModal({ isOpen, onClose, mode = "create", initialData 
         <div className="flex-1 flex flex-col h-[55vh] md:h-full bg-white relative">
           <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 shrink-0">
             <h2 className="font-bold text-lg text-gray-900">{mode === 'edit' ? '정보 수정' : '새 게시물'}</h2>
-            
+
             <div className="flex items-center gap-3">
-                <Button variant="ghost" className="text-[#FF69B4] font-bold hover:text-[#FF1493] hover:bg-transparent p-0 h-auto text-base" onClick={handleSubmit} disabled={isSubmitting || (previewUrls.length === 0 && !content)}>
-                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : '공유하기'}
-                </Button>
-                {/* 닫기 버튼 */}
-                <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 hover:bg-gray-100 rounded-full text-gray-400">
-                    <X className="h-5 w-5" />
-                </Button>
+              <Button variant="ghost" className="text-[#FF69B4] font-bold hover:text-[#FF1493] hover:bg-transparent p-0 h-auto text-base" onClick={handleSubmit} disabled={isSubmitting || (previewUrls.length === 0 && !content)}>
+                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : '공유하기'}
+              </Button>
+              {/* 닫기 버튼 */}
+              <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 hover:bg-gray-100 rounded-full text-gray-400">
+                <X className="h-5 w-5" />
+              </Button>
             </div>
           </div>
-          
+
           <div className="px-6 py-4 flex items-center gap-3 shrink-0">
             <Avatar className="w-10 h-10 ring-2 ring-transparent">
               <AvatarImage src={user?.avatar || "/placeholder-user.jpg"} />
@@ -182,21 +191,21 @@ export function FeedCreateModal({ isOpen, onClose, mode = "create", initialData 
             </Avatar>
             <span className="font-bold text-base text-gray-900">{user?.username}</span>
           </div>
-          
+
           <div className="flex-1 px-6 py-2 flex flex-col">
-            <Textarea 
-              placeholder="문구를 입력하세요... (#태그입력)" 
-              className="w-full flex-1 resize-none border-none p-0 text-[16px] focus-visible:ring-0 placeholder:text-gray-400 leading-relaxed custom-scrollbar" 
-              value={content} 
-              onChange={(e) => setContent(e.target.value)} 
+            <Textarea
+              placeholder="문구를 입력하세요... (#태그입력)"
+              className="w-full flex-1 resize-none border-none p-0 text-[16px] focus-visible:ring-0 placeholder:text-gray-400 leading-relaxed custom-scrollbar"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
             />
-            
+
             {extractedTags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2 mb-2">
                 {extractedTags.map((tag, idx) => (
-                  <Badge 
-                    key={idx} 
-                    variant="secondary" 
+                  <Badge
+                    key={idx}
+                    variant="secondary"
                     className="bg-[#FFF0F5] text-[#FF69B4] hover:bg-[#FFE4E1] text-xs px-2 py-1 font-medium"
                   >
                     {tag}
@@ -207,23 +216,46 @@ export function FeedCreateModal({ isOpen, onClose, mode = "create", initialData 
           </div>
 
           <div className="px-6 pb-4 text-right shrink-0 border-b border-gray-50">
-              <span className="text-xs text-gray-400 font-medium">{content.length}/2,200</span>
+            <span className="text-xs text-gray-400 font-medium">{content.length}/2,200</span>
           </div>
-          
+
           <div className="mt-auto shrink-0">
             {/* 해시태그 안내 문구 */}
             <div className="px-6 py-3 border-b border-gray-100 flex items-center text-sm text-gray-400">
-               <Hash className="w-4 h-4 mr-2" />
-               <span className="text-xs">내용에 #태그를 입력하면 자동으로 추가됩니다.</span>
+              <Hash className="w-4 h-4 mr-2" />
+              <span className="text-xs">내용에 #태그를 입력하면 자동으로 추가됩니다.</span>
             </div>
 
-            <div className="px-6 py-4 flex items-center group cursor-pointer hover:bg-gray-50 transition-colors">
+            <div className="px-6 py-4 flex items-center group hover:bg-gray-50 transition-colors">
               <MapPin className="w-6 h-6 text-gray-400 mr-4 group-hover:text-[#FF69B4] transition-colors" />
-              <Input placeholder="위치 추가" className="flex-1 border-none p-0 h-auto focus-visible:ring-0 text-base bg-transparent placeholder:text-gray-500" value={location} onChange={(e) => setLocation(e.target.value)} />
+              <Input
+                placeholder="위치 추가"
+                className="flex-1 border-none p-0 h-auto focus-visible:ring-0 text-base bg-transparent placeholder:text-gray-500"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+              />
+              {/* [수정] 위치 검색 모달 열기 버튼 */}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setLocationModalOpen(true)}
+                className="ml-2 h-9 w-9 hover:bg-[#FFF0F5] rounded-full text-gray-400 hover:text-[#FF69B4] transition-colors"
+                title="위치 검색"
+              >
+                <Search className="w-5 h-5" />
+              </Button>
             </div>
           </div>
         </div>
       </DialogContent>
+
+      {/* 위치 검색 모달 */}
+      <LocationSearchModal
+        isOpen={locationModalOpen}
+        onClose={() => setLocationModalOpen(false)}
+        onSelectLocation={handleSelectLocation}
+      />
     </Dialog>
   );
 }

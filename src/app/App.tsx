@@ -10,6 +10,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // Shared Components
 import { ThemeProvider } from "@/shared/components/theme-provider"
 import { Header } from "@/shared/components/header"
+import { Toaster } from "@/shared/ui/sonner"
 
 // Feature: Auth
 import { AuthProvider } from "@/features/auth/context/auth-context"
@@ -161,6 +162,7 @@ function App() {
                             </WishlistProvider>
                         </CartProvider>
                     </AuthProvider>
+                    <Toaster richColors position="top-center" />
                 </ThemeProvider>
             </Router>
         </QueryClientProvider>
