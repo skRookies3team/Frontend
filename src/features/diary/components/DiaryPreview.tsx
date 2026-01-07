@@ -36,6 +36,7 @@ const DiaryPreview = ({
     };
 
     const getBackgroundStyle = () => {
+        // 프리셋/테마에 따른 배경 패턴 처리
         if (themeStyle === 'vintage' || preset === 'cozy_morning' || preset === 'vintage_scrapbook') {
             return {
                 backgroundColor: backgroundColor,
@@ -44,6 +45,71 @@ const DiaryPreview = ({
                     linear-gradient(90deg, #e5e7eb 1px, transparent 1px)
                 `,
                 backgroundSize: '20px 20px'
+            };
+        }
+        // 카와이 스타일 - 도트 패턴
+        if (themeStyle === 'kawaii') {
+            return {
+                backgroundColor: backgroundColor,
+                backgroundImage: `radial-gradient(circle, #ffb6c1 1px, transparent 1px)`,
+                backgroundSize: '15px 15px'
+            };
+        }
+        // 아티스틱 스타일 - 추상 블롭
+        if (themeStyle === 'artistic') {
+            return {
+                backgroundColor: backgroundColor,
+                backgroundImage: `
+                    radial-gradient(ellipse at 20% 30%, rgba(255,182,193,0.3) 0%, transparent 50%),
+                    radial-gradient(ellipse at 80% 70%, rgba(173,216,230,0.3) 0%, transparent 50%)
+                `
+            };
+        }
+        // 플레이풀 스타일 - 기하학 패턴
+        if (themeStyle === 'playful') {
+            return {
+                backgroundColor: backgroundColor,
+                backgroundImage: `
+                    linear-gradient(135deg, rgba(255,215,0,0.1) 25%, transparent 25%),
+                    linear-gradient(225deg, rgba(255,105,180,0.1) 25%, transparent 25%)
+                `,
+                backgroundSize: '30px 30px'
+            };
+        }
+        // 자연 스타일 - 부드러운 그라데이션
+        if (themeStyle === 'natural') {
+            return {
+                backgroundColor: backgroundColor,
+                backgroundImage: `linear-gradient(180deg, rgba(144,238,144,0.1) 0%, transparent 100%)`
+            };
+        }
+        // 몽환 스타일 - 드리미 글로우
+        if (themeStyle === 'dreamy') {
+            return {
+                backgroundColor: backgroundColor,
+                backgroundImage: `
+                    radial-gradient(circle at 30% 20%, rgba(199,125,255,0.15) 0%, transparent 40%),
+                    radial-gradient(circle at 70% 80%, rgba(255,182,255,0.15) 0%, transparent 40%)
+                `
+            };
+        }
+        // 레트로 스타일 - 필름 그레인
+        if (themeStyle === 'retro') {
+            return {
+                backgroundColor: backgroundColor,
+                backgroundImage: `
+                    repeating-linear-gradient(0deg, rgba(0,0,0,0.02) 0px, rgba(0,0,0,0.02) 1px, transparent 1px, transparent 2px)
+                `
+            };
+        }
+        // 프레쉬 스타일 - 파도 패턴
+        if (themeStyle === 'fresh') {
+            return {
+                backgroundColor: backgroundColor,
+                backgroundImage: `
+                    linear-gradient(180deg, rgba(135,206,250,0.15) 0%, transparent 30%),
+                    linear-gradient(0deg, rgba(135,206,250,0.1) 0%, transparent 20%)
+                `
             };
         }
         return { backgroundColor };
