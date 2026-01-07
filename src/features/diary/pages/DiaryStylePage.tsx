@@ -57,6 +57,7 @@ const DiaryStylePage = () => {
     const [themeStyle, setThemeStyle] = useState("basic");
     const [preset, setPreset] = useState<string | null>(null);
     const [backgroundColor, setBackgroundColor] = useState("#ffffff");
+    const [fontFamily, setFontFamily] = useState("Noto Sans KR"); // [NEW] Default Font
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [earnedReward, setEarnedReward] = useState<number | null>(null);
@@ -175,7 +176,8 @@ const DiaryStylePage = () => {
                         backgroundColor: backgroundColor,
                         preset: preset,
                         themeStyle: themeStyle,
-                        petId: selectedPetId
+                        petId: selectedPetId,
+                        fontFamily: fontFamily // [NEW] Save Font
                     });
                     console.log("=== [Frontend] Style Saved ===");
                 } catch (e) {
@@ -246,18 +248,16 @@ const DiaryStylePage = () => {
     return (
         <div className="min-h-screen pb-20 font-sans text-gray-800"
             style={{
-                backgroundColor: backgroundTheme === 'pink' ? '#ffeef2' : '#E3F2FD',
-                backgroundImage: `
-                  linear-gradient(90deg, rgba(255,255,255,0.6) 50%, transparent 50%),
-                  linear-gradient(rgba(255,255,255,0.6) 50%, transparent 50%)
-                `,
-                backgroundSize: '80px 80px',
-                transition: 'background-color 0.5s ease-in-out'
+                backgroundColor: backgroundTheme === 'pink' ? '#fff1f2' : '#f0f9ff', // pink-50/rose-50 equivalent hex
+                backgroundImage: backgroundTheme === 'pink'
+                    ? 'linear-gradient(to bottom, #fff1f2, #fff1f2)' // pink-50 to rose-50 approx
+                    : 'linear-gradient(to bottom, #f0f9ff, #eff6ff)', // sky-50 to blue-50 approx
+                transition: 'background-color 0.5s ease-in-out, background-image 0.5s ease-in-out'
             }}
         >
             <header className={`sticky top-0 z-40 border-b-2 border-dashed bg-white/90 backdrop-blur-md transition-colors duration-500 ${backgroundTheme === 'pink'
-                    ? 'border-pink-200 shadow-[0_4px_20px_rgba(255,192,203,0.1)]'
-                    : 'border-blue-200 shadow-[0_4px_20px_rgba(135,206,235,0.1)]'
+                ? 'border-pink-200 shadow-[0_4px_20px_rgba(255,192,203,0.1)]'
+                : 'border-blue-200 shadow-[0_4px_20px_rgba(135,206,235,0.1)]'
                 }`}>
                 <div className="container mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
                     <button onClick={handleBack} className={`transition-colors p-1 ${backgroundTheme === 'pink' ? 'text-pink-600 hover:text-pink-700' : 'text-blue-600 hover:text-blue-700'}`}>
@@ -285,9 +285,11 @@ const DiaryStylePage = () => {
                         sizeOption={sizeOption} setSizeOption={setSizeOption}
                         themeStyle={themeStyle} setThemeStyle={setThemeStyle}
                         preset={preset} setPreset={setPreset}
+                        preset={preset} setPreset={setPreset}
                         handleShareToFeed={handleShareToFeed} isSubmitting={isSubmitting}
                         onBack={handleBack}
-                        title={title} // [NEW]
+                        title={title}
+                        fontFamily={fontFamily} setFontFamily={setFontFamily} // [NEW] Font Family State
                     />
                 )}
                 {step === 'complete' && <CompleteStep onHome={handleReset} earnedAmount={earnedReward} onShare={handleSocialShare} onThemeChange={setBackgroundTheme} />}

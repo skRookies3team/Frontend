@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Calendar, MapPin, Sun, Smile, Edit3, Save, Loader2, LayoutGrid, Layers, Columns, Grid, Maximize2, Minimize2, Type, Palette, Sparkles, ImageIcon, BookOpen, ArrowUpRight } from 'lucide-react';
+import { Calendar, MapPin, Sun, Smile, Edit3, Save, Loader2, Layers, Grid, Maximize2, Minimize2, Type, Palette, Sparkles, ImageIcon, ArrowUpRight, LayoutGrid } from 'lucide-react';
 import KakaoMap from './KakaoMap';
 
 interface StyleStepProps {
@@ -10,7 +10,9 @@ interface StyleStepProps {
     locationName: string;
     locationCoords: { lat: number, lng: number } | null;
     selectedDate: string;
-    title: string; // [NEW]
+    title: string;
+    fontFamily: string; // [NEW]
+    setFontFamily: (font: string) => void; // [NEW]
 
     // Style Props
     layoutStyle: string;
@@ -39,7 +41,7 @@ const StyleStep = ({
     selectedImages, editedDiary, weather, mood, locationName, locationCoords, selectedDate,
     layoutStyle, setLayoutStyle, textAlign, setTextAlign, fontSize, setFontSize, backgroundColor, setBackgroundColor,
     sizeOption, setSizeOption, themeStyle, setThemeStyle, preset, setPreset,
-    handleShareToFeed, isSubmitting, onBack, title
+    handleShareToFeed, isSubmitting, onBack, title, fontFamily, setFontFamily // [NEW]
 }: StyleStepProps) => {
 
     // 확장된 배경 색상 팔레트
@@ -55,12 +57,47 @@ const StyleStep = ({
         "#f8f0ff", // 드림퍼플
         "#f7f3e9", // 빈티지아이보리
         "#f0f8ff", // 오션블루
+        "#e0f7fa", // 아이스블루
+        "#fbe9e7", // 피치 (코랄)
+        "#fff8e1", // 크림
+        "#f3e5f5", // 라이트퍼플
+        "#e8f5e9", // 페일그린
         "#1a1a2e", // 다크모드
     ];
+
     const [activeTab, setActiveTab] = useState<'layout' | 'detail'>('layout');
+
+    // [NEW] Theme/Preset to Font Mapping
+    const getFontForTheme = (theme: string, preset: string | null) => {
+        if (preset === 'cute_planner') return 'Jua';
+        if (preset === 'romantic_picnic') return 'Hi Melody';
+        if (preset === 'vintage_scrapbook') return 'Nanum Myeongjo';
+        if (preset === 'abstract_organic') return 'Song Myung';
+        if (preset === 'memphis_pop') return 'Dongle';
+        if (preset === 'dreamy_pastel') return 'Hi Melody';
+        if (preset === 'ocean_breeze') return 'Gaegu';
+
+        switch (theme) {
+            case 'kawaii': return 'Jua';
+            case 'romantic': return 'Hi Melody';
+            case 'vintage': return 'Nanum Myeongjo';
+            case 'modern': return 'Gowun Dodum';
+            case 'artistic': return 'Song Myung';
+            case 'playful': return 'Dongle';
+            case 'retro': return 'Nanum Myeongjo';
+            case 'natural': return 'Gowun Dodum';
+            case 'dreamy': return 'Hi Melody';
+            case 'fresh': return 'Gaegu';
+            default: return 'Noto Sans KR';
+        }
+    };
 
     // 프리셋/테마 변경 시 스타일 적용 로직
     useEffect(() => {
+        // [NEW] Auto-update font based on theme/preset
+        const newFont = getFontForTheme(themeStyle, preset);
+        setFontFamily(newFont);
+
         if (!preset) return;
 
         switch (preset) {
@@ -72,12 +109,12 @@ const StyleStep = ({
             case 'city_night': // 다크 모드
                 setBackgroundColor('#1a1a2e');
                 setThemeStyle('modern');
-                setLayoutStyle('classic');
+                setLayoutStyle('grid');
                 break;
             case 'romantic_picnic': // 핑크 로맨틱
                 setBackgroundColor('#fff0f5');
                 setThemeStyle('romantic');
-                setLayoutStyle('slide');
+                setLayoutStyle('masonry');
                 break;
             case 'minimal_white': // 미니멀
                 setBackgroundColor('#ffffff');
@@ -90,22 +127,22 @@ const StyleStep = ({
                 setLayoutStyle('masonry');
                 break;
             // 새로운 프리셋 테마들
-            case 'cute_planner': // 큐트 플래너 (이미지1 참고)
+            case 'cute_planner': // 큐트 플래너
                 setBackgroundColor('#fff5f8');
                 setThemeStyle('kawaii');
                 setLayoutStyle('grid');
                 break;
-            case 'abstract_organic': // 추상 오가닉 (이미지2 참고)
+            case 'abstract_organic': // 추상 오가닉
                 setBackgroundColor('#fdf2f0');
                 setThemeStyle('artistic');
-                setLayoutStyle('slide');
+                setLayoutStyle('masonry');
                 break;
-            case 'memphis_pop': // 멤피스 팝 (이미지3 참고)
+            case 'memphis_pop': // 멤피스 팝
                 setBackgroundColor('#fef9e7');
                 setThemeStyle('playful');
-                setLayoutStyle('classic');
+                setLayoutStyle('grid');
                 break;
-            case 'botanical_calm': // 보타니컬 (이미지4 참고)
+            case 'botanical_calm': // 보타니컬
                 setBackgroundColor('#f5f9f0');
                 setThemeStyle('natural');
                 setLayoutStyle('masonry');
@@ -113,7 +150,7 @@ const StyleStep = ({
             case 'dreamy_pastel': // 몽환 파스텔
                 setBackgroundColor('#f8f0ff');
                 setThemeStyle('dreamy');
-                setLayoutStyle('slide');
+                setLayoutStyle('masonry');
                 break;
             case 'retro_film': // 레트로 필름
                 setBackgroundColor('#f7f3e9');
@@ -126,7 +163,7 @@ const StyleStep = ({
                 setLayoutStyle('masonry');
                 break;
         }
-    }, [preset, setBackgroundColor, setThemeStyle, setLayoutStyle]);
+    }, [preset, setBackgroundColor, setThemeStyle, setLayoutStyle, setFontFamily, themeStyle]); // Added themeStyle dependency
 
     const getPreviewContainerStyle = () => {
         let baseStyle = "w-full flex-1 rounded-2xl shadow-xl overflow-y-auto border border-gray-100 relative h-full transition-all duration-300";
@@ -221,26 +258,17 @@ const StyleStep = ({
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-24 h-6 bg-yellow-100/80 rotate-2 shadow-sm z-10 opacity-90 backdrop-blur-sm border-l border-r border-white/50" />
     );
 
-    const StickerDecoration = ({ type }: { type: string }) => {
-        if (type === 'heart') return <div className="absolute -bottom-4 -right-4 text-4xl opacity-90 rotate-12 drop-shadow-md z-20">💖</div>;
-        if (type === 'star') return <div className="absolute -top-4 -left-4 text-4xl opacity-90 -rotate-12 drop-shadow-md z-20">⭐</div>;
-        if (type === 'pin') return <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-3xl drop-shadow-md z-20">📍</div>;
-        return null;
-    };
-
     const layoutOptions = [
         { id: 'grid', label: '그리드', icon: <Grid className="w-5 h-5" />, desc: '기본 정렬' },
         { id: 'masonry', label: 'Masonry', icon: <Layers className="w-5 h-5" />, desc: '빈틈없는 배치' },
-        { id: 'slide', label: '슬라이드', icon: <Columns className="w-5 h-5" />, desc: '가로 스크롤' },
-        { id: 'classic', label: '클래식', icon: <LayoutGrid className="w-5 h-5" />, desc: '세로 나열' },
         { id: 'collage', label: '콜라주', icon: <ImageIcon className="w-5 h-5" />, desc: '자유 배치' },
-        { id: 'magazine', label: '매거진', icon: <BookOpen className="w-5 h-5" />, desc: '잡지 스타일' },
+        { id: 'bricks', label: 'Bricks', icon: <LayoutGrid className="w-5 h-5" />, desc: '벽돌 스타일' },
     ];
 
     const sizeOptions = [
-        { id: 'small', label: 'Small', icon: <Minimize2 className="w-5 h-5" />, desc: '작게 (영상비율)' },
-        { id: 'medium', label: 'Medium', icon: <span>M</span>, desc: '중간 (정방형)' },
-        { id: 'large', label: 'Large', icon: <Maximize2 className="w-5 h-5" />, desc: '크게 (1.2배)' },
+        { id: 'small', label: 'Small', icon: <Minimize2 className="w-5 h-5" />, desc: '작게' },
+        { id: 'medium', label: 'Medium', icon: <span>M</span>, desc: '중간' },
+        { id: 'large', label: 'Large', icon: <Maximize2 className="w-5 h-5" />, desc: '크게' },
         { id: 'full', label: 'Full', icon: <ArrowUpRight className="w-5 h-5" />, desc: '꽉찬 화면' },
     ];
 
@@ -263,7 +291,7 @@ const StyleStep = ({
                         ${themeStyle === 'vintage' ? 'font-serif text-amber-900 border-b-2 border-amber-900/10 pb-2' : 'text-gray-800'}
                         ${themeStyle === 'romantic' ? 'font-serif text-pink-600' : ''}
                         ${themeStyle === 'modern' ? 'tracking-tight' : ''}
-                    `}>
+                    `} style={{ fontFamily: fontFamily }}>
                         {title}
                     </h2>
 
@@ -338,32 +366,35 @@ const StyleStep = ({
                                 ? 'grid grid-cols-1 md:grid-cols-1 xl:grid-cols-2' // Large/Full: 1-2 columns (Bigger items)
                                 : 'grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3' // Normal: 2-3 columns
                             : ''}
-                        ${(layoutStyle === 'masonry' || layoutStyle === 'magazine')
+                        ${layoutStyle === 'masonry'
                             ? (sizeOption === 'large' || sizeOption === 'full')
                                 ? 'columns-1 md:columns-2 gap-6 space-y-6'
                                 : 'columns-2 md:columns-3 gap-6 space-y-6'
                             : ''}
-                        ${layoutStyle === 'slide' ? 'flex overflow-x-auto pb-8 snap-x scrollbar-hide px-2' : ''}
-                        ${layoutStyle === 'classic' ? 'flex flex-col space-y-8' : ''}
+                        ${layoutStyle === 'bricks'
+                            ? 'grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[200px] grid-flow-dense' // Bricks Layout
+                            : ''}
+                        ${layoutStyle === 'collage'
+                            ? 'columns-2 md:columns-3 gap-3 space-y-3' // [NEW] Dense Masonry for Collage
+                            : ''}
                     `}>
                         {selectedImages.map((img: any, idx: number) => (
                             <div key={idx} className={`relative group transition-all duration-300
-                                ${layoutStyle === 'slide' ? 'min-w-[80%] md:min-w-[70%] snap-center' : 'w-full'}
+                                ${layoutStyle === 'bricks' && (idx % 3 === 0) ? 'col-span-2 row-span-2' : ''} // Featured Brick for Bricks
+                                ${layoutStyle === 'collage' ? 'break-inside-avoid mb-3' : ''} // Masonry Item for Collage
                                 ${sizeOption === 'small' ? 'aspect-video' : sizeOption === 'large' ? 'aspect-auto min-h-[400px]' : sizeOption === 'full' ? 'aspect-[9/16]' : 'aspect-square'}
+                                ${(layoutStyle === 'bricks') ? 'aspect-auto w-full h-full' : ''} // Reset aspect for Bricks
+                                ${(layoutStyle === 'collage') ? 'aspect-auto w-full h-auto' : ''} // [NEW] Reset aspect for Collage (Height Auto)
                                 ${themeStyle === 'vintage'
                                     ? 'bg-white p-3 shadow-lg rotate-1 even:-rotate-2 border border-gray-100/50'
                                     : 'rounded-2xl overflow-hidden shadow-md border border-gray-100'}
                             `}>
                                 {(themeStyle === 'vintage' || preset === 'cozy_morning' || preset === 'vintage_scrapbook') && (idx % 2 === 0 || idx === 0) && <TapeDecoration />}
 
-                                {themeStyle === 'romantic' && idx === 0 && <StickerDecoration type="heart" />}
-                                {themeStyle === 'vintage' && idx === 1 && <StickerDecoration type="pin" />}
-
-                                <img src={img.imageUrl} alt="diary" className={`w-full h-full object-cover shadow-inner
+                                <img src={img.imageUrl} alt="diary" className={`w-full h-full shadow-inner transition-all duration-300
+                                    ${layoutStyle === 'collage' ? 'object-cover w-full h-auto' : 'object-cover'}
                                     ${themeStyle === 'vintage' ? '' : 'rounded-lg'}
                                 `} />
-
-                                {(themeStyle === 'vintage' || preset === 'vintage_scrapbook') && idx === selectedImages.length - 1 && <StickerDecoration type="star" />}
                             </div>
                         ))}
                     </div>
@@ -375,7 +406,7 @@ const StyleStep = ({
                         ${themeStyle === 'vintage' || themeStyle === 'romantic'
                             ? 'font-serif text-gray-800'
                             : 'text-gray-700 font-medium'}
-                    `} style={{ fontSize: `${fontSize}px` }}>
+                    `} style={{ fontSize: `${fontSize}px`, fontFamily: fontFamily }}>
                         {editedDiary}
                     </div>
                 </div>

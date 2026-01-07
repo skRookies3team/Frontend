@@ -19,11 +19,12 @@ interface DiaryPreviewProps {
     sizeOption: string;
     themeStyle: string;
     preset: string | null;
+    fontFamily?: string; // [NEW]
 }
 
 const DiaryPreview = ({
     title, selectedImages, editedDiary, weather, mood, locationName, locationCoords, selectedDate,
-    layoutStyle, textAlign, fontSize, backgroundColor, sizeOption, themeStyle, preset
+    layoutStyle, textAlign, fontSize, backgroundColor, sizeOption, themeStyle, preset, fontFamily // [NEW]
 }: DiaryPreviewProps) => {
 
     const getPreviewContainerStyle = () => {
@@ -75,7 +76,7 @@ const DiaryPreview = ({
                     ${themeStyle === 'vintage' ? 'font-serif text-amber-900 border-b-2 border-amber-900/10 pb-2' : 'text-gray-800'}
                     ${themeStyle === 'romantic' ? 'font-serif text-pink-600' : ''}
                     ${themeStyle === 'modern' ? 'tracking-tight' : ''}
-                `}>
+                `} style={{ fontFamily: fontFamily }}>
                     {title}
                 </h2>
 
@@ -87,7 +88,7 @@ const DiaryPreview = ({
                         {themeStyle === 'vintage' ? (
                             <div className="bg-[#fcf8e3] px-4 py-2 rounded shadow-sm text-amber-900 font-bold font-serif border border-amber-200/50 flex items-center gap-2 transform -rotate-1">
                                 <Calendar className="w-4 h-4 text-amber-700" />
-                                <span>{new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()}</span>
+                                <span style={{ fontFamily: 'inherit' }}>{new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()}</span>
                             </div>
                         ) : (
                             <div className="flex items-center gap-2 text-gray-500 text-sm font-medium bg-gray-50/50 px-3 py-1 rounded-full">
@@ -177,7 +178,7 @@ const DiaryPreview = ({
                     ${themeStyle === 'vintage' || themeStyle === 'romantic'
                         ? 'font-serif text-gray-800'
                         : 'text-gray-700 font-medium'}
-                `} style={{ fontSize: `${fontSize}px` }}>
+                `} style={{ fontSize: `${fontSize}px`, fontFamily: fontFamily }}>
                     {editedDiary}
                 </div>
             </div>

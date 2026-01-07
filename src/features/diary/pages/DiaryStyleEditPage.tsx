@@ -24,6 +24,7 @@ const DiaryStyleEditPage = () => {
     const [themeStyle, setThemeStyle] = useState("basic");
     const [preset, setPreset] = useState<string | null>(null);
     const [backgroundColor, setBackgroundColor] = useState("#ffffff");
+    const [fontFamily, setFontFamily] = useState("Noto Sans KR"); // [NEW] Font State
 
     // Fetch diary and style data
     useEffect(() => {
@@ -51,6 +52,7 @@ const DiaryStyleEditPage = () => {
                     setThemeStyle(diaryData.style.themeStyle || "basic");
                     setPreset(diaryData.style.preset || null);
                     setBackgroundColor(diaryData.style.backgroundColor || "#ffffff");
+                    setFontFamily(diaryData.style.fontFamily || "Noto Sans KR"); // [NEW] Load Font
                 } else {
                     console.log("ℹ️ 저장된 스타일 없음 - 기본값 사용");
                 }
@@ -86,7 +88,8 @@ const DiaryStyleEditPage = () => {
                 backgroundColor: backgroundColor,
                 preset: preset,
                 themeStyle: themeStyle,
-                petId: diary.petId
+                petId: diary.petId,
+                fontFamily: fontFamily // [NEW] Save Font
             });
 
             alert('스타일이 저장되었습니다.');
@@ -158,6 +161,8 @@ const DiaryStyleEditPage = () => {
                     isSubmitting={isSubmitting}
                     onBack={handleBack}
                     title={diary.title}
+                    fontFamily={fontFamily} // [NEW] Pass Prop
+                    setFontFamily={setFontFamily} // [NEW] Pass Prop
                 />
             </main>
         </div>
