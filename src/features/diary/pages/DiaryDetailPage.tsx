@@ -18,7 +18,7 @@ import {
 
 import { Button } from "@/shared/ui/button"
 import { Badge } from "@/shared/ui/badge"
-import { getDiary, deleteDiary, getMyStyleApi } from "@/features/diary/api/diary-api"
+import { getDiary, deleteDiary, getMyStyleApi, getDiaryStyleApi } from "@/features/diary/api/diary-api"
 import { useAuth } from "@/features/auth/context/auth-context"
 import DiaryPreview from "@/features/diary/components/DiaryPreview"
 
@@ -49,22 +49,39 @@ export default function DiaryDetailPage() {
             try {
                 setIsLoading(true)
                 const data = await getDiary(Number(id))
+                console.log("📄 Diary Detail Loaded:", data); // [DEBUG]
                 setDiary(data)
 
-                // Use style from diary response if available
-                if (data.style) {
+                // 1. Check if the returned style is specific to this diary
+                if (data.style && data.style.diaryId === Number(id)) {
+                    console.log("🎨 Specific Diary Style found in Response:", data.style); // [DEBUG]
                     setStyleSettings(data.style)
-                } else if (user?.id && data.petId) {
-                    try {
-                        const styleData = await getMyStyleApi(Number(user.id), data.petId)
-                        setStyleSettings(styleData)
-                    } catch (styleError) {
-                        console.warn("스타일 로드 실패:", styleError)
-                    }
-                } else if (user?.id) {
-                    const settings = await getMyStyleApi(Number(user.id))
-                    if (settings) {
-                        setStyleSettings(settings)
+                } else {
+                    // 2. If not specific (or missing), try to fetch Diary Specific Style explicitly
+                    console.log("ℹ️ Fetching Diary Specific Style (Override)...");
+                    const specificStyle = await getDiaryStyleApi(Number(id));
+
+                    if (specificStyle) {
+                        console.log("🎨 Diary Specific Style Loaded:", specificStyle);
+                        setStyleSettings(specificStyle);
+                    } else if (data.style) {
+                        // 3. Fallback to generic style from response
+                        console.log("⚠️ Using Generic/Pet Style from Response:", data.style);
+                        setStyleSettings(data.style)
+                    } else if (user?.id && data.petId) {
+                        console.log("⚠️ No Style in Response, fetching Pet Style..."); // [DEBUG]
+                        try {
+                            const styleData = await getMyStyleApi(Number(user.id), data.petId)
+                            setStyleSettings(styleData)
+                        } catch (styleError) {
+                            console.warn("스타일 로드 실패:", styleError)
+                        }
+                    } else if (user?.id) {
+                        console.log("⚠️ Fetching User Default Style..."); // [DEBUG]
+                        const settings = await getMyStyleApi(Number(user.id))
+                        if (settings) {
+                            setStyleSettings(settings)
+                        }
                     }
                 }
             } catch (error) {
@@ -352,6 +369,7 @@ export default function DiaryDetailPage() {
                         sizeOption={styleSettings?.sizeOption || "medium"}
                         themeStyle={styleSettings?.themeStyle || "basic"}
                         preset={styleSettings?.preset || null}
+                        fontFamily={styleSettings?.fontFamily || "Noto Sans KR"} // [NEW] Pass saved font family
                     />
                 </div>
 

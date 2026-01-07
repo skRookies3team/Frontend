@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css?family=Gaegu');
-@import url('https://fonts.googleapis.com/earlyaccess/notosanskr.css');
+@import url('https://fonts.googleapis.com/css2?family=Dongle&family=Gaegu&family=Gamja+Flower&family=Gowun+Dodum&family=Hi+Melody&family=Jua&family=Nanum+Myeongjo&family=Song+Myung&family=Noto+Sans+KR:wght@100..900&display=swap');
 @import "tw-animate-css";
 
 @tailwind base;
@@ -200,4 +199,19 @@ body {
 
 .animate-pulse-slow {
   animation: pulse-slow 3s ease-in-out infinite;
+}
+
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(-15%);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 3s infinite;
 }
