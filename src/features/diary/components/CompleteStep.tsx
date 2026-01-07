@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, Share2, BookOpen, Coins, Facebook, Instagram, Link as LinkIcon } from 'lucide-react';
+import { Check, Share2, Coins, Facebook, Instagram, Link as LinkIcon } from 'lucide-react';
 
 interface CompleteStepProps {
     onHome: () => void;
@@ -63,42 +63,7 @@ const CompleteStep = ({ onHome, earnedAmount, onShare }: CompleteStepProps) => {
         }
     };
 
-    if (sharingStep === 'visibility') {
-        return (
-            <div className="flex flex-col items-center justify-center py-10 text-center animate-fade-in space-y-6">
-                <h2 className="text-2xl font-bold text-gray-800">공개 범위를 선택해주세요</h2>
-                <p className="text-gray-500">소셜 피드에 어떻게 공유할까요?</p>
 
-                <div className="grid grid-cols-1 gap-4 w-full max-w-sm">
-                    <button onClick={() => handleShareClick('PUBLIC')} disabled={isSharing} className="flex items-center gap-4 p-4 border rounded-xl hover:bg-pink-50 hover:border-pink-300 transition-all text-left group">
-                        <div className="bg-pink-100 p-3 rounded-full text-pink-600 group-hover:bg-pink-200"><Share2 className="w-5 h-5" /></div>
-                        <div>
-                            <div className="font-bold text-gray-800">전체 공개</div>
-                            <div className="text-xs text-gray-500">모든 사용자가 볼 수 있습니다.</div>
-                        </div>
-                    </button>
-
-                    <button onClick={() => handleShareClick('FOLLOWER')} disabled={isSharing} className="flex items-center gap-4 p-4 border rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all text-left group">
-                        <div className="bg-blue-100 p-3 rounded-full text-blue-600 group-hover:bg-blue-200"><Check className="w-5 h-5" /></div>
-                        <div>
-                            <div className="font-bold text-gray-800">팔로워 공개</div>
-                            <div className="text-xs text-gray-500">내 팔로워만 볼 수 있습니다.</div>
-                        </div>
-                    </button>
-
-                    <button onClick={() => handleShareClick('PRIVATE')} disabled={isSharing} className="flex items-center gap-4 p-4 border rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all text-left group">
-                        <div className="bg-gray-100 p-3 rounded-full text-gray-600 group-hover:bg-gray-200"><BookOpen className="w-5 h-5" /></div>
-                        <div>
-                            <div className="font-bold text-gray-800">나만 보기</div>
-                            <div className="text-xs text-gray-500">피드에 기록되지만 나만 볼 수 있습니다.</div>
-                        </div>
-                    </button>
-                </div>
-
-                <button onClick={() => setSharingStep('initial')} disabled={isSharing} className="text-gray-400 text-sm underline mt-4">취소</button>
-            </div>
-        );
-    }
 
     if (sharingStep === 'success') {
         return (
@@ -150,8 +115,8 @@ const CompleteStep = ({ onHome, earnedAmount, onShare }: CompleteStepProps) => {
                 <button onClick={onHome} className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors">
                     내 다이어리 보기
                 </button>
-                <button onClick={() => setSharingStep('visibility')} className="px-6 py-3 bg-pink-500 text-white rounded-xl font-medium flex items-center gap-2 shadow-lg hover:bg-pink-600 transition-colors">
-                    <Share2 className="w-4 h-4" /> 피드 공유하기
+                <button onClick={() => handleShareClick('PUBLIC')} disabled={isSharing} className="px-6 py-3 bg-pink-500 text-white rounded-xl font-medium flex items-center gap-2 shadow-lg hover:bg-pink-600 transition-colors">
+                    <Share2 className="w-4 h-4" /> {isSharing ? '공유 중...' : '피드 공유하기'}
                 </button>
             </div>
 

@@ -80,7 +80,7 @@ const DiaryPreview = ({
                 </h2>
 
                 {/* Header Info */}
-                <div className={`flex flex-wrap items-center justify-between gap-4 mb-8 pb-4 
+                <div className={`flex flex-col gap-4 mb-8 pb-4 
                     ${themeStyle === 'vintage' ? 'border-b-2 border-dashed border-gray-400/50' : 'border-b border-gray-100'}`}
                 >
                     <div className="flex items-center gap-2">
@@ -99,33 +99,33 @@ const DiaryPreview = ({
 
                     <div className="flex flex-wrap gap-2">
                         {locationName && (
-                            <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium shadow-sm
+                            <div className={`flex items-start gap-1 px-3 py-1.5 rounded-lg text-sm font-medium shadow-sm
                                 ${themeStyle === 'vintage'
                                     ? 'bg-orange-50 text-orange-800 border border-orange-200 font-serif rotate-1'
                                     : 'bg-green-50 text-green-600'}
                             `}>
-                                <MapPin className="w-3 h-3" />
-                                <span>{locationName}</span>
+                                <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                                <span className="whitespace-normal break-words leading-tight">{locationName}</span>
                             </div>
                         )}
                         {weather && (
-                            <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium shadow-sm
+                            <div className={`flex items-start gap-1 px-3 py-1.5 rounded-lg text-sm font-medium shadow-sm
                                  ${themeStyle === 'vintage'
                                     ? 'bg-blue-50 text-blue-800 border border-blue-200 font-serif'
                                     : 'bg-blue-50 text-blue-600'}
                             `}>
-                                <Sun className="w-3 h-3" />
-                                <span>{weather}</span>
+                                <Sun className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                                <span className="whitespace-normal break-words leading-tight">{weather}</span>
                             </div>
                         )}
                         {mood && (
-                            <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium shadow-sm
+                            <div className={`flex items-start gap-1 px-3 py-1.5 rounded-lg text-sm font-medium shadow-sm
                                  ${themeStyle === 'vintage'
                                     ? 'bg-yellow-50 text-yellow-800 border border-yellow-200 font-serif -rotate-1'
                                     : 'bg-yellow-50 text-yellow-600'}
                             `}>
-                                <Smile className="w-3 h-3" />
-                                <span>{mood}</span>
+                                <Smile className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                                <span className="whitespace-normal break-words leading-tight">{mood}</span>
                             </div>
                         )}
                     </div>

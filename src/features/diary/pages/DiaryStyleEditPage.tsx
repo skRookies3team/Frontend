@@ -131,7 +131,7 @@ const DiaryStyleEditPage = () => {
                 </div>
             </header>
 
-            <main className="container mx-auto max-w-7xl p-4 md:p-6">
+            <main className="w-[98%] max-w-[1920px] mx-auto p-4 md:p-6">
                 <StyleStep
                     selectedImages={selectedImages}
                     editedDiary={diary.content}
