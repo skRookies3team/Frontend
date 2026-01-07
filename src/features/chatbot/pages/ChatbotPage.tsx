@@ -1,22 +1,18 @@
 import type React from "react"
-import { useState, useEffect, Component, ReactNode } from "react"
+import { useState, useEffect, Component, type ReactNode, useRef } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
 import { Button } from "@/shared/ui/button"
 import { Input } from "@/shared/ui/input"
-import { Send, ChevronDown } from 'lucide-react'
+import { Send, ChevronDown, Map, Stethoscope, ArrowLeft } from 'lucide-react'
 import { useAuth } from "@/features/auth/context/auth-context"
-import { useSearchParams, Link } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import PetCanvas from '@/shared/components/3d/PetCanvas'
+import { chatbotApi, ChatMessage, Hospital } from "../api/chatbotApi"
+import MapContainer from "../components/MapContainer"
+import DiseaseSearch from "../components/DiseaseSearch"
 
-interface Message {
-  id: string
-  content: string
-  sender: "user" | "bot"
-  timestamp: Date
-}
-
-// 에러 경계 컴포넌트
+// Error Boundary Component
 interface ErrorBoundaryState {
   hasError: boolean
 }
@@ -36,16 +32,7 @@ class ErrorBoundary extends Component<{ children: ReactNode; fallback: ReactNode
   }
 }
 
-const PET_RESPONSES = [
-  "멍멍! 네가 말할 때마다 너무 좋아!",
-  "대박! 지금 당장 공원에 갈 수 있을까?",
-  "넌 최고의 집사야! 정말 사랑해!",
-  "오오, 더 말해줘! 내 꼬리가 이미 흔들리고 있어!",
-  "너를 내 집사로 둔 건 정말 행운이야!",
-  "왈! 간식 줄 거야? 기대되는데?",
-  "하루 종일 너랑 놀고 싶어! 산책 갈래?",
-  "멍멍! 오늘도 너와 함께해서 행복해!",
-]
+type ViewMode = 'chat' | 'map' | 'disease';
 
 export default function ChatbotPage() {
   const { user } = useAuth()
@@ -58,28 +45,26 @@ export default function ChatbotPage() {
     : pets[0]
 
   const [selectedPet, setSelectedPet] = useState(initialPet)
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState("")
   const [isTyping, setIsTyping] = useState(false)
   const [speechText, setSpeechText] = useState("멍멍! 반가워!")
   const [showSpeech, setShowSpeech] = useState(true)
   const [showPetSelector, setShowPetSelector] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('chat')
+  const [hospitals, setHospitals] = useState<Hospital[]>([])
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // 펫 변경 시 초기 메시지 설정
   useEffect(() => {
-    setSpeechText("멍멍! 반가워!")
+    setSpeechText(`안녕! 나는 ${selectedPet?.name || '멍멍이'}야!`)
     setShowSpeech(true)
     setMessages([])
   }, [selectedPet])
 
   useEffect(() => {
-    if (petIdFromUrl) {
-      const pet = pets.find(p => p.id === petIdFromUrl)
-      if (pet) {
-        setSelectedPet(pet)
-      }
-    }
-  }, [petIdFromUrl, pets])
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
 
   // 말풍선 자동 숨김 타이머
   useEffect(() => {
@@ -91,37 +76,43 @@ export default function ChatbotPage() {
     }
   }, [showSpeech, speechText, isTyping])
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputValue.trim()) return
 
-    const userMessage: Message = {
+    const userMsg: ChatMessage = {
       id: Date.now().toString(),
+      sender: 'user',
       content: inputValue,
-      sender: "user",
-      timestamp: new Date(),
+      timestamp: new Date()
     }
 
-    setMessages(prev => [...prev, userMessage])
+    setMessages(prev => [...prev, userMsg])
     setInputValue("")
     setShowSpeech(false)
     setIsTyping(true)
 
-    // 1.5초 후 펫 응답
-    setTimeout(() => {
-      const botResponse = PET_RESPONSES[Math.floor(Math.random() * PET_RESPONSES.length)]
+    try {
+      const response = await chatbotApi.sendMessage(userMsg.content, user?.id || 'guest')
+      
+      setMessages(prev => [...prev, response])
+      setSpeechText(response.content)
+      setShowSpeech(true)
 
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: botResponse,
-        sender: "bot",
-        timestamp: new Date(),
+      // Handle specific response types
+      if (response.type === 'map') {
+        const data = await chatbotApi.getNearbyHospitals(37.5665, 126.9780);
+        setHospitals(data);
+        setTimeout(() => setViewMode('map'), 1500);
+      } else if (response.type === 'disease_list') {
+         setTimeout(() => setViewMode('disease'), 1500);
       }
 
-      setMessages(prev => [...prev, botMessage])
-      setSpeechText(botResponse)
+    } catch (error) {
+      console.error("Chat error:", error)
+      setSpeechText("멍멍... 뭔가 문제가 생긴 것 같아.")
+    } finally {
       setIsTyping(false)
-      setShowSpeech(true)
-    }, 1500)
+    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -131,138 +122,240 @@ export default function ChatbotPage() {
     }
   }
 
-  // 3D 로딩/에러 시 보여줄 fallback
-  const CanvasFallback = () => (
-    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-sky-200 via-green-100 to-amber-100">
-      <div className="flex flex-col items-center gap-4">
-        <div className="text-8xl">🐕</div>
-        <p className="text-pink-600 font-medium">강아지가 준비 중이에요...</p>
-      </div>
-    </div>
-  )
+  const handleTTS = () => {
+    alert("TTS 기능은 곧 추가될 예정입니다! 🎙️")
+  }
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-gradient-to-b from-sky-100 via-green-50 to-amber-50">
-      {/* 3D Canvas 배경 */}
-      <ErrorBoundary fallback={<CanvasFallback />}>
-        <PetCanvas
-          speechText={speechText}
-          showSpeech={showSpeech}
-          isTyping={isTyping}
-        />
-      </ErrorBoundary>
-
-      {/* 상단 헤더 - 펫 선택 */}
-      <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20">
-        <motion.button
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          onClick={() => setShowPetSelector(!showPetSelector)}
-          className="flex items-center gap-3 bg-white/90 backdrop-blur-md rounded-full px-4 py-2 shadow-lg border border-pink-100 hover:bg-white transition-colors"
-        >
-          <Avatar className="h-10 w-10 border-2 border-pink-300">
-            <AvatarImage src={selectedPet?.photo || "/placeholder.svg"} alt={selectedPet?.name} />
-            <AvatarFallback>{selectedPet?.name?.[0] || '🐕'}</AvatarFallback>
-          </Avatar>
-          <div className="text-left">
-            <p className="font-bold text-gray-800">{selectedPet?.name || '펫'}</p>
-            <p className="text-xs text-gray-500">{selectedPet?.breed || '대화하기'}</p>
-          </div>
-          <ChevronDown className={`h-5 w-5 text-gray-400 transition-transform ${showPetSelector ? 'rotate-180' : ''}`} />
-        </motion.button>
-
-        {/* 펫 선택 드롭다운 */}
-        <AnimatePresence>
-          {showPetSelector && pets.length > 1 && (
-            <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-pink-100 overflow-hidden min-w-[200px]"
-            >
-              {pets.map((pet) => (
-                <button
-                  key={pet.id}
-                  onClick={() => {
-                    setSelectedPet(pet)
-                    setShowPetSelector(false)
-                  }}
-                  className={`w-full flex items-center gap-3 p-3 hover:bg-pink-50 transition-colors ${selectedPet?.id === pet.id ? 'bg-pink-50' : ''
-                    }`}
-                >
-                  <Avatar className="h-10 w-10 border-2 border-pink-200">
-                    <AvatarImage src={pet.photo || "/placeholder.svg"} alt={pet.name} />
-                    <AvatarFallback>{pet.name[0]}</AvatarFallback>
-                  </Avatar>
-                  <div className="text-left">
-                    <p className="font-semibold text-gray-800">{pet.name}</p>
-                    <p className="text-xs text-gray-500">{pet.breed}</p>
-                  </div>
-                  {selectedPet?.id === pet.id && (
-                    <div className="ml-auto w-2 h-2 rounded-full bg-green-500" />
-                  )}
-                </button>
-              ))}
-              <Link to="/pet-info?returnTo=/chatbot" className="block">
-                <button className="w-full p-3 text-sm text-pink-600 font-medium hover:bg-pink-50 border-t border-pink-100">
-                  + 반려동물 추가하기
-                </button>
-              </Link>
-            </motion.div>
-          )}
+    <div className="relative h-screen w-full overflow-hidden bg-gray-900 font-sans">
+      {/* Background Image Layer */}
+      <div className="absolute inset-0 z-0">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={selectedPet?.id}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1 }}
+            className="absolute inset-0"
+          >
+            <img 
+              src={selectedPet?.photo || "/placeholder.svg"} 
+              alt="Background" 
+              className="w-full h-full object-cover opacity-60 blur-sm"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/80" />
+          </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* 채팅 기록 */}
-      {messages.length > 0 && (
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10 max-h-[40vh] overflow-y-auto">
-          <div className="space-y-2 max-w-xs">
-            {messages.slice(-5).map((message) => (
-              <motion.div
-                key={message.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className={`rounded-2xl px-4 py-2 text-sm ${message.sender === "user"
-                  ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white ml-auto"
-                  : "bg-white/80 backdrop-blur-sm text-gray-800"
-                  }`}
-              >
-                {message.content}
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* 2. 3D Pet Canvas Layer (Middle) */}
+      <div className={`absolute inset-0 z-10 transition-all duration-700 ${viewMode !== 'chat' ? 'scale-90 opacity-30 blur-sm' : ''}`}>
+        <ErrorBoundary fallback={
+           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="flex flex-col items-center gap-4">
+                 <div className="text-6xl">🐕</div>
+                 <p className="text-white/80 font-medium text-sm">3D 강아지 불러오는 중...</p>
+              </div>
+           </div>
+        }>
+          <PetCanvas
+            speechText={speechText}
+            showSpeech={showSpeech}
+            isTyping={isTyping}
+          />
+        </ErrorBoundary>
+      </div>
 
-      {/* 하단 입력창 - Glassmorphism */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 p-4 pb-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-2xl mx-auto"
+      {/* Side Pet Selector (Top Right) */}
+      <div className="absolute top-6 right-6 z-30">
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="relative"
         >
-          <div className="bg-white/70 backdrop-blur-xl rounded-full shadow-2xl border border-white/50 p-2 flex items-center gap-2">
-            <Input
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder={`${selectedPet?.name || '펫'}에게 말해보세요...`}
-              className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-4 text-gray-800 placeholder:text-gray-400"
-            />
-            <Button
-              onClick={handleSend}
-              disabled={!inputValue.trim()}
-              size="icon"
-              className="h-12 w-12 shrink-0 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 shadow-lg disabled:opacity-50 transition-all hover:scale-105"
-            >
-              <Send className="h-5 w-5" />
-            </Button>
-          </div>
-          <p className="text-center text-xs text-gray-500 mt-2">
-            마우스로 강아지를 회전시켜 보세요! 🐕
-          </p>
+          <button
+            onClick={() => setShowPetSelector(!showPetSelector)}
+            className="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-full pl-2 pr-4 py-1.5 border border-white/20 hover:bg-white/20 transition-all group shadow-lg"
+          >
+            <Avatar className="h-8 w-8 border border-white/50">
+              <AvatarImage src={selectedPet?.photo || "/placeholder.svg"} />
+              <AvatarFallback>{selectedPet?.name?.[0]}</AvatarFallback>
+            </Avatar>
+            <span className="text-white font-medium text-sm group-hover:text-white/90">
+              {selectedPet?.name}
+            </span>
+            <ChevronDown className={`h-4 w-4 text-white/70 transition-transform ${showPetSelector ? 'rotate-180' : ''}`} />
+          </button>
+
+          <AnimatePresence>
+            {showPetSelector && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                className="absolute top-full right-0 mt-2 bg-gray-900/90 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl overflow-hidden min-w-[180px]"
+              >
+                {pets.map((pet) => (
+                  <button
+                    key={pet.id}
+                    onClick={() => {
+                      setSelectedPet(pet)
+                      setShowPetSelector(false)
+                    }}
+                    className={`w-full flex items-center gap-3 p-3 hover:bg-white/10 transition-colors ${selectedPet?.id === pet.id ? 'bg-white/5' : ''
+                      }`}
+                  >
+                    <Avatar className="h-8 w-8 border border-white/20">
+                      <AvatarImage src={pet.photo || "/placeholder.svg"} />
+                      <AvatarFallback>{pet.name[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="text-left">
+                      <p className="font-medium text-white text-sm">{pet.name}</p>
+                      <p className="text-[10px] text-white/50">{pet.breed}</p>
+                    </div>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       </div>
+      
+      {/* Mode Switcher / Back Button */}
+      {viewMode !== 'chat' && (
+         <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="absolute top-6 left-6 z-50"
+         >
+            <Button 
+               variant="secondary" 
+               className="bg-white/10 backdrop-blur border border-white/20 text-white hover:bg-white/20 rounded-full gap-2 pl-3 pr-4"
+               onClick={() => setViewMode('chat')}
+            >
+               <ArrowLeft className="w-4 h-4" /> 채팅으로 돌아가기
+            </Button>
+         </motion.div>
+      )}
+
+      {/* Quick Actions (When in Chat Mode) */}
+      <AnimatePresence>
+         {viewMode === 'chat' && (
+            <motion.div 
+               initial={{ opacity: 0, y: 20 }}
+               animate={{ opacity: 1, y: 0 }}
+               exit={{ opacity: 0, y: 20 }}
+               className="absolute top-6 left-6 z-30 flex gap-2"
+            >
+               <Button 
+                  size="sm" 
+                  className="bg-white/10 backdrop-blur text-white border border-white/10 hover:bg-white/20 rounded-full gap-2"
+                  onClick={() => {
+                     // Trigger Map via API call simulation or direct mode switch
+                     // For UI demo, direct switch:
+                     chatbotApi.getNearbyHospitals(37.5665, 126.9780).then(data => setHospitals(data));
+                     setViewMode('map');
+                  }}
+               >
+                  <Map className="w-4 h-4 text-emerald-400" /> 병원 찾기
+               </Button>
+               <Button 
+                  size="sm" 
+                  className="bg-white/10 backdrop-blur text-white border border-white/10 hover:bg-white/20 rounded-full gap-2"
+                  onClick={() => setViewMode('disease')}
+               >
+                  <Stethoscope className="w-4 h-4 text-pink-400" /> 증상 검색
+               </Button>
+            </motion.div>
+         )}
+      </AnimatePresence>
+
+
+      {/* Chat Interface (Overlay) */}
+      <AnimatePresence>
+      {viewMode === 'chat' && (
+        <>
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="absolute left-0 right-0 bottom-24 px-4 z-20 overflow-hidden h-[35vh] mask-linear-fade pointer-events-none"
+          >
+             <div className="max-w-2xl mx-auto flex flex-col justify-end h-full space-y-3 pb-4 px-2">
+                {messages.slice(-5).map((message) => (
+                   <motion.div
+                     key={message.id}
+                     initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                     animate={{ opacity: 1, y: 0, scale: 1 }}
+                     className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} pointer-events-auto`}
+                   >
+                     <div className={`max-w-[85%] px-5 py-3 rounded-2xl backdrop-blur-md text-sm shadow-lg border border-white/5 ${
+                       message.sender === 'user' 
+                         ? 'bg-pink-500/80 text-white rounded-br-sm' 
+                         : 'bg-gray-800/60 text-white rounded-bl-sm'
+                     }`}>
+                       {message.content}
+                     </div>
+                   </motion.div>
+                ))}
+                <div ref={messagesEndRef} />
+             </div>
+          </motion.div>
+
+          {/* Input Area */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="absolute bottom-0 left-0 right-0 z-30 p-6 pb-8"
+          >
+            <div className="max-w-2xl mx-auto">
+              <div className="bg-gray-900/60 backdrop-blur-xl rounded-full shadow-2xl border border-white/10 p-2 flex items-center gap-3 transition-all focus-within:ring-2 focus-within:ring-pink-500/50 focus-within:bg-gray-900/80">
+                <Button 
+                   variant="ghost" 
+                   size="icon" 
+                   className="h-10 w-10 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+                   onClick={handleTTS}
+                >
+                   <span className="text-lg">🎙️</span>
+                </Button>
+                
+                <Input
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="증상을 말하거나 궁금한 점을 물어보세요..."
+                  className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 text-white placeholder:text-white/30 text-base h-10"
+                />
+                
+                <Button
+                  onClick={handleSend}
+                  disabled={!inputValue.trim()}
+                  size="icon"
+                  className="h-10 w-10 shrink-0 rounded-full bg-gradient-to-tr from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all transform hover:scale-105 active:scale-95"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+      </AnimatePresence>
+
+      {/* Modes Overlay */}
+      <AnimatePresence>
+        {viewMode === 'map' && (
+          <MapContainer 
+            onClose={() => setViewMode('chat')} 
+            hospitals={hospitals}
+          />
+        )}
+        {viewMode === 'disease' && (
+          <DiseaseSearch 
+            onClose={() => setViewMode('chat')} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
