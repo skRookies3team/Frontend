@@ -306,10 +306,6 @@ export default function UserDiaryPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <Badge className="absolute right-1 top-1 text-[10px]">{photo.category}</Badge>
-                                <span className="absolute bottom-1 left-1 text-[10px] font-semibold text-white drop-shadow-md">
-                                    {photo.date}
-                                </span>
                             </div>
                         ))}
                     </div>
