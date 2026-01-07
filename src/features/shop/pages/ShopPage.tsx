@@ -172,7 +172,7 @@ export default function ShopPage() {
                     alt={SHOP_BANNERS[currentBanner].title}
                     className="w-full h-full object-cover"
                   />
-                  <div className={`absolute inset-0 bg-gradient-to-r ${SHOP_BANNERS[currentBanner].gradient}`} />
+                  {/* Gradient overlay removed as per user request */}
                 </div>
                 <div className="relative container mx-auto max-w-6xl h-full flex items-center px-4">
                   <div className="text-white max-w-2xl">
