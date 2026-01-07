@@ -20,7 +20,6 @@ import {
   ChevronRight,
   Heart,
   ArrowUpRight,
-  Link as LinkIcon,
   Award,
   Cat,
 } from "lucide-react"
@@ -126,8 +125,7 @@ const healthData = {
 
 
 export default function DashboardPage() {
-  const { user, connectWithapet } = useAuth()
-  const [showConnectModal, setShowConnectModal] = useState(false)
+  const { user } = useAuth()
   const [missingPets, setMissingPets] = useState(initialMissingPets)
   const [currentPage, setCurrentPage] = useState(0)
   const [isMissingPetsExpanded, setIsMissingPetsExpanded] = useState(true)
@@ -229,10 +227,7 @@ export default function DashboardPage() {
 
   const hasPets = myPets && myPets.length > 0
 
-  const handleConnectWithapet = () => {
-    connectWithapet()
-    setShowConnectModal(false)
-  }
+
 
   const toggleTodo = (id: string) => {
     setTodos(todos.map((todo) => (todo.id === id ? { ...todo, completed: !todo.completed } : todo)))
@@ -460,93 +455,76 @@ export default function DashboardPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {!user.withapetConnected ? (
-                    <div className="text-center py-6">
-                      <div className="mx-auto w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mb-4">
-                        <LinkIcon className="h-8 w-8 text-purple-600" />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-lg border border-border bg-white p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Heart className="h-4 w-4 text-rose-600" />
+                          <span className="text-sm font-medium">분당 심박수</span>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          {healthData.heartRate.status === "normal" ? "정상 ✅" : "주의 ⚠️"}
+                        </Badge>
                       </div>
-                      <h3 className="font-semibold text-foreground mb-2">withapet 연동하기</h3>
-                      <p className="text-sm text-muted-foreground mb-4">건강 데이터를 실시간으로 모니터링하세요</p>
-                      <Button
-                        onClick={() => setShowConnectModal(true)}
-                        className="w-full bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600"
-                      >
-                        지금 연동하기
-                      </Button>
-                      <p className="text-xs text-purple-600 mt-2">+ 100 펫코인 보너스</p>
-                    </div>
-                  ) : (
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="rounded-lg border border-border bg-white p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <Heart className="h-4 w-4 text-rose-600" />
-                            <span className="text-sm font-medium">분당 심박수</span>
-                          </div>
-                          <Badge variant="secondary" className="text-xs">
-                            {healthData.heartRate.status === "normal" ? "정상 ✅" : "주의 ⚠️"}
-                          </Badge>
-                        </div>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-2xl font-bold">{healthData.heartRate.current}</span>
-                          <span className="text-sm text-muted-foreground">bpm</span>
-                          <ArrowUpRight className="h-4 w-4 text-rose-500 ml-auto" />
-                          <span className="text-xs text-rose-500">+{healthData.heartRate.change}%</span>
-                        </div>
-                      </div>
-
-                      <div className="rounded-lg border border-border bg-white p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <Wind className="h-4 w-4 text-cyan-600" />
-                            <span className="text-sm font-medium">호흡수</span>
-                          </div>
-                          <Badge variant="secondary" className="text-xs">
-                            정상 ✅
-                          </Badge>
-                        </div>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-2xl font-bold">{healthData.respiratoryRate.current}</span>
-                          <span className="text-sm text-muted-foreground">rpm</span>
-                        </div>
-                      </div>
-
-                      <div className="rounded-lg border border-purple-200 bg-purple-50 p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <BrainCircuit className="h-4 w-4 text-purple-600" />
-                            <span className="text-sm font-medium">AI 진단</span>
-                          </div>
-                          <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
-                            건강 ✅
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-lg font-bold text-foreground">건강한 상태</span>
-                          <span className="text-sm text-muted-foreground">{healthData.aiDiagnosis.confidence}%</span>
-                        </div>
-                      </div>
-
-                      <div className="rounded-lg border border-border bg-white p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <Scale className="h-4 w-4 text-green-600" />
-                            <span className="text-sm font-medium">몸무게</span>
-                          </div>
-                          <Badge variant="secondary" className="text-xs">
-                            정상 ✅
-                          </Badge>
-                        </div>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-2xl font-bold">{healthData.weight.current}</span>
-                          <span className="text-sm text-muted-foreground">kg</span>
-                        </div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-bold">{healthData.heartRate.current}</span>
+                        <span className="text-sm text-muted-foreground">bpm</span>
+                        <ArrowUpRight className="h-4 w-4 text-rose-500 ml-auto" />
+                        <span className="text-xs text-rose-500">+{healthData.heartRate.change}%</span>
                       </div>
                     </div>
-                  )}
+
+                    <div className="rounded-lg border border-border bg-white p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Wind className="h-4 w-4 text-cyan-600" />
+                          <span className="text-sm font-medium">호흡수</span>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          정상 ✅
+                        </Badge>
+                      </div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-bold">{healthData.respiratoryRate.current}</span>
+                        <span className="text-sm text-muted-foreground">rpm</span>
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border border-purple-200 bg-purple-50 p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <BrainCircuit className="h-4 w-4 text-purple-600" />
+                          <span className="text-sm font-medium">AI 진단</span>
+                        </div>
+                        <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                          건강 ✅
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-lg font-bold text-foreground">건강한 상태</span>
+                        <span className="text-sm text-muted-foreground">{healthData.aiDiagnosis.confidence}%</span>
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border border-border bg-white p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Scale className="h-4 w-4 text-green-600" />
+                          <span className="text-sm font-medium">몸무게</span>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          정상 ✅
+                        </Badge>
+                      </div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-bold">{healthData.weight.current}</span>
+                        <span className="text-sm text-muted-foreground">kg</span>
+                      </div>
+                    </div>
+                  </div>
 
                   <Link to="/healthcare">
-                    <Button variant="outline" className="w-full text-sm bg-transparent" size="sm">
+                    <Button variant="outline" className="w-full text-sm bg-transparent mt-2" size="sm">
                       상세 보기
                       <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
@@ -671,64 +649,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {showConnectModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <Card className="max-w-md w-full bg-white">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <LinkIcon className="h-5 w-5 text-purple-600" />
-                withapet 연동하기
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-sm font-bold text-purple-600">1</span>
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-sm">withapet 앱 설치</h4>
-                    <p className="text-xs text-muted-foreground">앱 스토어에서 다운로드</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-sm font-bold text-purple-600">2</span>
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-sm">웨어러블 기기 페어링</h4>
-                    <p className="text-xs text-muted-foreground">기기와 블루투스 연결</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-sm font-bold text-purple-600">3</span>
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-sm">PetConnect 연동 승인</h4>
-                    <p className="text-xs text-muted-foreground">데이터 공유 권한 허용</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-purple-50 rounded-lg p-4 text-center">
-                <p className="text-sm font-medium text-purple-900">보너스 펫코인</p>
-                <p className="text-2xl font-bold text-purple-600">+100</p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1 bg-transparent" onClick={() => setShowConnectModal(false)}>
-                  나중에
-                </Button>
-                <Button
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-purple-500"
-                  onClick={handleConnectWithapet}
-                >
-                  연동 완료
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+
     </div>
   )
 }

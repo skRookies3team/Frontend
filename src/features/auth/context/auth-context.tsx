@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { setTokenGetter, setTokenRemover, setUserIdGetter } from "@/shared/api/http-client"; // [수정] setUserIdGetter 추가
-import { loginApi, signupApi, getUserCoinApi } from "@/features/auth/api/auth-api";
+import { loginApi, signupApi, getUserCoinApi, getUserApi } from "@/features/auth/api/auth-api";
 import { createPetApi } from "@/features/healthcare/api/pet-api";
 
 interface User {
@@ -167,29 +167,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // 로그인
   const login = async (email: string, password: string) => {
     try {
-      // 백엔드 API 호출
-      const response = await loginApi(email, password);
+      // 1. 로그인 API 호출 to obtain token and basic info
+      const loginResponse = await loginApi(email, password);
 
-      // 토큰 저장 (메모리)
-      setToken(response.token);
+      // 2. 토큰 저장
+      setToken(loginResponse.token);
 
-      // 코인 정보 가져오기
-      const coinDto = await getUserCoinApi(response.userId);
+      // 3. 사용자 상세 정보 조회 (getUserApi)
+      const userDto = await getUserApi(loginResponse.userId);
 
-      // 사용자 정보 저장
+      // 4. User 객체로 매핑
       const userData: User = {
-        ...mockUser,
-        id: response.userId.toString(),
-        name: response.username,
-        username: response.social,
-        email: response.email,
-        avatar: response.profileImage || "/placeholder-user.jpg",
-        petCoin: coinDto.petCoin, // 실시간 코인 정보 반영
-        profileCompleted: true
+        id: loginResponse.userId.toString(),
+        name: userDto.username,       // 닉네임
+        username: userDto.social,     // 소셜 ID
+        email: loginResponse.email,   // 이메일 (LoginResponse에서 가져옴)
+        avatar: userDto.profileImage || "/placeholder-user.jpg",
+        bio: userDto.statusMessage,
+        birthday: userDto.birth,
+        gender: userDto.genderType,
+        petCoin: userDto.petCoin,
+        withapetConnected: false, // API에 없음, 기본값
+        profileCompleted: true,
+        pets: userDto.pets.map(pet => ({
+          id: pet.petId.toString(),
+          name: pet.petName,
+          species: pet.species === "DOG" ? "강아지" : pet.species === "CAT" ? "고양이" : "기타", // 간단한 매핑
+          breed: pet.breed,
+          age: pet.age,
+          photo: pet.profileImage || "/placeholder-pet.jpg",
+          gender: pet.genderType === "MALE" ? "수컷" : pet.genderType === "FEMALE" ? "암컷" : "알 수 없음",
+          neutered: pet.is_neutered,
+          birthday: pet.birth,
+          healthStatus: {
+            lastCheckup: "",
+            vaccination: pet.vaccinated ? "접종 완료" : "접종 미완료",
+            weight: ""
+          },
+          stats: {
+            walks: 0,
+            friends: 0,
+            photos: 0
+          }
+        }))
       };
 
       setUser(userData);
-      // 로컬 스토리지에도 저장 (새로고침 시 유지용)
+      // 로컬 스토리지 데이터 갱신
       localStorage.setItem("petlog_user", JSON.stringify(userData));
 
       navigate("/dashboard");
