@@ -70,6 +70,7 @@ const AiDiaryPage = () => {
   const [themeStyle, setThemeStyle] = useState("basic");
   const [preset, setPreset] = useState<string | null>(null);
   const [backgroundColor, setBackgroundColor] = useState("#ffffff");
+  const [fontFamily, setFontFamily] = useState("Noto Sans KR"); // [NEW]
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -276,6 +277,7 @@ const AiDiaryPage = () => {
             handleShareToFeed={handleShareToFeed} isSubmitting={isSubmitting}
             onBack={() => setStep('edit')}
             title={title} // [NEW] Pass Title
+            fontFamily={fontFamily} setFontFamily={setFontFamily} // [NEW]
           />
         )}
         {step === 'complete' && <CompleteStep onHome={handleReset} earnedAmount={earnedReward} onShare={handleSocialShare} />}

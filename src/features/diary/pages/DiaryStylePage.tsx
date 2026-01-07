@@ -285,7 +285,6 @@ const DiaryStylePage = () => {
                         sizeOption={sizeOption} setSizeOption={setSizeOption}
                         themeStyle={themeStyle} setThemeStyle={setThemeStyle}
                         preset={preset} setPreset={setPreset}
-                        preset={preset} setPreset={setPreset}
                         handleShareToFeed={handleShareToFeed} isSubmitting={isSubmitting}
                         onBack={handleBack}
                         title={title}

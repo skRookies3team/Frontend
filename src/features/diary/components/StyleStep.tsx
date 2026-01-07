@@ -76,6 +76,7 @@ const StyleStep = ({
         if (preset === 'memphis_pop') return 'Dongle';
         if (preset === 'dreamy_pastel') return 'Hi Melody';
         if (preset === 'ocean_breeze') return 'Gaegu';
+        if (preset === 'retro_notebook') return 'Gaegu'; // [NEW]
 
         switch (theme) {
             case 'kawaii': return 'Jua';
@@ -161,6 +162,11 @@ const StyleStep = ({
                 setBackgroundColor('#f0f8ff');
                 setThemeStyle('fresh');
                 setLayoutStyle('masonry');
+                break;
+            case 'retro_notebook': // [NEW] 레트로 노트
+                setBackgroundColor('#fdfbf7');
+                setThemeStyle('retro_notebook_theme'); // Special internal theme name
+                setLayoutStyle('grid');
                 break;
         }
     }, [preset, setBackgroundColor, setThemeStyle, setLayoutStyle, setFontFamily, themeStyle]); // Added themeStyle dependency
@@ -277,83 +283,124 @@ const StyleStep = ({
             {/* Left Panel: Preview */}
             <div className={getPreviewContainerStyle()} style={getBackgroundStyle()}>
 
-                {/* Vintage Texture Overlay */}
+                {/* Notebook Spine & Special Layout for Retro Notebook Theme */}
+                {(themeStyle === 'retro_notebook_theme' || preset === 'retro_notebook') && (
+                    <>
+                        {/* Grid Background Overlay */}
+                        <div
+                            className="absolute inset-0 pointer-events-none opacity-20 z-0"
+                            style={{
+                                backgroundImage: 'linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px)',
+                                backgroundSize: '24px 24px'
+                            }}
+                        />
+
+                        {/* Spine Binding */}
+                        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-200 via-gray-100 to-white border-r border-gray-200 z-20 flex flex-col items-center justify-evenly py-6">
+                            {[1, 2, 3, 4, 5, 6].map(n => (
+                                <div key={n} className="w-3 h-3 rounded-full bg-gray-700/10 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]"></div>
+                            ))}
+                        </div>
+
+                        {/* Top Header "PET RECORD" */}
+                        <div className="absolute top-8 left-16 right-8 border-b-2 border-dashed border-gray-300 pb-2 z-10 hidden md:block">
+                            <div className="flex justify-between items-end">
+                                <h1 className="text-2xl font-bold text-blue-900 tracking-wider font-sans">PET RECORD</h1>
+                                <div className="flex gap-4 font-['Jua'] text-gray-500 text-sm">
+                                    <span>DATE: {selectedDate}</span>
+                                    <span>WEATHER: {weather}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                )}
+
+                {/* Vintage Texture Overlay (Standard Vintage) */}
                 {(themeStyle === 'vintage' || preset === 'vintage_scrapbook') && (
                     <div className="absolute inset-0 pointer-events-none opacity-10 bg-repeat z-0 mix-blend-multiply"
                         style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/paper.png")' }}>
                     </div>
                 )}
 
-                <div className={`p-8 relative z-10 ${textAlign === 'center' ? 'text-center' : textAlign === 'right' ? 'text-right' : 'text-left'}`}>
+                <div className={`
+                    p-8 relative z-10 h-full
+                    ${(themeStyle === 'retro_notebook_theme' || preset === 'retro_notebook') ? 'pl-16 pt-24' : ''} 
+                    ${textAlign === 'center' ? 'text-center' : textAlign === 'right' ? 'text-right' : 'text-left'}
+                `}>
 
                     {/* [NEW] Title Display (Moved to Top) */}
-                    <h2 className={`text-2xl font-bold mb-4
-                        ${themeStyle === 'vintage' ? 'font-serif text-amber-900 border-b-2 border-amber-900/10 pb-2' : 'text-gray-800'}
-                        ${themeStyle === 'romantic' ? 'font-serif text-pink-600' : ''}
-                        ${themeStyle === 'modern' ? 'tracking-tight' : ''}
-                    `} style={{ fontFamily: fontFamily }}>
-                        {title}
-                    </h2>
+                    {!(themeStyle === 'retro_notebook_theme' || preset === 'retro_notebook') && (
+                        <h2 className={`text-2xl font-bold mb-4
+                            ${themeStyle === 'vintage' ? 'font-serif text-amber-900 border-b-2 border-amber-900/10 pb-2' : 'text-gray-800'}
+                            ${themeStyle === 'romantic' ? 'font-serif text-pink-600' : ''}
+                            ${themeStyle === 'modern' ? 'tracking-tight' : ''}
+                        `} style={{ fontFamily: fontFamily }}>
+                            {title}
+                        </h2>
+                    )}
 
-                    {/* Header Info */}
-                    <div className={`flex flex-wrap items-center justify-between gap-4 mb-8 pb-4 
-                        ${themeStyle === 'vintage' ? 'border-b-2 border-dashed border-gray-400/50' : 'border-b border-gray-100'}`}
-                    >
-                        <div className="flex items-center gap-2">
-                            {themeStyle === 'vintage' ? (
-                                <div className="bg-[#fcf8e3] px-4 py-2 rounded shadow-sm text-amber-900 font-bold font-serif border border-amber-200/50 flex items-center gap-2 transform -rotate-1">
-                                    <Calendar className="w-4 h-4 text-amber-700" />
-                                    <span>{new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()}</span>
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-2 text-gray-500 text-sm font-medium bg-gray-50/50 px-3 py-1 rounded-full">
-                                    <Calendar className="w-4 h-4 text-pink-400" />
-                                    {new Date(selectedDate).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
-                                </div>
-                            )}
-                        </div>
+                    {/* Header Info (Standard Layouts) */}
+                    {!(themeStyle === 'retro_notebook_theme' || preset === 'retro_notebook') && (
+                        <div className={`flex flex-wrap items-center justify-between gap-4 mb-8 pb-4 
+                            ${themeStyle === 'vintage' ? 'border-b-2 border-dashed border-gray-400/50' : 'border-b border-gray-100'}`}
+                        >
+                            <div className="flex items-center gap-2">
+                                {themeStyle === 'vintage' ? (
+                                    <div className="bg-[#fcf8e3] px-4 py-2 rounded shadow-sm text-amber-900 font-bold font-serif border border-amber-200/50 flex items-center gap-2 transform -rotate-1">
+                                        <Calendar className="w-4 h-4 text-amber-700" />
+                                        <span>{new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()}</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2 text-gray-500 text-sm font-medium bg-gray-50/50 px-3 py-1 rounded-full">
+                                        <Calendar className="w-4 h-4 text-pink-400" />
+                                        {new Date(selectedDate).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
+                                    </div>
+                                )}
+                            </div>
 
-                        <div className="flex flex-wrap gap-2">
-                            {locationName && (
-                                <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium shadow-sm
-                                    ${themeStyle === 'vintage'
-                                        ? 'bg-orange-50 text-orange-800 border border-orange-200 font-serif rotate-1'
-                                        : 'bg-green-50 text-green-600'}
-                                `}>
-                                    <MapPin className="w-3 h-3" />
-                                    <span>{locationName}</span>
-                                </div>
-                            )}
-                            {weather && (
-                                <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium shadow-sm
-                                     ${themeStyle === 'vintage'
-                                        ? 'bg-blue-50 text-blue-800 border border-blue-200 font-serif'
-                                        : 'bg-blue-50 text-blue-600'}
-                                `}>
-                                    <Sun className="w-3 h-3" />
-                                    <span>{weather}</span>
-                                </div>
-                            )}
-                            {mood && (
-                                <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium shadow-sm
-                                     ${themeStyle === 'vintage'
-                                        ? 'bg-yellow-50 text-yellow-800 border border-yellow-200 font-serif -rotate-1'
-                                        : 'bg-yellow-50 text-yellow-600'}
-                                `}>
-                                    <Smile className="w-3 h-3" />
-                                    <span>{mood}</span>
-                                </div>
-                            )}
+                            <div className="flex flex-wrap gap-2">
+                                {locationName && (
+                                    <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium shadow-sm
+                                        ${themeStyle === 'vintage'
+                                            ? 'bg-orange-50 text-orange-800 border border-orange-200 font-serif rotate-1'
+                                            : 'bg-green-50 text-green-600'}
+                                    `}>
+                                        <MapPin className="w-3 h-3" />
+                                        <span>{locationName}</span>
+                                    </div>
+                                )}
+                                {weather && (
+                                    <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium shadow-sm
+                                         ${themeStyle === 'vintage'
+                                            ? 'bg-blue-50 text-blue-800 border border-blue-200 font-serif'
+                                            : 'bg-blue-50 text-blue-600'}
+                                    `}>
+                                        <Sun className="w-3 h-3" />
+                                        <span>{weather}</span>
+                                    </div>
+                                )}
+                                {mood && (
+                                    <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium shadow-sm
+                                         ${themeStyle === 'vintage'
+                                            ? 'bg-yellow-50 text-yellow-800 border border-yellow-200 font-serif -rotate-1'
+                                            : 'bg-yellow-50 text-yellow-600'}
+                                    `}>
+                                        <Smile className="w-3 h-3" />
+                                        <span>{mood}</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Map */}
                     {locationCoords && (
                         <div className={`mb-8 p-1 bg-white shadow-md rounded-lg overflow-hidden
                             ${themeStyle === 'vintage' ? 'rotate-1 border-4 border-white' : ''}
+                            ${(themeStyle === 'retro_notebook_theme' || preset === 'retro_notebook') ? 'rotate-1 border-4 border-white shadow-sm max-w-[200px] float-right ml-4 mb-4' : ''}
                         `}>
                             <div className="relative">
-                                {(themeStyle === 'vintage') && <TapeDecoration />}
+                                {(themeStyle === 'vintage' || themeStyle === 'retro_notebook_theme') && <TapeDecoration />}
                                 <KakaoMap lat={locationCoords.lat} lng={locationCoords.lng} />
                             </div>
                         </div>
@@ -388,26 +435,42 @@ const StyleStep = ({
                                 ${themeStyle === 'vintage'
                                     ? 'bg-white p-3 shadow-lg rotate-1 even:-rotate-2 border border-gray-100/50'
                                     : 'rounded-2xl overflow-hidden shadow-md border border-gray-100'}
+                                ${(themeStyle === 'retro_notebook_theme' || preset === 'retro_notebook')
+                                    ? 'bg-white p-3 shadow-md rotate-[1deg] even:-rotate-[1deg] border border-gray-200'
+                                    : ''}
                             `}>
-                                {(themeStyle === 'vintage' || preset === 'cozy_morning' || preset === 'vintage_scrapbook') && (idx % 2 === 0 || idx === 0) && <TapeDecoration />}
+                                {(themeStyle === 'vintage' || preset === 'cozy_morning' || preset === 'vintage_scrapbook' || themeStyle === 'retro_notebook_theme') && (idx % 2 === 0 || idx === 0) && <TapeDecoration />}
 
-                                <img src={img.imageUrl} alt="diary" className={`w-full h-full shadow-inner transition-all duration-300
-                                    ${layoutStyle === 'collage' ? 'object-cover w-full h-auto' : 'object-cover'}
-                                    ${themeStyle === 'vintage' ? '' : 'rounded-lg'}
-                                `} />
+                                <div className="w-full h-full relative overflow-hidden bg-gray-100
+                                     ${(themeStyle === 'retro_notebook_theme' || preset === 'retro_notebook') ? '' : 'rounded-lg'}
+                                ">
+                                    <img src={img.imageUrl} alt="diary" className={`w-full h-full shadow-inner transition-all duration-300
+                                       ${layoutStyle === 'collage' ? 'object-cover w-full h-auto' : 'object-cover'}
+                                   `} />
+                                </div>
                             </div>
                         ))}
                     </div>
-
-
 
                     {/* Text Content */}
                     <div className={`whitespace-pre-wrap leading-loose p-4 rounded-xl
                         ${themeStyle === 'vintage' || themeStyle === 'romantic'
                             ? 'font-serif text-gray-800'
                             : 'text-gray-700 font-medium'}
+                         ${(themeStyle === 'retro_notebook_theme' || preset === 'retro_notebook')
+                            ? 'font-["Gaegu"] text-xl text-gray-800 bg-transparent'
+                            : ''}
                     `} style={{ fontSize: `${fontSize}px`, fontFamily: fontFamily }}>
-                        {editedDiary}
+
+                        {/* Retro Notebook Title embedded in text area if desired, or handled above */}
+                        {(themeStyle === 'retro_notebook_theme' || preset === 'retro_notebook') && (
+                            <h3 className="font-['Jua'] text-2xl text-amber-900 mb-4 border-b-2 border-yellow-200 inline-block px-2">
+                                {title}
+                            </h3>
+                        )}
+                        <div className="block mt-2">
+                            {editedDiary}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -506,6 +569,9 @@ const StyleStep = ({
                                             <option value="botanical_calm">🪴 보타니컬 카페</option>
                                             <option value="ocean_breeze">🌊 오션 브리즈</option>
                                             <option value="city_night">🌃 도시의 밤</option>
+                                        </optgroup>
+                                        <optgroup label="📚 스페셜">
+                                            <option value="retro_notebook">📖 펫 로그 북 (인기!)</option>
                                         </optgroup>
                                     </select>
                                 </section>
