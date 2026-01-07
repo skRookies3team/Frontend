@@ -31,13 +31,13 @@ export interface DiaryImageDTO {
     metadata?: Record<string, any>; // EXIF 데이터 등 비정형 메타데이터
 }
 
-// [추가] 일기 생성 응답 DTO
+// 일기 생성 응답 DTO
 export interface CreateDiaryResponse {
     diaryId: number;
     message: string;
 }
 
-// [추가] 다이어리 스타일 요청 DTO
+// 다이어리 스타일 요청 DTO
 export interface DiaryStyleRequest {
     galleryType: string;   // grid, masonry, slider, classic
     textAlignment: string; // left, center, right
@@ -48,6 +48,7 @@ export interface DiaryStyleRequest {
     themeStyle: string;    // basic, romantic, modern
     petId: number | null;
     diaryId: number;       // [NEW] 다이어리 ID (개별 다이어리 스타일 적용)
+    fontFamily?: string;   // [NEW] 폰트 스타일
 }
 
 // [추가] 일기 생성 요청 DTO (프론트엔드에서 백엔드로 보낼 때 사용)
@@ -105,6 +106,7 @@ export interface DiaryResponse {
     longitude?: number;
     locationName?: string;
     updatedAt?: string;
+    style?: DiaryStyleRequest; // [NEW] 스타일 정보 포함
 }
 
 // 백엔드 이미지 객체 구조

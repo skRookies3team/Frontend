@@ -141,6 +141,17 @@ export const getPetStyleApi = async (userId: number, petId: number) => {
         return null;
     }
 };
+
+// [NEW] 다이어리별 스타일 조회
+export const getDiaryStyleApi = async (diaryId: number) => {
+    try {
+        const response = await httpClient.get<any>(`/v1/diary/styles/diary/${diaryId}`);
+        return response;
+    } catch (error) {
+        console.warn("[Service] 다이어리 스타일 조회 실패:", error);
+        return null; // Return null if not found
+    }
+};
 // [NEW] 위치 이력 조회
 export const getLocationHistory = async (userId: number, date: string) => {
     try {
