@@ -31,13 +31,13 @@ export interface DiaryImageDTO {
     metadata?: Record<string, any>; // EXIF 데이터 등 비정형 메타데이터
 }
 
-// [추가] 일기 생성 응답 DTO
+// 일기 생성 응답 DTO
 export interface CreateDiaryResponse {
     diaryId: number;
     message: string;
 }
 
-// [추가] 다이어리 스타일 요청 DTO
+// 다이어리 스타일 요청 DTO
 export interface DiaryStyleRequest {
     galleryType: string;   // grid, masonry, slider, classic
     textAlignment: string; // left, center, right
