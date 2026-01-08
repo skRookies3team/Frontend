@@ -176,7 +176,7 @@ const DiaryStylePage = () => {
                         backgroundColor: backgroundColor,
                         preset: preset,
                         themeStyle: themeStyle,
-                        petId: selectedPetId,
+                        petId: selectedPetId || 0, // [FIX] Prevent 500 error by defaulting to 0 if null
                         fontFamily: fontFamily // [NEW] Save Font
                     });
                     console.log("=== [Frontend] Style Saved ===");
