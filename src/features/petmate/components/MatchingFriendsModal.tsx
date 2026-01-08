@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, Heart, MapPin, Clock, MessageCircle, UserMinus, Send, Users } from 'lucide-react';
+import { X, MessageCircle, Users } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { PendingRequest, MatchResult } from '../api/petmate-api';
 import { useNavigate } from 'react-router-dom';
@@ -28,7 +28,6 @@ export function MatchingFriendsModal({
     sentRequests,
     onAccept,
     onReject,
-    onUnfriend,
     onCancelRequest,
     onMatchSuccess
 }: MatchingFriendsModalProps) {
@@ -46,36 +45,26 @@ export function MatchingFriendsModal({
         await onReject(matchId);
     };
 
-    const handleUnfriend = async (matchedUserId: number) => {
-        if (confirm('정말 친구를 끊으시겠습니까?')) {
-            await onUnfriend(matchedUserId);
-        }
-    };
-
     const handleMessage = (userId: number) => {
         onClose();
         navigate(`/messages?userId=${userId}`);
     };
 
-    // 시간 포맷팅
-    const formatTime = (dateString: string) => {
+    const formatTime = (dateString?: string) => {
+        if (!dateString) return '';
         const date = new Date(dateString);
         const now = new Date();
         const diffMs = now.getTime() - date.getTime();
         const diffMinutes = Math.floor(diffMs / (1000 * 60));
-        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
         if (diffMinutes < 1) return '방금 전';
         if (diffMinutes < 60) return `${diffMinutes}분 전`;
-        if (diffHours < 24) return `${diffHours}시간 전`;
-        return `${diffDays}일 전`;
+        return `${Math.floor(diffMinutes / 60)}시간 전`;
     };
 
     const tabs = [
-        { id: 'matched' as TabType, label: '매칭된 친구', count: matches.length, icon: Users },
-        { id: 'received' as TabType, label: '받은 요청', count: pendingRequests.length, icon: Heart },
-        { id: 'sent' as TabType, label: '보낸 요청', count: sentRequests.length, icon: Send },
+        { id: 'matched' as TabType, label: '매칭된 친구', count: matches.length },
+        { id: 'received' as TabType, label: '받은 요청', count: pendingRequests.length },
+        { id: 'sent' as TabType, label: '보낸 요청', count: sentRequests.length },
     ];
 
     return (
@@ -85,248 +74,192 @@ export function MatchingFriendsModal({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[2px] p-4"
                     onClick={onClose}
                 >
                     <motion.div
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.9, opacity: 0 }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                        className="bg-white rounded-3xl shadow-2xl max-w-lg w-full h-[500px] flex flex-col overflow-hidden"
+                        initial={{ scale: 0.95, opacity: 0, y: 10 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.95, opacity: 0, y: 10 }}
+                        transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+                        className="bg-[#FFFCF5] rounded-[24px] shadow-2xl max-w-lg w-full h-[600px] flex flex-col font-sans overflow-hidden border border-[#EBE5D5]"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* 헤더 */}
-                        <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-full bg-gradient-to-r from-pink-500 to-rose-500">
-                                    <Users className="h-5 w-5 text-white" />
-                                </div>
-                                <h2 className="text-xl font-bold text-gray-900">매칭친구</h2>
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-6 py-5 bg-white border-b border-[#F0E6D2]">
+                            <div className="flex items-center gap-2">
+                                <span className="text-2xl">🧩</span>
+                                <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: '"Jua", sans-serif' }}>매칭 친구들</h2>
                             </div>
                             <button
                                 onClick={onClose}
-                                className="h-10 w-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                                className="h-8 w-8 rounded-full bg-white border border-gray-200 hover:bg-gray-50 flex items-center justify-center transition-colors text-gray-400"
                             >
-                                <X className="h-5 w-5 text-gray-600" />
+                                <X className="h-4 w-4" />
                             </button>
                         </div>
 
-                        {/* 탭 */}
-                        <div className="flex border-b border-gray-100">
+                        {/* Tabs */}
+                        <div className="flex px-4 pt-4 bg-[#FFFCF5]">
                             {tabs.map((tab) => (
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`flex-1 py-3 px-4 text-sm font-medium transition-colors relative ${activeTab === tab.id
-                                        ? 'text-pink-600'
-                                        : 'text-gray-500 hover:text-gray-700'
+                                    className={`flex-1 pb-3 text-sm font-bold transition-all relative ${activeTab === tab.id
+                                        ? 'text-rose-400'
+                                        : 'text-gray-400 hover:text-gray-600'
                                         }`}
+                                    style={{ fontFamily: '"Jua", sans-serif' }}
                                 >
-                                    <div className="flex items-center justify-center gap-1">
-                                        <tab.icon className="h-4 w-4" />
+                                    <div className="flex items-center justify-center gap-1.5">
                                         <span>{tab.label}</span>
                                         {tab.count > 0 && (
-                                            <span className={`ml-1 px-1.5 py-0.5 text-xs rounded-full ${activeTab === tab.id
-                                                ? 'bg-pink-100 text-pink-600'
-                                                : 'bg-gray-100 text-gray-500'
+                                            <span className={`px-1.5 min-w-[18px] h-[18px] text-[10px] rounded-full flex items-center justify-center ${activeTab === tab.id
+                                                ? 'bg-rose-400 text-white'
+                                                : 'bg-gray-200 text-gray-500'
                                                 }`}>
                                                 {tab.count}
                                             </span>
                                         )}
                                     </div>
                                     {activeTab === tab.id && (
-                                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-pink-500" />
+                                        <motion.div
+                                            layoutId="activeTabIndicator"
+                                            className="absolute bottom-0 left-0 right-0 h-[3px] bg-rose-400 rounded-t-full mx-2"
+                                        />
                                     )}
                                 </button>
                             ))}
                         </div>
 
-                        {/* 컨텐츠 */}
-                        <div className="flex-1 overflow-y-auto">
-                            {/* 매칭된 친구 탭 */}
+                        {/* Content Area */}
+                        <div className="flex-1 overflow-y-auto bg-[#FFFCF5] p-4 scrollbar-hide">
+
+                            {/* MATCHED FRIENDS TAB */}
                             {activeTab === 'matched' && (
-                                <div className="p-4">
+                                <div className="space-y-3">
                                     {matches.length === 0 ? (
-                                        <div className="p-8 text-center">
-                                            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-pink-50 flex items-center justify-center">
-                                                <Users className="h-8 w-8 text-pink-300" />
-                                            </div>
-                                            <p className="text-gray-500">아직 매칭된 친구가 없어요</p>
-                                        </div>
+                                        <EmptyState message="아직 매칭된 친구가 없어요!" subMessage="마음을 보내보세요 💕" />
                                     ) : (
-                                        <div className="space-y-3">
-                                            {matches.map((match) => (
-                                                <div
-                                                    key={match.matchId}
-                                                    className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-4 border border-green-100"
-                                                >
-                                                    <div className="flex items-center gap-4">
+                                        matches.map((match) => (
+                                            <div key={match.matchId} className="bg-white rounded-2xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100/50 flex flex-col gap-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="relative">
                                                         <img
                                                             src={match.petPhoto || '/placeholder.svg'}
                                                             alt={match.petName || ''}
-                                                            className="h-16 w-16 rounded-2xl object-cover ring-2 ring-green-200"
+                                                            className="h-12 w-12 rounded-xl object-cover bg-gray-50"
                                                         />
-                                                        <div className="flex-1 min-w-0">
-                                                            <h3 className="font-bold text-gray-900 truncate">{match.petName}</h3>
-                                                            <p className="text-sm text-gray-500">{match.matchedUserName}</p>
-                                                            {match.matchedAt && (
-                                                                <p className="text-xs text-gray-400 mt-1">
-                                                                    {formatTime(match.matchedAt)}에 매칭됨
-                                                                </p>
-                                                            )}
-                                                        </div>
+                                                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-400 rounded-full border-2 border-white"></div>
                                                     </div>
-                                                    <div className="flex gap-2 mt-3">
-                                                        <Button
-                                                            onClick={() => handleMessage(match.matchedUserId)}
-                                                            className="flex-1 h-10 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white text-sm"
-                                                        >
-                                                            <MessageCircle className="mr-1 h-4 w-4" />
-                                                            메시지
-                                                        </Button>
-                                                        <Button
-                                                            onClick={() => handleUnfriend(match.matchedUserId)}
-                                                            variant="outline"
-                                                            className="h-10 rounded-xl border-2 border-red-200 text-red-500 hover:bg-red-50 text-sm"
-                                                        >
-                                                            <UserMinus className="h-4 w-4" />
-                                                        </Button>
+                                                    <div className="flex-1">
+                                                        <h3 className="font-bold text-gray-800 text-base" style={{ fontFamily: '"Jua", sans-serif' }}>{match.petName}</h3>
+                                                        <p className="text-xs text-gray-400">{match.matchedUserName} • {formatTime(match.matchedAt)}</p>
                                                     </div>
                                                 </div>
-                                            ))}
-                                        </div>
+                                                <Button
+                                                    onClick={() => handleMessage(match.matchedUserId)}
+                                                    className="w-full h-11 rounded-xl bg-emerald-400 hover:bg-emerald-500 text-white text-sm font-bold shadow-sm transition-all"
+                                                >
+                                                    <MessageCircle className="mr-1.5 h-4 w-4" />
+                                                    대화하기
+                                                </Button>
+                                            </div>
+                                        ))
                                     )}
                                 </div>
                             )}
 
-                            {/* 받은 요청 탭 */}
+                            {/* RECEIVED REQUESTS TAB */}
                             {activeTab === 'received' && (
-                                <div className="p-4">
+                                <div className="space-y-3">
                                     {pendingRequests.length === 0 ? (
-                                        <div className="p-8 text-center">
-                                            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-pink-50 flex items-center justify-center">
-                                                <Heart className="h-8 w-8 text-pink-300" />
-                                            </div>
-                                            <p className="text-gray-500">받은 요청이 없어요</p>
-                                        </div>
+                                        <EmptyState message="받은 요청이 없어요." subMessage="새로운 친구를 기다려봐요!" />
                                     ) : (
-                                        <div className="space-y-4">
-                                            {pendingRequests.map((request) => (
-                                                <motion.div
-                                                    key={request.matchId}
-                                                    initial={{ opacity: 0, y: 20 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    className="bg-gradient-to-r from-pink-50 to-rose-50 rounded-2xl p-4 border border-pink-100"
-                                                >
-                                                    <div className="flex items-start gap-4">
-                                                        <div className="relative flex-shrink-0">
-                                                            <img
-                                                                src={request.petPhoto || '/placeholder.svg'}
-                                                                alt={request.petName}
-                                                                className="h-16 w-16 rounded-2xl object-cover ring-2 ring-pink-200"
-                                                            />
-                                                            <img
-                                                                src={request.fromUserAvatar || '/placeholder.svg'}
-                                                                alt={request.fromUserName}
-                                                                className="absolute -bottom-2 -right-2 h-7 w-7 rounded-full ring-2 ring-white object-cover"
-                                                            />
+                                        pendingRequests.map((request) => (
+                                            <div key={request.matchId} className="bg-white rounded-2xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-rose-50">
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <img
+                                                        src={request.petPhoto || '/placeholder.svg'}
+                                                        alt={request.petName}
+                                                        className="h-14 w-14 rounded-xl object-cover bg-rose-50"
+                                                    />
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <h3 className="font-bold text-gray-800 text-base" style={{ fontFamily: '"Jua", sans-serif' }}>{request.petName}</h3>
+                                                            <span className="text-[10px] bg-rose-100 text-rose-500 px-1.5 py-0.5 rounded font-bold">New</span>
                                                         </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <h3 className="font-bold text-gray-900 truncate">{request.petName}</h3>
-                                                                <span className="text-sm text-gray-500">({request.fromUserName})</span>
-                                                            </div>
-                                                            <p className="text-sm text-gray-600">
-                                                                {request.petBreed}
-                                                                {request.petAge && ` • ${request.petAge}살`}
-                                                            </p>
-                                                            <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
-                                                                {request.location && (
-                                                                    <span className="flex items-center gap-1">
-                                                                        <MapPin className="h-3 w-3" />
-                                                                        {request.location}
-                                                                    </span>
-                                                                )}
-                                                                <span className="flex items-center gap-1">
-                                                                    <Clock className="h-3 w-3" />
-                                                                    {formatTime(request.createdAt)}
-                                                                </span>
-                                                            </div>
-                                                        </div>
+                                                        <p className="text-xs text-gray-500 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis">
+                                                            {request.petBreed} • {request.petAge}살
+                                                        </p>
+                                                        {request.location && <p className="text-[10px] text-gray-400 mt-0.5">{request.location}</p>}
                                                     </div>
-                                                    <div className="flex gap-3 mt-4">
-                                                        <Button
-                                                            onClick={() => handleAccept(request)}
-                                                            className="flex-1 h-10 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white text-sm font-semibold"
-                                                        >
-                                                            <Check className="mr-1 h-4 w-4" />
-                                                            수락
-                                                        </Button>
-                                                        <Button
-                                                            onClick={() => handleReject(request.matchId)}
-                                                            variant="outline"
-                                                            className="flex-1 h-10 rounded-xl border-2 border-gray-300 hover:bg-gray-100 text-sm font-semibold"
-                                                        >
-                                                            <X className="mr-1 h-4 w-4" />
-                                                            거절
-                                                        </Button>
-                                                    </div>
-                                                </motion.div>
-                                            ))}
-                                        </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        onClick={() => handleAccept(request)}
+                                                        className="flex-1 h-10 rounded-xl bg-rose-400 hover:bg-rose-500 text-white text-sm font-bold shadow-sm"
+                                                    >
+                                                        수락
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() => handleReject(request.matchId)}
+                                                        className="h-10 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-500 text-sm font-bold"
+                                                    >
+                                                        거절
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))
                                     )}
                                 </div>
                             )}
 
-                            {/* 보낸 요청 탭 */}
+                            {/* SENT REQUESTS TAB */}
                             {activeTab === 'sent' && (
-                                <div className="p-4">
+                                <div className="space-y-3">
                                     {sentRequests.length === 0 ? (
-                                        <div className="p-8 text-center">
-                                            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-orange-50 flex items-center justify-center">
-                                                <Send className="h-8 w-8 text-orange-300" />
-                                            </div>
-                                            <p className="text-gray-500">보낸 요청이 없어요</p>
-                                        </div>
+                                        <EmptyState message="보낸 요청이 없어요." subMessage="친구들에게 마음을 표현해보세요!" />
                                     ) : (
-                                        <div className="space-y-3">
-                                            {sentRequests.map((request) => (
-                                                <div
-                                                    key={request.matchId}
-                                                    className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-4 border border-orange-100"
-                                                >
-                                                    <div className="flex items-center gap-4">
-                                                        <img
-                                                            src={request.petPhoto || '/placeholder.svg'}
-                                                            alt={request.petName}
-                                                            className="h-14 w-14 rounded-2xl object-cover ring-2 ring-orange-200"
-                                                        />
-                                                        <div className="flex-1 min-w-0">
-                                                            <h3 className="font-bold text-gray-900 truncate">{request.petName}</h3>
-                                                            <p className="text-sm text-gray-500">{request.fromUserName}</p>
-                                                            <p className="text-xs text-orange-500 mt-1">응답 대기 중...</p>
-                                                        </div>
-                                                        <Button
-                                                            onClick={() => onCancelRequest(request.fromUserId)}
-                                                            variant="outline"
-                                                            size="sm"
-                                                            className="text-red-500 border-red-200 hover:bg-red-50 text-xs"
-                                                        >
-                                                            <X className="h-3 w-3 mr-1" />
-                                                            취소
-                                                        </Button>
-                                                    </div>
+                                        sentRequests.map((request) => (
+                                            <div key={request.matchId} className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex items-center gap-3 opacity-90">
+                                                <img
+                                                    src={request.petPhoto || '/placeholder.svg'}
+                                                    alt={request.petName}
+                                                    className="h-12 w-12 rounded-xl object-cover grayscale-[0.3]"
+                                                />
+                                                <div className="flex-1">
+                                                    <h3 className="font-bold text-gray-700 text-sm" style={{ fontFamily: '"Jua", sans-serif' }}>{request.petName}</h3>
+                                                    <p className="text-xs text-orange-400 font-medium">응답 대기중...</p>
                                                 </div>
-                                            ))}
-                                        </div>
+                                                <button
+                                                    onClick={() => onCancelRequest(request.fromUserId)}
+                                                    className="p-2 text-gray-300 hover:text-red-400 transition-colors"
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        ))
                                     )}
                                 </div>
                             )}
+
                         </div>
                     </motion.div>
                 </motion.div>
             )}
         </AnimatePresence>
+    );
+}
+
+function EmptyState({ message, subMessage }: { message: string, subMessage: string }) {
+    return (
+        <div className="h-40 flex flex-col items-center justify-center text-center opacity-70">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                <Users className="h-6 w-6 text-gray-400" />
+            </div>
+            <p className="text-gray-600 font-bold text-sm">{message}</p>
+            <p className="text-gray-400 text-xs mt-1">{subMessage}</p>
+        </div>
     );
 }
