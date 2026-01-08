@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: './', // Use relative base for flexibility in deployment
+  base: '/', // Use absolute base for SPA routing to work correctly
   publicDir: 'public', // Explicitly set public directory for static assets
   plugins: [react()],
   resolve: {

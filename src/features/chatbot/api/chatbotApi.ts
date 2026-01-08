@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const BASE_URL = '/api/chat'; // Proxy setup in package.json points execution to Gateway/Backend
+// Gateway URL (Proxied via vite.config.ts or package.json 'proxy' field)
+const BASE_URL = '/api/chat'; 
+const HEALTH_URL = '/api/health'; // Assumption for hospital search
 
 export interface ChatMessage {
   id: string;
@@ -46,15 +48,33 @@ export const chatbotApi = {
   // Send Message
   sendMessage: async (message: string, userId: string): Promise<ChatMessage> => {
     try {
-      // TODO: Uncomment when backend is ready
-      // const response = await axios.post(`${BASE_URL}/message`, { message, userId });
-      // return response.data;
+      // ---------------------------------------------------------
+      // REAL BACKEND INTEGRATION (Uncomment when backend is ready)
+      // ---------------------------------------------------------
+      /*
+      const response = await axios.post(`${BASE_URL}/send`, { 
+        message: message, 
+        userId: userId 
+      });
+      // Adapt response to ChatMessage interface if needed
+      return {
+         id: response.data.id || Date.now().toString(),
+         sender: 'bot',
+         content: response.data.response || response.data.message,
+         timestamp: new Date(),
+         type: response.data.type, // Expecting 'map' or 'disease_list' from backend if applicable
+         data: response.data.data
+      };
+      */
+
       
-      // Mock Response Logic
-      const isHospitalRequest = message.includes('병원');
-      const isDiseaseRequest = message.includes('아파') || message.includes('병');
+      // ---------------------------------------------------------
+      // MOCK LOGIC (For Frontend Dev)
+      // ---------------------------------------------------------
+      const isHospitalRequest = message.includes('병원') || message.includes('찾아');
+      const isDiseaseRequest = message.includes('아파') || message.includes('증상') || message.includes('병');
       
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate partial delay
+      await new Promise(resolve => setTimeout(resolve, 800)); // Network delay simulation
 
       if (isHospitalRequest) {
           return {
@@ -71,7 +91,7 @@ export const chatbotApi = {
            return {
               id: Date.now().toString(),
               sender: 'bot',
-              content: "관련된 질병 정보를 찾았습니다.",
+              content: "이런 증상이 의심되는군요. 상세 정보를 확인해보세요.",
               timestamp: new Date(),
               type: 'disease_list',
               data: MOCK_DISEASES
@@ -81,7 +101,7 @@ export const chatbotApi = {
       return {
         id: Date.now().toString(),
         sender: 'bot',
-        content: `"${message}"에 대해 확인해볼게요! 멍멍!`,
+        content: `"${message}".. 멍멍! (백엔드 연결 시 실제 응답이 옵니다)`,
         timestamp: new Date()
       };
     } catch (error) {
@@ -93,9 +113,33 @@ export const chatbotApi = {
   // Get Nearby Hospitals
   getNearbyHospitals: async (lat: number, lng: number): Promise<Hospital[]> => {
     try {
-      // const response = await axios.get(`${BASE_URL}/hospitals`, { params: { lat, lng } });
-      // return response.data;
-      return MOCK_HOSPITALS;
+      // ---------------------------------------------------------
+      // REAL BACKEND INTEGRATION
+      // ---------------------------------------------------------
+      /*
+      const response = await axios.get(`${HEALTH_URL}/hospitals`, { params: { lat, lng } });
+      return response.data;
+      */
+      
+      // Dynamic Mock Data Generation
+      const generateRandomHospital = (id: string, name: string, baseLat: number, baseLng: number) => ({
+        id,
+        name,
+        address: `${name} 근처 도로명 주소`,
+        lat: baseLat + (Math.random() - 0.5) * 0.01,
+        lng: baseLng + (Math.random() - 0.5) * 0.01,
+        rating: 4.0 + Number((Math.random()).toFixed(1)),
+        distance: Math.floor(Math.random() * 1000) + 100,
+        status: Math.random() > 0.3 ? 'OPEN' : 'CLOSED' as const
+      });
+
+      return [
+        generateRandomHospital('1', '행복한 동물병원', lat, lng),
+        generateRandomHospital('2', '24시 케어 센터', lat, lng),
+        generateRandomHospital('3', '사랑 펫 클리닉', lat, lng),
+        generateRandomHospital('4', '우리동네 동물병원', lat, lng),
+        generateRandomHospital('5', '서울 종합 동물병원', lat, lng),
+      ];
     } catch (error) {
       console.warn("Using mock hospitals due to error", error);
       return MOCK_HOSPITALS;
@@ -105,9 +149,15 @@ export const chatbotApi = {
   // Search Diseases
   searchDiseases: async (query: string): Promise<Disease[]> => {
     try {
-      // const response = await axios.get(`${BASE_URL}/diseases`, { params: { query } });
+      // ---------------------------------------------------------
+      // REAL BACKEND INTEGRATION
+      // ---------------------------------------------------------
+      // const response = await axios.get(`${HEALTH_URL}/diseases`, { params: { query } });
       // return response.data;
-      return MOCK_DISEASES.filter(d => d.name.includes(query) || d.symptoms.some(s => s.includes(query)));
+
+      return MOCK_DISEASES.filter(d => 
+        d.name.includes(query) || d.symptoms.some(s => s.includes(query))
+      );
     } catch (error) {
       return MOCK_DISEASES;
     }

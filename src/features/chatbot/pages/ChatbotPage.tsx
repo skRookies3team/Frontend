@@ -3,14 +3,12 @@ import { useState, useEffect, Component, type ReactNode, useRef } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
 import { Button } from "@/shared/ui/button"
 import { Input } from "@/shared/ui/input"
-import { Send, ChevronDown, Map, Stethoscope, ArrowLeft } from 'lucide-react'
+import { Send, ChevronDown, Mic, Sparkles, X, Volume2, MicOff } from 'lucide-react'
 import { useAuth } from "@/features/auth/context/auth-context"
 import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import PetCanvas from '@/shared/components/3d/PetCanvas'
-import { chatbotApi, ChatMessage, Hospital } from "../api/chatbotApi"
-import MapContainer from "../components/MapContainer"
-import DiseaseSearch from "../components/DiseaseSearch"
+import { chatbotApi, ChatMessage } from "../api/chatbotApi"
 
 // Error Boundary Component
 interface ErrorBoundaryState {
@@ -32,8 +30,6 @@ class ErrorBoundary extends Component<{ children: ReactNode; fallback: ReactNode
   }
 }
 
-type ViewMode = 'chat' | 'map' | 'disease';
-
 export default function ChatbotPage() {
   const { user } = useAuth()
   const [searchParams] = useSearchParams()
@@ -48,16 +44,16 @@ export default function ChatbotPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState("")
   const [isTyping, setIsTyping] = useState(false)
-  const [speechText, setSpeechText] = useState("멍멍! 반가워!")
+  const [isVoiceMode, setIsVoiceMode] = useState(false)
+  const [voiceStatus, setVoiceStatus] = useState<'listening' | 'processing' | 'speaking'>('listening')
+  const [speechText, setSpeechText] = useState("나는 너의 베프야! 멍멍!")
   const [showSpeech, setShowSpeech] = useState(true)
   const [showPetSelector, setShowPetSelector] = useState(false)
-  const [viewMode, setViewMode] = useState<ViewMode>('chat')
-  const [hospitals, setHospitals] = useState<Hospital[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // 펫 변경 시 초기 메시지 설정
   useEffect(() => {
-    setSpeechText(`안녕! 나는 ${selectedPet?.name || '멍멍이'}야!`)
+    setSpeechText(`안녕! 나는 ${selectedPet?.name || '멍멍이'}야! 오늘 기분 어때?`)
     setShowSpeech(true)
     setMessages([])
   }, [selectedPet])
@@ -94,18 +90,21 @@ export default function ChatbotPage() {
     try {
       const response = await chatbotApi.sendMessage(userMsg.content, user?.id || 'guest')
       
-      setMessages(prev => [...prev, response])
-      setSpeechText(response.content)
-      setShowSpeech(true)
-
-      // Handle specific response types
-      if (response.type === 'map') {
-        const data = await chatbotApi.getNearbyHospitals(37.5665, 126.9780);
-        setHospitals(data);
-        setTimeout(() => setViewMode('map'), 1500);
-      } else if (response.type === 'disease_list') {
-         setTimeout(() => setViewMode('disease'), 1500);
+      // If response is 'map' or 'disease', we guide the user to the Healthcare page instead
+      if (response.type === 'map' || response.type === 'disease_list') {
+         const redirectMsg: ChatMessage = {
+            id: Date.now().toString(),
+            sender: 'bot',
+            content: "아픈 곳이나 병원을 찾고 싶다면 '헬스케어' 탭으로 이동해봐! 나는 너랑 노는 게 더 좋아!",
+            timestamp: new Date()
+         };
+         setMessages(prev => [...prev, redirectMsg]);
+         setSpeechText("헬스케어 탭에서 도와줄 수 있어! 멍멍!");
+      } else {
+         setMessages(prev => [...prev, response])
+         setSpeechText(response.content)
       }
+      setShowSpeech(true)
 
     } catch (error) {
       console.error("Chat error:", error)
@@ -122,8 +121,21 @@ export default function ChatbotPage() {
     }
   }
 
-  const handleTTS = () => {
-    alert("TTS 기능은 곧 추가될 예정입니다! 🎙️")
+  const handleSTT = () => {
+    setIsVoiceMode(true)
+    setVoiceStatus('listening')
+    // Mocking the interaction cycle
+    setTimeout(() => setVoiceStatus('processing'), 3000)
+    setTimeout(() => {
+        setVoiceStatus('speaking')
+        setSpeechText("그래, 오늘 산책은 어땠어? 내가 같이 못 가서 아쉬웠어!")
+    }, 5000)
+    setTimeout(() => setVoiceStatus('listening'), 10000)
+  }
+
+  const closeVoiceMode = () => {
+    setIsVoiceMode(false)
+    setVoiceStatus('listening')
   }
 
   return (
@@ -150,7 +162,7 @@ export default function ChatbotPage() {
       </div>
 
       {/* 2. 3D Pet Canvas Layer (Middle) */}
-      <div className={`absolute inset-0 z-10 transition-all duration-700 ${viewMode !== 'chat' ? 'scale-90 opacity-30 blur-sm' : ''}`}>
+      <div className="absolute inset-0 z-10">
         <ErrorBoundary fallback={
            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="flex flex-col items-center gap-4">
@@ -221,141 +233,171 @@ export default function ChatbotPage() {
           </AnimatePresence>
         </motion.div>
       </div>
-      
-      {/* Mode Switcher / Back Button */}
-      {viewMode !== 'chat' && (
-         <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="absolute top-6 left-6 z-50"
-         >
-            <Button 
-               variant="secondary" 
-               className="bg-white/10 backdrop-blur border border-white/20 text-white hover:bg-white/20 rounded-full gap-2 pl-3 pr-4"
-               onClick={() => setViewMode('chat')}
-            >
-               <ArrowLeft className="w-4 h-4" /> 채팅으로 돌아가기
-            </Button>
-         </motion.div>
-      )}
-
-      {/* Quick Actions (When in Chat Mode) */}
-      <AnimatePresence>
-         {viewMode === 'chat' && (
-            <motion.div 
-               initial={{ opacity: 0, y: 20 }}
-               animate={{ opacity: 1, y: 0 }}
-               exit={{ opacity: 0, y: 20 }}
-               className="absolute top-6 left-6 z-30 flex gap-2"
-            >
-               <Button 
-                  size="sm" 
-                  className="bg-white/10 backdrop-blur text-white border border-white/10 hover:bg-white/20 rounded-full gap-2"
-                  onClick={() => {
-                     // Trigger Map via API call simulation or direct mode switch
-                     // For UI demo, direct switch:
-                     chatbotApi.getNearbyHospitals(37.5665, 126.9780).then(data => setHospitals(data));
-                     setViewMode('map');
-                  }}
-               >
-                  <Map className="w-4 h-4 text-emerald-400" /> 병원 찾기
-               </Button>
-               <Button 
-                  size="sm" 
-                  className="bg-white/10 backdrop-blur text-white border border-white/10 hover:bg-white/20 rounded-full gap-2"
-                  onClick={() => setViewMode('disease')}
-               >
-                  <Stethoscope className="w-4 h-4 text-pink-400" /> 증상 검색
-               </Button>
-            </motion.div>
-         )}
-      </AnimatePresence>
-
 
       {/* Chat Interface (Overlay) */}
-      <AnimatePresence>
-      {viewMode === 'chat' && (
-        <>
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute left-0 right-0 bottom-24 px-4 z-20 overflow-hidden h-[35vh] mask-linear-fade pointer-events-none"
-          >
-             <div className="max-w-2xl mx-auto flex flex-col justify-end h-full space-y-3 pb-4 px-2">
-                {messages.slice(-5).map((message) => (
-                   <motion.div
-                     key={message.id}
-                     initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                     className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} pointer-events-auto`}
-                   >
-                     <div className={`max-w-[85%] px-5 py-3 rounded-2xl backdrop-blur-md text-sm shadow-lg border border-white/5 ${
-                       message.sender === 'user' 
-                         ? 'bg-pink-500/80 text-white rounded-br-sm' 
-                         : 'bg-gray-800/60 text-white rounded-bl-sm'
-                     }`}>
-                       {message.content}
-                     </div>
-                   </motion.div>
-                ))}
-                <div ref={messagesEndRef} />
-             </div>
-          </motion.div>
+       <div className="absolute left-0 right-0 bottom-24 px-4 z-20 overflow-hidden h-[35vh] mask-linear-fade pointer-events-none">
+          <div className="max-w-2xl mx-auto flex flex-col justify-end h-full space-y-3 pb-4 px-2">
+             {messages.slice(-5).map((message) => (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} pointer-events-auto`}
+                >
+                  <div className={`max-w-[85%] px-5 py-3 rounded-2xl backdrop-blur-md text-sm shadow-lg border border-white/5 ${
+                    message.sender === 'user' 
+                      ? 'bg-pink-500/80 text-white rounded-br-sm' 
+                      : 'bg-gray-800/60 text-white rounded-bl-sm'
+                  }`}>
+                    {message.content}
+                  </div>
+                </motion.div>
+             ))}
+             <div ref={messagesEndRef} />
+          </div>
+       </div>
 
-          {/* Input Area */}
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className="absolute bottom-0 left-0 right-0 z-30 p-6 pb-8"
-          >
-            <div className="max-w-2xl mx-auto">
-              <div className="bg-gray-900/60 backdrop-blur-xl rounded-full shadow-2xl border border-white/10 p-2 flex items-center gap-3 transition-all focus-within:ring-2 focus-within:ring-pink-500/50 focus-within:bg-gray-900/80">
-                <Button 
-                   variant="ghost" 
-                   size="icon" 
-                   className="h-10 w-10 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-                   onClick={handleTTS}
+      {/* Input Area */}
+      <div className="absolute bottom-0 left-0 right-0 z-30 p-6 pb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-2xl mx-auto"
+        >
+          <div className="bg-gray-900/60 backdrop-blur-xl rounded-full shadow-2xl border border-white/10 p-2 flex items-center gap-3 transition-all focus-within:ring-2 focus-within:ring-pink-500/50 focus-within:bg-gray-900/80">
+            {/* STT Button */}
+            <Button 
+               variant="ghost" 
+               size="icon" 
+               className="h-10 w-10 rounded-full text-pink-400 hover:text-pink-300 hover:bg-white/10 transition-colors"
+               onClick={handleSTT}
+            >
+               <Mic className="w-5 h-5" />
+            </Button>
+            
+            <Input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder={`${selectedPet?.name || '펫'}에게 말을 걸어보세요...`}
+              className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 text-white placeholder:text-white/30 text-base h-10"
+            />
+            
+            <Button
+              onClick={handleSend}
+              disabled={!inputValue.trim()}
+              size="icon"
+              className="h-10 w-10 shrink-0 rounded-full bg-gradient-to-tr from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all transform hover:scale-105 active:scale-95"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Voice Mode Overlay */}
+      <AnimatePresence>
+        {isVoiceMode && (
+            <motion.div
+                initial={{ opacity: 0, y: '100%' }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="absolute inset-0 z-50 bg-gray-950/95 backdrop-blur-3xl flex flex-col items-center justify-center font-sans"
+            >
+                {/* Close Button */}
+                <button 
+                    onClick={closeVoiceMode}
+                    className="absolute top-6 right-6 p-4 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all"
                 >
-                   <span className="text-lg">🎙️</span>
-                </Button>
-                
-                <Input
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="증상을 말하거나 궁금한 점을 물어보세요..."
-                  className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 text-white placeholder:text-white/30 text-base h-10"
-                />
-                
-                <Button
-                  onClick={handleSend}
-                  disabled={!inputValue.trim()}
-                  size="icon"
-                  className="h-10 w-10 shrink-0 rounded-full bg-gradient-to-tr from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all transform hover:scale-105 active:scale-95"
+                    <X className="w-8 h-8" />
+                </button>
+
+                {/* Main Visualizer */}
+                <div className="relative flex items-center justify-center w-full h-1/2">
+                    {/* Concentric Circles Animation */}
+                    <AnimatePresence mode='wait'>
+                        {voiceStatus === 'listening' && (
+                            <motion.div>
+                                {[...Array(3)].map((_, i) => (
+                                    <motion.div
+                                        key={i}
+                                        className="absolute inset-0 m-auto rounded-full border border-pink-500/30"
+                                        style={{ width: '150px', height: '150px' }}
+                                        animate={{
+                                            scale: [1, 2 + i * 0.5],
+                                            opacity: [0.8, 0],
+                                        }}
+                                        transition={{
+                                            duration: 2,
+                                            repeat: Infinity,
+                                            delay: i * 0.6,
+                                            ease: "easeOut"
+                                        }}
+                                    />
+                                ))}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Central Orb */}
+                    <motion.div
+                        animate={{
+                            scale: voiceStatus === 'speaking' ? [1, 1.2, 1] : [1, 1.05, 1],
+                            boxShadow: voiceStatus === 'speaking' 
+                                ? "0 0 50px 10px rgba(236, 72, 153, 0.6)" 
+                                : "0 0 30px 5px rgba(236, 72, 153, 0.3)"
+                        }}
+                        transition={{
+                            duration: voiceStatus === 'speaking' ? 0.5 : 2,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                        }}
+                        className="w-40 h-40 rounded-full bg-gradient-to-br from-pink-500 to-rose-600 relative z-10 flex items-center justify-center shadow-2xl"
+                    >
+                        {voiceStatus === 'listening' && <Mic className="w-16 h-16 text-white" />}
+                        {voiceStatus === 'speaking' && <Volume2 className="w-16 h-16 text-white" />}
+                        {voiceStatus === 'processing' && <Sparkles className="w-16 h-16 text-white animate-spin-slow" />}
+                    </motion.div>
+                </div>
+
+                {/* Status Text */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    key={voiceStatus}
+                    className="mt-12 text-center space-y-2"
                 >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        </>
-      )}
+                    <h2 className="text-3xl font-bold text-white">
+                        {voiceStatus === 'listening' && "듣고 있어요..."}
+                        {voiceStatus === 'processing' && "생각하는 중..."}
+                        {voiceStatus === 'speaking' && "답변하는 중..."}
+                    </h2>
+                    <p className="text-white/50 text-lg">
+                        {voiceStatus === 'listening' && "말씀해주세요"}
+                        {voiceStatus === 'processing' && "잠시만 기다려주세요"}
+                        {voiceStatus === 'speaking' && "AI 닥터가 말하고 있습니다"}
+                    </p>
+                </motion.div>
+
+                {/* Bottom Controls */}
+                <div className="absolute bottom-12 flex items-center gap-8">
+                    <button 
+                        onClick={() => setVoiceStatus(prev => prev === 'listening' ? 'processing' : 'listening')}
+                        className={`p-6 rounded-full transition-all ${
+                            voiceStatus === 'listening' 
+                            ? 'bg-rose-500/20 text-rose-500 hover:bg-rose-500/30 ring-2 ring-rose-500/50' 
+                            : 'bg-white/10 text-white/50 hover:bg-white/20'
+                        }`}
+                    >
+                        {voiceStatus === 'listening' ? <MicOff className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
+                    </button>
+                </div>
+            </motion.div>
+        )}
       </AnimatePresence>
 
-      {/* Modes Overlay */}
-      <AnimatePresence>
-        {viewMode === 'map' && (
-          <MapContainer 
-            onClose={() => setViewMode('chat')} 
-            hospitals={hospitals}
-          />
-        )}
-        {viewMode === 'disease' && (
-          <DiseaseSearch 
-            onClose={() => setViewMode('chat')} 
-          />
-        )}
-      </AnimatePresence>
     </div>
   )
 }
+

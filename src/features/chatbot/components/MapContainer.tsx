@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/shared/ui/button";
 import { Hospital } from '../api/chatbotApi';
-import { X, Navigation, MapPin, Store } from 'lucide-react';
+import { X, Navigation, Loader2, MapPin, Store } from 'lucide-react';
 
 interface MapContainerProps {
   onClose: () => void;
   hospitals: Hospital[];
   center?: { lat: number; lng: number };
+  onCenterChange?: (lat: number, lng: number) => void;
 }
 
 declare global {
@@ -16,43 +17,74 @@ declare global {
   }
 }
 
-export default function MapContainer({ onClose, hospitals, center }: MapContainerProps) {
+export default function MapContainer({ onClose, hospitals, center, onCenterChange }: MapContainerProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<any>(null);
   const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
 
   useEffect(() => {
-    if (!mapRef.current || !window.kakao) {
-      console.warn("Kakao maps SDK not loaded");
-      return;
+    const loadMap = () => {
+        if (!window.kakao || !window.kakao.maps) {
+            console.error("Kakao maps SDK not available");
+            return;
+        }
+
+        window.kakao.maps.load(() => {
+            const options = {
+                center: new window.kakao.maps.LatLng(center?.lat || 37.5665, center?.lng || 126.9780),
+                level: 4,
+            };
+
+            const newMap = new window.kakao.maps.Map(mapRef.current, options);
+            setMap(newMap);
+
+            // Add Markers
+            hospitals.forEach(hospital => {
+                const markerPosition = new window.kakao.maps.LatLng(hospital.lat, hospital.lng);
+                const marker = new window.kakao.maps.Marker({
+                    position: markerPosition,
+                    clickable: true
+                });
+                marker.setMap(newMap);
+
+                window.kakao.maps.event.addListener(marker, 'click', () => {
+                    setSelectedHospital(hospital);
+                    newMap.panTo(markerPosition);
+                });
+            });
+        });
+    };
+
+    // Check if script is already loaded
+    if (window.kakao && window.kakao.maps) {
+        loadMap();
+    } else {
+        // Check if script tag exists but maybe not loaded yet
+        const existingScript = document.getElementById('kakao-maps-sdk');
+        
+        if (!existingScript) {
+            const script = document.createElement("script");
+            script.id = 'kakao-maps-sdk';
+            // Use environment variable for API Key
+            const apiKey = import.meta.env.VITE_KAKAO_API_KEY;
+            script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false`;
+            script.async = true;
+            
+            script.onload = () => {
+                // Wait for kakao.maps.load to be available
+                window.kakao.maps.load(loadMap);
+            };
+            
+            document.head.appendChild(script);
+        } else {
+             // Script exists, just wait for it to be ready
+             // Simple polling or just trying to load if it's ready
+             if (window.kakao && window.kakao.maps) {
+                 window.kakao.maps.load(loadMap);
+             }
+        }
     }
-
-    const { kakao } = window;
-    
-    kakao.maps.load(() => {
-      const options = {
-        center: new kakao.maps.LatLng(center?.lat || 37.5665, center?.lng || 126.9780),
-        level: 4,
-      };
-      
-      const newMap = new kakao.maps.Map(mapRef.current, options);
-      setMap(newMap);
-
-      // Add Markers
-      hospitals.forEach(hospital => {
-        const markerPosition = new kakao.maps.LatLng(hospital.lat, hospital.lng);
-        const marker = new kakao.maps.Marker({
-          position: markerPosition,
-          clickable: true 
-        });
-        marker.setMap(newMap);
-
-        kakao.maps.event.addListener(marker, 'click', () => {
-          setSelectedHospital(hospital);
-          newMap.panTo(markerPosition);
-        });
-      });
-    });
   }, [center, hospitals]);
 
   return (
@@ -77,17 +109,40 @@ export default function MapContainer({ onClose, hospitals, center }: MapContaine
           
           {/* Overlay controls */}
           <div className="absolute bottom-6 right-6 z-10 flex flex-col gap-2">
-            <Button size="icon" className="rounded-full shadow-lg bg-pink-500 hover:bg-pink-600 text-white" onClick={() => {
+            <Button 
+                size="icon" 
+                className="rounded-full shadow-lg bg-pink-500 hover:bg-pink-600 text-white transition-all duration-300" 
+                onClick={() => {
                  if (navigator.geolocation && map) {
-                    navigator.geolocation.getCurrentPosition((pos) => {
-                        const lat = pos.coords.latitude;
-                        const lng = pos.coords.longitude;
-                        const moveLatLon = new window.kakao.maps.LatLng(lat, lng);
-                        map.panTo(moveLatLon);
-                    });
+                    setIsLocating(true);
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            const lat = pos.coords.latitude;
+                            const lng = pos.coords.longitude;
+                            const moveLatLon = new window.kakao.maps.LatLng(lat, lng);
+                            map.panTo(moveLatLon);
+                            
+                            // Notify parent to fetch new data
+                            if (onCenterChange) {
+                                onCenterChange(lat, lng);
+                            }
+                            setIsLocating(false);
+                        },
+                        (err) => {
+                            console.error("Geolocation error:", err);
+                            setIsLocating(false);
+                            alert("위치 정보를 가져올 수 없습니다.");
+                        }
+                    );
+                 } else {
+                     alert("브라우저가 위치 정보를 지원하지 않습니다.");
                  }
             }}>
-               <Navigation className="w-4 h-4" />
+               {isLocating ? (
+                   <Loader2 className="w-4 h-4 animate-spin" />
+               ) : (
+                   <Navigation className="w-4 h-4" />
+               )}
             </Button>
           </div>
         </div>
