@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, Heart, MapPin, Clock, MessageCircle, UserMinus, Send, Users } from 'lucide-react';
+import { X, MessageCircle, UserMinus, Users } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { PendingRequest, MatchResult } from '../api/petmate-api';
 
