@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import * as THREE from "three"
-import { X, Calendar, MapPin, ChevronLeft, ChevronRight, RotateCw, ZoomIn } from 'lucide-react'
-import { Button } from "@/shared/ui/button"
+import { X, ChevronLeft, ChevronRight, RotateCw } from 'lucide-react'
 import { getAiDiariesApi } from "@/features/diary/api/diary-api"
 import { useAuth } from "@/features/auth/context/auth-context"
 
@@ -233,7 +232,6 @@ export default function PortfolioPage() {
 
   // --- Three.js Logic ---
   const containerRef = useRef<HTMLDivElement>(null)
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null)
   const groupRef = useRef<THREE.Group | null>(null)
   const animationFrameRef = useRef<number | null>(null)
 

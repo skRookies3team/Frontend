@@ -28,181 +28,230 @@ import { getAiDiariesApi } from "@/features/diary/api/diary-api"
 import { DiaryResponse } from "@/features/diary/types/diary"
 
 type TodoItem = {
-    id: string
-    text: string
-    completed: boolean
+  id: string
+  text: string
+  completed: boolean
 }
 
 const initialTodos: TodoItem[] = [
-    { id: "1", text: "저녁 산책하기", completed: false },
-    { id: "2", text: "사료 급여", completed: true },
-    { id: "3", text: "약 먹이기", completed: false },
-    { id: "4", text: "양치질하기", completed: false },
+  { id: "1", text: "저녁 산책하기", completed: false },
+  { id: "2", text: "사료 급여", completed: true },
+  { id: "3", text: "약 먹이기", completed: false },
+  { id: "4", text: "양치질하기", completed: false },
 ]
 
 const initialMissingPets = [
-    {
-        id: "1",
-        name: "바둑이",
-        breed: "믹스견",
-        age: 5,
-        lastSeen: "서울시 강남구 역삼동",
-        photo: "/lost-brown-dog.jpg",
-        date: "2025-01-10",
-        contact: "010-1234-5678",
-        description: "갈색 털에 왼쪽 귀에 흰 점이 있습니다",
-    },
-    {
-        id: "2",
-        name: "초코",
-        breed: "푸들",
-        age: 3,
-        lastSeen: "서울시 송파구 잠실동",
-        photo: "/lost-poodle-dog.jpg",
-        date: "2025-01-09",
-        contact: "010-9876-5432",
-        description: "검은색 푸들, 목에 빨간 리본 착용",
-    },
-    {
-        id: "3",
-        name: "해피",
-        breed: "시바견",
-        age: 4,
-        lastSeen: "서울시 마포구 합정동",
-        photo: "/lost-shiba-dog.jpg",
-        date: "2025-01-08",
-        contact: "010-5555-1234",
-        description: "갈색 시바견, 매우 겁이 많습니다",
-    },
+  {
+    id: "1",
+    name: "바둑이",
+    breed: "믹스견",
+    age: 5,
+    lastSeen: "서울시 강남구 역삼동",
+    photo: "/lost-brown-dog.jpg",
+    date: "2025-01-10",
+    contact: "010-1234-5678",
+    description: "갈색 털에 왼쪽 귀에 흰 점이 있습니다",
+  },
+  {
+    id: "2",
+    name: "초코",
+    breed: "푸들",
+    age: 3,
+    lastSeen: "서울시 송파구 잠실동",
+    photo: "/lost-poodle-dog.jpg",
+    date: "2025-01-09",
+    contact: "010-9876-5432",
+    description: "검은색 푸들, 목에 빨간 리본 착용",
+  },
+  {
+    id: "3",
+    name: "해피",
+    breed: "시바견",
+    age: 4,
+    lastSeen: "서울시 마포구 합정동",
+    photo: "/lost-shiba-dog.jpg",
+    date: "2025-01-08",
+    contact: "010-5555-1234",
+    description: "갈색 시바견, 매우 겁이 많습니다",
+  },
 ]
 
 
 
 export default function DashboardPage() {
-    const { user } = useAuth()
-    const [missingPets, setMissingPets] = useState(initialMissingPets)
-    const [currentPage, setCurrentPage] = useState(0)
-    const [isMissingPetsExpanded, setIsMissingPetsExpanded] = useState(true)
-    const [todos, setTodos] = useState<TodoItem[]>(initialTodos)
-    const [newTodoText, setNewTodoText] = useState("")
-    const [isAddingTodo, setIsAddingTodo] = useState(false)
-    const [aiDiaries, setAiDiaries] = useState<DiaryResponse[]>([])
-    const [isDiariesLoading, setIsDiariesLoading] = useState(true)
-    const [myPets, setMyPets] = useState<GetPetDto[]>([])
-    const [petCoin, setPetCoin] = useState<number>(0)
-    const petsPerPage = 4
+  const { user } = useAuth()
+  const [missingPets, setMissingPets] = useState(initialMissingPets)
+  const [currentPage, setCurrentPage] = useState(0)
+  const [isMissingPetsExpanded, setIsMissingPetsExpanded] = useState(true)
+  const [todos, setTodos] = useState<TodoItem[]>(initialTodos)
+  const [newTodoText, setNewTodoText] = useState("")
+  const [isAddingTodo, setIsAddingTodo] = useState(false)
+  const [aiDiaries, setAiDiaries] = useState<DiaryResponse[]>([])
+  const [isDiariesLoading, setIsDiariesLoading] = useState(true)
+  const [myPets, setMyPets] = useState<GetPetDto[]>([])
+  const [petCoin, setPetCoin] = useState<number>(0)
+  const petsPerPage = 4
 
-    useEffect(() => {
-        const storedPets = localStorage.getItem("missingPets")
-        if (storedPets) {
-            const parsed = JSON.parse(storedPets)
-            setMissingPets([...initialMissingPets, ...parsed])
-        }
+  useEffect(() => {
+    const storedPets = localStorage.getItem("missingPets")
+    if (storedPets) {
+      const parsed = JSON.parse(storedPets)
+      setMissingPets([...initialMissingPets, ...parsed])
+    }
 
-        const storedTodos = localStorage.getItem("petTodos")
-        if (storedTodos) {
-            setTodos(JSON.parse(storedTodos))
-        }
-    }, [])
+    const storedTodos = localStorage.getItem("petTodos")
+    if (storedTodos) {
+      setTodos(JSON.parse(storedTodos))
+    }
+  }, [])
 
-    useEffect(() => {
-        localStorage.setItem("petTodos", JSON.stringify(todos))
-    }, [todos])
+  useEffect(() => {
+    localStorage.setItem("petTodos", JSON.stringify(todos))
+  }, [todos])
 
-    // AI 다이어리 보관함 데이터 페칭
-    useEffect(() => {
-        const fetchAiDiaries = async () => {
-            if (!user?.id) return
-            setIsDiariesLoading(true)
-            try {
-                const data = await getAiDiariesApi(Number(user.id))
-                console.log('[Dashboard] AI 다이어리 데이터:', data)
-                // 최근 13개만 저장 (3D 캐러셀 오버랩 방지)
-                setAiDiaries(data.slice(0, 11))
-            } catch (error) {
-                console.error('[Dashboard] AI 다이어리 조회 실패:', error)
-                setAiDiaries([]) // 실패 시 빈 배열
-            } finally {
-                setIsDiariesLoading(false)
-            }
-        }
-        fetchAiDiaries()
-    }, [user?.id])
+  // AI 다이어리 보관함 데이터 페칭
+  useEffect(() => {
+    const fetchAiDiaries = async () => {
+      if (!user?.id) return
+      setIsDiariesLoading(true)
+      try {
+        const data = await getAiDiariesApi(Number(user.id))
+        console.log('[Dashboard] AI 다이어리 데이터:', data)
+        // 최근 13개만 저장 (3D 캐러셀 오버랩 방지)
+        setAiDiaries(data.slice(0, 11))
+      } catch (error) {
+        console.error('[Dashboard] AI 다이어리 조회 실패:', error)
+        setAiDiaries([]) // 실패 시 빈 배열
+      } finally {
+        setIsDiariesLoading(false)
+      }
+    }
+    fetchAiDiaries()
+  }, [user?.id])
 
-    // 내 펫 정보 가져오기
-    useEffect(() => {
-        const fetchMyPets = async () => {
-            if (!user?.id) return
-            try {
-                const userData = await getUserApi(Number(user.id))
-                setMyPets(userData.pets)
-            } catch (error) {
-                console.error("Failed to fetch user pets:", error)
-            }
-        }
-        fetchMyPets()
-    }, [user?.id])
+  // 내 펫 정보 가져오기
+  useEffect(() => {
+    const fetchMyPets = async () => {
+      if (!user?.id) return
+      try {
+        const userData = await getUserApi(Number(user.id))
+        setMyPets(userData.pets)
+      } catch (error) {
+        console.error("Failed to fetch user pets:", error)
+      }
+    }
+    fetchMyPets()
+  }, [user?.id])
 
-    // 펫 코인 가져오기
-    useEffect(() => {
-        const fetchPetCoin = async () => {
-            if (!user?.id) return
-            try {
-                const coinData = await getUserCoinApi(Number(user.id))
-                setPetCoin(coinData.petCoin)
-            } catch (error) {
-                console.error("Failed to fetch pet coin:", error)
-            }
-        }
-        fetchPetCoin()
-    }, [user?.id])
+  // 펫 코인 가져오기
+  useEffect(() => {
+    const fetchPetCoin = async () => {
+      if (!user?.id) return
+      try {
+        const coinData = await getUserCoinApi(Number(user.id))
+        setPetCoin(coinData.petCoin)
+      } catch (error) {
+        console.error("Failed to fetch pet coin:", error)
+      }
+    }
+    fetchPetCoin()
+  }, [user?.id])
 
-    if (!user) {
-        return (
-            <div className="min-h-screen bg-gradient-to-b from-pink-50/50 to-white flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">로딩 중...</p>
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-pink-50/50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
+          <p className="text-muted-foreground">로딩 중...</p>
+        </div>
+      </div>
+    )
+  }
+
+  const totalPages = Math.ceil(missingPets.length / petsPerPage)
+  const displayedPets = missingPets.slice(currentPage * petsPerPage, (currentPage + 1) * petsPerPage)
+
+  const handlePrevPage = () => {
+    setCurrentPage((prev) => (prev > 0 ? prev - 1 : totalPages - 1))
+  }
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => (prev < totalPages - 1 ? prev + 1 : 0))
+  }
+
+  const hasPets = myPets && myPets.length > 0
+
+
+
+  const toggleTodo = (id: string) => {
+    setTodos(todos.map((todo) => (todo.id === id ? { ...todo, completed: !todo.completed } : todo)))
+  }
+
+  const addTodo = () => {
+    if (newTodoText.trim()) {
+      const newTodo: TodoItem = {
+        id: Date.now().toString(),
+        text: newTodoText.trim(),
+        completed: false,
+      }
+      setTodos([...todos, newTodo])
+      setNewTodoText("")
+      setIsAddingTodo(false)
+    }
+  }
+
+  const deleteTodo = (id: string) => {
+    setTodos(todos.filter((todo) => todo.id !== id))
+  }
+
+  const completedCount = todos.filter((t) => t.completed).length
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 to-white">
+      <div className="container mx-auto px-4 py-6 lg:py-8">
+        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+          <aside className="hidden lg:block space-y-6">
+            <Card className="border-pink-200 bg-gradient-to-br from-pink-50/50 to-white">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-lg text-pink-700">
+                    <CheckCircle2 className="h-5 w-5" />
+                    오늘의 할 일
+                  </CardTitle>
+                  <Badge variant="secondary" className="text-xs">
+                    {completedCount}/{todos.length}
+                  </Badge>
                 </div>
-            </div>
-        )
-    }
-
-    const totalPages = Math.ceil(missingPets.length / petsPerPage)
-    const displayedPets = missingPets.slice(currentPage * petsPerPage, (currentPage + 1) * petsPerPage)
-
-    const handlePrevPage = () => {
-        setCurrentPage((prev) => (prev > 0 ? prev - 1 : totalPages - 1))
-    }
-
-    const handleNextPage = () => {
-        setCurrentPage((prev) => (prev < totalPages - 1 ? prev + 1 : 0))
-    }
-
-    const hasPets = myPets && myPets.length > 0
-
-
-
-    const toggleTodo = (id: string) => {
-        setTodos(todos.map((todo) => (todo.id === id ? { ...todo, completed: !todo.completed } : todo)))
-    }
-
-    const addTodo = () => {
-        if (newTodoText.trim()) {
-            const newTodo: TodoItem = {
-                id: Date.now().toString(),
-                text: newTodoText.trim(),
-                completed: false,
-            }
-            setTodos([...todos, newTodo])
-            setNewTodoText("")
-            setIsAddingTodo(false)
-        }
-    }
-
-    const deleteTodo = (id: string) => {
-        setTodos(todos.filter((todo) => todo.id !== id))
-    }
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                  {todos.map((todo) => (
+                    <div
+                      key={todo.id}
+                      className="group flex items-center gap-2 p-2 rounded-lg border border-pink-100 bg-white hover:border-pink-200 transition-all"
+                    >
+                      <button onClick={() => toggleTodo(todo.id)} className="flex-shrink-0 transition-colors">
+                        {todo.completed ? (
+                          <CheckCircle2 className="h-5 w-5 text-pink-600" />
+                        ) : (
+                          <Circle className="h-5 w-5 text-gray-300 hover:text-pink-400" />
+                        )}
+                      </button>
+                      <span
+                        className={`flex-1 text-sm ${todo.completed ? "line-through text-muted-foreground" : "text-foreground"
+                          }`}
+                      >
+                        {todo.text}
+                      </span>
+                      <button
+                        onClick={() => deleteTodo(todo.id)}
+                        className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-4 w-4 text-gray-400 hover:text-rose-500" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
 
                 {isAddingTodo ? (
                   <div className="flex items-center gap-2 p-2 rounded-lg border border-pink-200 bg-pink-50">
@@ -467,5 +516,9 @@ export default function DashboardPage() {
             </aside>
           </div>
         </div>
-    )
+      </div>
+
+
+    </div>
+  )
 }

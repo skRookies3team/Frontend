@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+
 
 const GeneratingStep = ({ progress }: { progress: number }) => {
     return (
