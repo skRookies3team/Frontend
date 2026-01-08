@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, PawPrint } from 'lucide-react';
 import { useDiaryAuth } from "../hooks/useDiaryAuth";
-import { getDiary, saveDiaryStyleApi } from "../api/diary-api";
+import { getDiary, saveDiaryStyleApi, getDiaryStyleApi } from "../api/diary-api";
 
 import StyleStep from '../components/StyleStep';
 
@@ -24,6 +24,7 @@ const DiaryStyleEditPage = () => {
     const [themeStyle, setThemeStyle] = useState("basic");
     const [preset, setPreset] = useState<string | null>(null);
     const [backgroundColor, setBackgroundColor] = useState("#ffffff");
+    const [fontFamily, setFontFamily] = useState("Noto Sans KR"); // [NEW] Font State
 
     // Fetch diary and style data
     useEffect(() => {
@@ -41,9 +42,22 @@ const DiaryStyleEditPage = () => {
                 console.log("✅ 다이어리 데이터:", diaryData);
                 setDiary(diaryData);
 
-                // ✅ Use style from diary response (backend includes it now)
-                if (diaryData.style) {
-                    console.log("🎨 다이어리에서 스타일 로드됨:", diaryData.style);
+                // ✅ Fetch diary-specific style first (Priority: Fresh data)
+                console.log("🎨 Fetching Diary-Specific Style (Priority)...");
+                const specificStyle = await getDiaryStyleApi(Number(id));
+
+                if (specificStyle) {
+                    console.log("🎨 Diary Specific Style Loaded (Fresh):", specificStyle);
+                    setLayoutStyle(specificStyle.galleryType || "grid");
+                    setTextAlign(specificStyle.textAlignment || "left");
+                    setFontSize(specificStyle.fontSize || 16);
+                    setSizeOption(specificStyle.sizeOption || "medium");
+                    setThemeStyle(specificStyle.themeStyle || "basic");
+                    setPreset(specificStyle.preset || null);
+                    setBackgroundColor(specificStyle.backgroundColor || "#ffffff");
+                    setFontFamily(specificStyle.fontFamily || "Noto Sans KR");
+                } else if (diaryData.style) {
+                    console.log("🎨 다이어리에서 스타일 로드됨 (Fallback):", diaryData.style);
                     setLayoutStyle(diaryData.style.galleryType || "grid");
                     setTextAlign(diaryData.style.textAlignment || "left");
                     setFontSize(diaryData.style.fontSize || 16);
@@ -51,6 +65,7 @@ const DiaryStyleEditPage = () => {
                     setThemeStyle(diaryData.style.themeStyle || "basic");
                     setPreset(diaryData.style.preset || null);
                     setBackgroundColor(diaryData.style.backgroundColor || "#ffffff");
+                    setFontFamily(diaryData.style.fontFamily || "Noto Sans KR");
                 } else {
                     console.log("ℹ️ 저장된 스타일 없음 - 기본값 사용");
                 }
@@ -86,7 +101,8 @@ const DiaryStyleEditPage = () => {
                 backgroundColor: backgroundColor,
                 preset: preset,
                 themeStyle: themeStyle,
-                petId: diary.petId
+                petId: diary.petId,
+                fontFamily: fontFamily // [NEW] Save Font
             });
 
             alert('스타일이 저장되었습니다.');
@@ -158,6 +174,8 @@ const DiaryStyleEditPage = () => {
                     isSubmitting={isSubmitting}
                     onBack={handleBack}
                     title={diary.title}
+                    fontFamily={fontFamily} // [NEW] Pass Prop
+                    setFontFamily={setFontFamily} // [NEW] Pass Prop
                 />
             </main>
         </div>

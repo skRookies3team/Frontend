@@ -1,90 +1,421 @@
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { Badge } from "@/shared/ui/badge"
-import { ArrowLeft, Sparkles, Calendar, ChevronLeft, ChevronRight, Loader2, Wand2, Star, BookOpen, Heart } from "lucide-react"
-import { RecapDetailResponse } from "@/features/diary/types/recap"
-import { getRecapDetailApi } from "@/features/diary/api/diary-api"
+import { ArrowLeft, AlertCircle, Heart, Share2, PawPrint, ChevronLeft, ChevronRight, BookOpen, Star } from "lucide-react"
+
+import { Button } from "@/shared/ui/button"
+import { getRecapDetailApi } from "../api/diary-api"
+
+// Helper for Coin Badge (Absolute Positioned for Sticker Effect)
+const CoinBadge = ({ className }: { className?: string }) => (
+    <div className={`absolute z-50 ${className}`}>
+        <div className="bg-[#FFD700] text-white font-['Jua'] px-5 py-2 rounded-full border-4 border-white shadow-md flex items-center gap-1 text-lg transform -rotate-12 hover:rotate-0 transition-transform cursor-pointer hover:scale-105 active:scale-95">
+            <span></span> +30 코인
+        </div>
+    </div>
+)
+
+// --- Layout 1: Retro Notebook (1-3 images) ---
+const RetroNotebookLayout = ({ recap, navigate }: { recap: any, navigate: any }) => {
+    const images = recap.imageUrls || []
+    return (
+        <div className="min-h-screen bg-[#fcf8e3] py-8 px-4 font-sans relative overflow-x-hidden">
+            {/* Background Decorations */}
+            <div className="fixed top-0 left-0 w-full h-2 bg-stripes-amber opacity-30"></div>
+            <div className="fixed bottom-0 left-0 w-full h-2 bg-stripes-amber opacity-30"></div>
+
+            {/* Navigation Bar */}
+            <div className="max-w-4xl mx-auto mb-6 flex justify-between items-center relative z-10">
+                <Button
+                    variant="ghost"
+                    onClick={() => navigate(-1)}
+                    className="text-amber-800 hover:bg-amber-100/50 hover:text-amber-900 font-['Jua']"
+                >
+                    <ArrowLeft className="mr-2 h-5 w-5" /> 리캡 목록
+                </Button>
+                <div className="flex gap-2">
+                    <Button variant="outline" size="icon" className="text-amber-700 border-amber-200 hover:bg-amber-50"><Share2 className="w-4 h-4" /></Button>
+                    <Button variant="outline" size="icon" className="text-amber-700 border-amber-200 hover:bg-amber-50"><Heart className="w-4 h-4" /></Button>
+                </div>
+            </div>
+
+            {/* Notebook Container */}
+            <div className="bg-white rounded-r-3xl rounded-l-md shadow-2xl min-h-[800px] relative max-w-4xl mx-auto">
+                <div
+                    className="absolute inset-0 z-0 pointer-events-none opacity-20 rounded-r-3xl rounded-l-md overflow-hidden"
+                    style={{
+                        backgroundImage: 'linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px)',
+                        backgroundSize: '24px 24px'
+                    }}
+                />
+                <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-200 via-gray-100 to-white border-r border-gray-200 z-20 flex flex-col items-center justify-evenly py-6 rounded-l-md">
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
+                        <div key={n} className="w-4 h-4 rounded-full bg-gray-700/10 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]"></div>
+                    ))}
+                </div>
+
+                <div className="relative z-10 pl-16 pr-8 py-10 md:pl-20 md:pr-12 md:py-12">
+                    {/* Header */}
+                    <div className="flex justify-center items-center border-b-2 border-dashed border-gray-200 pb-6 mb-8">
+                        <div className="bg-white/90 backdrop-blur-sm px-8 py-3 rounded-full border border-gray-200 shadow-sm flex items-center gap-6 font-['Gaegu']">
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-gray-400 text-sm font-bold font-sans tracking-widest lowercase">period</span>
+                                <span className="text-2xl text-slate-700 font-bold tracking-wide">{recap.periodStart} ~ {recap.periodEnd}</span>
+                            </div>
+                            <span className="text-gray-300 text-xl font-light">|</span>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-gray-400 text-sm font-bold font-sans tracking-widest lowercase">date</span>
+                                <span className="text-2xl text-slate-700 font-bold tracking-wide">{new Date().toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <div className="space-y-8">
+                            <div className="relative group">
+                                <div className="relative w-full aspect-video md:aspect-[4/3] bg-gray-100 shadow-md p-3 pb-8 mb-6 transform -rotate-1 transition-transform group-hover:scale-[1.01] group-hover:rotate-0 duration-500 border border-gray-200">
+                                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-24 h-8 bg-yellow-100/60 backdrop-blur-[1px] rotate-2 shadow-sm border border-white/40 z-10"></div>
+                                    <div className="w-full h-full overflow-hidden bg-gray-50">
+                                        {images[0] && <img src={images[0]} alt="Main" className="w-full h-full object-cover filter contrast-[1.05]" />}
+                                    </div>
+                                    <div className="absolute bottom-2 right-4 font-['Gaegu'] text-gray-500 text-sm -rotate-2">
+                                        {recap.title}
+                                    </div>
+                                </div>
+                                <div className="relative pl-6 border-l-4 border-yellow-200/50">
+                                    <div className="font-['Jua'] text-lg text-gray-700 leading-9 whitespace-pre-wrap">{recap.summary}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="space-y-10 pt-4 md:pt-10">
+                            <div className="grid grid-cols-2 gap-4">
+                                {images.slice(1, 5).map((img: string, idx: number) => (
+                                    <div key={idx} className={`relative p-2 bg-white shadow-md border border-gray-100 ${idx % 2 === 0 ? 'rotate-2' : '-rotate-1'} transition-transform hover:scale-105 hover:z-10`}>
+                                        <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-12 h-4 bg-blue-100/50 backdrop-blur-[1px] rotate-1 shadow-sm"></div>
+                                        <div className="w-full aspect-square overflow-hidden bg-gray-50">
+                                            <img src={img} alt={`Collage ${idx}`} className="w-full h-full object-cover" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="space-y-6">
+                                {recap.highlights && recap.highlights.map((highlight: any, idx: number) => (
+                                    <div key={idx} className="relative pl-8">
+                                        <PawPrint className="absolute left-0 top-1 w-5 h-5 text-gray-300 rotate-12" />
+                                        <h4 className="font-['Jua'] text-lg text-gray-700 underline decoration-yellow-200 decoration-4 underline-offset-4 mb-1">{highlight.title}</h4>
+                                        <p className="font-['Gaegu'] text-lg text-gray-600 leading-7">{highlight.content}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div className="mt-12 flex flex-col items-center justify-center gap-5 pb-4">
+
+                        <p className="font-['Jua'] text-stone-400 text-sm tracking-wide">
+                            반려동물과의 소중한 기록, AI 다이어리가 응원합니다
+                        </p>
+                    </div>
+                </div>
+                {/* Coin Badge stuck to bottom right of notebook */}
+                <CoinBadge className="-bottom-5 -right-5" />
+            </div>
+        </div>
+    )
+}
+
+// --- Layout 2: Polaroid Scrapbook (4-6 images) ---
+const PolaroidScrapbookLayout = ({ recap, navigate }: { recap: any, navigate: any }) => {
+    const images = recap.imageUrls || []
+    return (
+        <div className="min-h-screen bg-[#fffbeb] font-sans relative flex items-center justify-center p-8 overflow-hidden">
+            {/* Navigation */}
+            <div className="fixed top-8 left-8 z-50">
+                <Button variant="ghost" onClick={() => navigate(-1)} className="text-amber-800 hover:bg-amber-100/50 hover:text-amber-900 font-['Jua']">
+                    <ArrowLeft className="mr-2 h-5 w-5" /> 뒤로가기
+                </Button>
+            </div>
+
+            {/* Main Content Card */}
+            <div className="relative bg-white/90 backdrop-blur-sm shadow-xl rounded-[2rem] p-12 max-w-4xl w-full mx-auto my-10 min-h-[700px] flex flex-col items-center">
+                {/* Decorative Tape Top */}
+                <div className="absolute -top-6 left-1/2 -translate-x-1/2 transform">
+                    <div className="bg-yellow-200/80 w-32 h-8 rotate-1 shadow-sm"></div>
+                </div>
+
+                {/* Title */}
+                <div className="mb-4 text-center">
+                    <span className="inline-block bg-yellow-100 text-yellow-600 px-3 py-1 rounded-full text-xs font-bold mb-2">✨ AI 리캡</span>
+                    <h1 className="text-4xl md:text-5xl font-['Jua'] text-orange-400 mb-2 drop-shadow-sm">{recap.title}</h1>
+                    <p className="text-gray-400 font-medium text-sm">{recap.periodStart.split('-')[0]}년 {recap.periodStart.split('-')[1]}월 • {recap.momentCount}개의 특별한 순간</p>
+                </div>
+
+                <div className="w-full h-px bg-dashed bg-gray-200 my-6"></div>
+
+                {/* Summary */}
+                <div className="w-full max-w-2xl text-center mb-12">
+                    <p className="font-['Gaegu'] text-2xl text-gray-700 leading-relaxed whitespace-pre-wrap">
+                        {recap.summary}
+                    </p>
+                </div>
+
+                {/* Highlights Section */}
+                <div className="w-full max-w-2xl">
+                    <h3 className="font-['Jua'] text-2xl text-orange-400 mb-6 flex items-center gap-2">
+                        <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" /> 이달의 하이라이트
+                    </h3>
+                    <div className="space-y-4">
+                        {recap.highlights && recap.highlights.map((highlight: any, idx: number) => (
+                            <div key={idx} className="bg-yellow-50 rounded-xl p-5 border border-yellow-100 flex gap-4 items-start hover:shadow-md transition-shadow">
+                                <div className="flex-shrink-0 w-8 h-8 bg-yellow-200 text-yellow-700 rounded-lg flex items-center justify-center font-bold font-['Jua']">
+                                    {idx + 1}
+                                </div>
+                                <div>
+                                    <h4 className="font-['Jua'] text-lg text-orange-600 mb-1">{highlight.title}</h4>
+                                    <p className="font-['Gaegu'] text-lg text-gray-600">{highlight.content}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Floating Polaroids (Redistributed) */}
+                {/* Top Right */}
+                <div className="absolute top-20 -right-44 w-60 rotate-6 hover:rotate-0 transition-transform duration-500 z-10 hidden md:block">
+                    <div className="bg-white p-3 shadow-lg rounded-sm pb-10">
+                        {images[0] && <img src={images[0]} alt="Pic 1" className="w-full aspect-square object-cover" />}
+                    </div>
+                    <div className="absolute -top-4 w-12 h-6 bg-red-200/50 right-10 -rotate-3"></div>
+                </div>
+                {/* Top Left */}
+                <div className="absolute top-24 -left-44 w-56 -rotate-6 hover:rotate-0 transition-transform duration-500 z-10 hidden md:block">
+                    <div className="bg-white p-3 shadow-lg rounded-sm pb-8">
+                        {images[1] && <img src={images[1]} alt="Pic 2" className="w-full aspect-square object-cover" />}
+                    </div>
+                    <div className="absolute -top-4 w-12 h-6 bg-blue-200/50 left-8 rotate-3"></div>
+                </div>
+                {/* Bottom Right */}
+                {images[2] && (
+                    <div className="absolute bottom-40 -right-48 w-52 rotate-3 hover:rotate-0 transition-transform duration-500 z-10 hidden md:block">
+                        <div className="bg-white p-2 shadow-md rounded-sm pb-6">
+                            <img src={images[2]} alt="Pic 3" className="w-full aspect-square object-cover" />
+                        </div>
+                    </div>
+                )}
+                {/* Bottom Left */}
+                {images[3] && (
+                    <div className="absolute bottom-32 -left-48 w-48 -rotate-12 hover:rotate-0 transition-transform duration-500 z-10 hidden md:block">
+                        <div className="bg-white p-2 shadow-xl rounded-sm pb-6">
+                            <img src={images[3]} alt="Pic 4" className="w-full aspect-square object-cover" />
+                        </div>
+                        <div className="absolute -top-3 w-10 h-5 bg-yellow-200/50 left-6"></div>
+                    </div>
+                )}
+
+                {/* Middle Right (5th Image) */}
+                {images[4] && (
+                    <div className="absolute top-1/2 -translate-y-1/2 -right-52 w-56 -rotate-3 hover:rotate-0 transition-transform duration-500 z-10 hidden md:block">
+                        <div className="bg-white p-2 shadow-lg rounded-sm pb-8">
+                            <img src={images[4]} alt="Pic 5" className="w-full aspect-square object-cover" />
+                        </div>
+                        <div className="absolute -top-3 w-10 h-5 bg-green-200/50 right-6 rotate-12"></div>
+                    </div>
+                )}
+
+                {/* Middle Left (6th Image) */}
+                {images[5] && (
+                    <div className="absolute top-1/2 -translate-y-1/2 -left-52 w-52 rotate-6 hover:rotate-0 transition-transform duration-500 z-10 hidden md:block">
+                        <div className="bg-white p-2 shadow-lg rounded-sm pb-6">
+                            <img src={images[5]} alt="Pic 6" className="w-full aspect-square object-cover" />
+                        </div>
+                        <div className="absolute -top-3 w-10 h-5 bg-purple-200/50 left-6 -rotate-6"></div>
+                    </div>
+                )}
+
+                {/* Coin Badge Overlapping Bottom Right */}
+                <CoinBadge className="-bottom-6 -right-6" />
+            </div>
+
+            {/* Bottom Info */}
+            <div className="absolute bottom-8 w-full text-center text-gray-400 text-xs font-['Jua'] flex flex-col items-center gap-2">
+                <div>
+                    <span>기간: {recap.periodStart} ~ {recap.periodEnd}</span>
+                    <span className="mx-2">|</span>
+                    <span>작성일: {new Date().toLocaleDateString()}</span>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// --- Layout 3: Widescreen Layout (7+ images) ---
+const WidescreenRecapLayout = ({ recap, navigate }: { recap: any, navigate: any }) => {
+    const images = recap.imageUrls || []
+    const [currentSlide, setCurrentSlide] = useState(0)
+
+    const nextSlide = () => setCurrentSlide(prev => (prev + 1) % images.length)
+    const prevSlide = () => setCurrentSlide(prev => (prev - 1 + images.length) % images.length)
+
+    useEffect(() => {
+        const timer = setInterval(nextSlide, 5000)
+        return () => clearInterval(timer)
+    }, [images.length])
+
+    return (
+        <div className="min-h-screen bg-[#fcf8e3] font-sans relative pb-20 overflow-x-hidden">
+            {/* Navigation */}
+            <div className="absolute top-6 left-6 z-50">
+                <Button variant="ghost" onClick={() => navigate(-1)} className="text-white hover:bg-black/20 font-medium font-['Jua'] bg-black/10 backdrop-blur-sm rounded-full px-4 border border-white/20">
+                    <ArrowLeft className="mr-2 h-5 w-5" /> 돌아가기
+                </Button>
+            </div>
+
+            {/* Top Section: Full Width Slider */}
+            <div className="relative w-full h-[50vh] md:h-[60vh] bg-gray-900 text-white overflow-hidden shadow-xl">
+                {/* Slider Images */}
+                {images.map((img: string, idx: number) => (
+                    <div
+                        key={idx}
+                        className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${idx === currentSlide ? 'opacity-100' : 'opacity-0'}`}
+                    >
+                        <img src={img} alt="slide" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30"></div>
+                    </div>
+                ))}
+
+                {/* Slider Overlay Info */}
+                <div className="absolute bottom-10 left-0 w-full text-center z-10 px-4">
+                    <div className="inline-block bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold mb-3 shadow-[0_2px_0_rgb(180,83,9)] transform -rotate-1">
+                        ✨ AI 리캡
+                    </div>
+                    <h1 className="text-4xl md:text-5xl font-['Jua'] text-white drop-shadow-md mb-2">{recap.title}</h1>
+                    <p className="text-white/80 font-['Jua'] text-lg">{recap.periodStart} ~ {recap.periodEnd} • {recap.momentCount}개의 특별한 순간</p>
+
+                    {/* Indicators */}
+                    <div className="flex justify-center gap-2 mt-6">
+                        {images.map((_: any, idx: number) => (
+                            <button
+                                key={idx}
+                                onClick={() => setCurrentSlide(idx)}
+                                className={`h-2 rounded-full transition-all duration-300 shadow-sm ${idx === currentSlide ? 'w-8 bg-yellow-400' : 'w-2 bg-white/40 hover:bg-white/60'}`}
+                            />
+                        ))}
+                    </div>
+                </div>
+
+                {/* Controls */}
+                <Button
+                    size="icon"
+                    variant="ghost"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-black/20 rounded-full w-12 h-12"
+                    onClick={prevSlide}
+                >
+                    <ChevronLeft className="w-8 h-8" />
+                </Button>
+                <Button
+                    size="icon"
+                    variant="ghost"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-black/20 rounded-full w-12 h-12"
+                    onClick={nextSlide}
+                >
+                    <ChevronRight className="w-8 h-8" />
+                </Button>
+            </div>
+
+            {/* Bottom Content Container */}
+            <div className="max-w-4xl mx-auto -mt-10 relative z-20 px-4">
+                <div className="bg-white rounded-[2rem] shadow-xl border border-amber-100 p-8 md:p-12 relative">
+                    {/* Decorative Top */}
+                    <div className="absolute top-0 left-0 w-full h-3 bg-amber-200/50 rounded-t-[2rem] overflow-hidden"></div>
+                    <BookOpen className="absolute top-8 right-8 w-12 h-12 text-amber-100 rotate-12" />
+
+                    {/* Title Section */}
+                    <div className="flex items-center gap-3 mb-8 border-b-2 border-dashed border-amber-100 pb-4">
+                        <BookOpen className="w-6 h-6 text-amber-500" />
+                        <h2 className="text-2xl font-['Jua'] text-amber-600">{recap.title}</h2>
+                    </div>
+
+                    {/* Summary */}
+                    <div className="mb-10">
+                        <p className="font-['Gaegu'] text-xl text-gray-700 leading-8 whitespace-pre-wrap">
+                            {recap.summary}
+                        </p>
+                    </div>
+
+                    {/* Highlights */}
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                            <h3 className="text-xl font-['Jua'] text-amber-800">이달의 하이라이트</h3>
+                        </div>
+
+                        {recap.highlights && recap.highlights.map((highlight: any, idx: number) => (
+                            <div key={idx} className="bg-amber-50 rounded-2xl p-6 border border-amber-100 flex gap-5 hover:shadow-md transition-shadow">
+                                <div className="flex-shrink-0 w-8 h-8 bg-amber-200 text-amber-700 rounded-lg flex items-center justify-center font-bold font-['Jua'] shadow-sm transform rotate-3">
+                                    {idx + 1}
+                                </div>
+                                <div>
+                                    <h4 className="font-['Jua'] text-lg text-amber-700 mb-2">{highlight.title}</h4>
+                                    <p className="font-['Gaegu'] text-lg text-gray-600 leading-relaxed">{highlight.content}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Coin Badge stuck to bottom right of card */}
+                    <CoinBadge className="-bottom-6 -right-6" />
+                </div>
+
+                {/* Footer Info */}
+                <div className="text-center mt-8 space-y-2">
+                    <div className="flex justify-center gap-3">
+                        <div className="px-4 py-2 bg-white rounded-full text-amber-800 font-['Jua'] text-sm shadow-sm border border-amber-100 flex items-center gap-1">
+                            <Heart className="w-4 h-4 text-red-400 fill-red-400" /> 소중한 추억
+                        </div>
+                        <div className="px-4 py-2 bg-white rounded-full text-amber-800 font-['Jua'] text-sm shadow-sm border border-amber-100 flex items-center gap-1">
+                            <Share2 className="w-4 h-4 text-blue-400" /> 공유하기
+                        </div>
+                    </div>
+                    <p className="text-amber-800/40 text-xs font-['Jua'] mt-4">
+                        반려동물과의 소중한 기록, AI 다이어리가 응원합니다
+                    </p>
+                </div>
+            </div>
+        </div>
+    )
+}
 
 export default function RecapDetailPage() {
     const { recapId } = useParams<{ recapId: string }>()
     const navigate = useNavigate()
-    const [recap, setRecap] = useState<RecapDetailResponse | null>(null)
-    const [loading, setLoading] = useState(true)
+
+    const [recap, setRecap] = useState<any | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
     useEffect(() => {
-        const fetchRecapDetail = async () => {
-            if (!recapId) {
-                setError('리캡 ID가 없습니다.')
-                setLoading(false)
-                return
-            }
-
-            // Check if user is logged in
-            const userStr = localStorage.getItem('petlog_user')
-            const userId = userStr ? JSON.parse(userStr).id : null
-            if (!userId || userId === '0') {
-                setError('로그인이 필요합니다.')
-                setLoading(false)
-                return
-            }
-
+        const fetchRecap = async () => {
+            if (!recapId) return
             try {
-                setLoading(true)
-                setError(null)
-                const data = await getRecapDetailApi(parseInt(recapId))
+                setIsLoading(true)
+                const data = await getRecapDetailApi(Number(recapId))
                 setRecap(data)
-            } catch (err) {
-                console.error('Failed to fetch recap detail:', err)
-                setError('리캡 정보를 불러오는데 실패했습니다.')
+            } catch (err: any) {
+                console.error("Failed to fetch recap detail:", err)
+                setError(err.message || "리캡 정보를 불러오는데 실패했습니다.")
             } finally {
-                setLoading(false)
+                setIsLoading(false)
             }
         }
-
-        fetchRecapDetail()
+        fetchRecap()
     }, [recapId])
 
-    const nextImage = () => {
-        if (recap && recap.imageUrls.length > 0) {
-            setCurrentImageIndex((prev) => (prev + 1) % recap.imageUrls.length)
-        }
-    }
-
-    const prevImage = () => {
-        if (recap && recap.imageUrls.length > 0) {
-            setCurrentImageIndex((prev) => (prev - 1 + recap.imageUrls.length) % recap.imageUrls.length)
-        }
-    }
-
-    const formatDate = (dateStr: string) => dateStr.replace(/-/g, '.')
-
-    const formatPeriod = (start: string, end: string) => {
-        const startDate = new Date(start)
-        const endDate = new Date(end)
-
-        const startYear = startDate.getFullYear()
-        const endYear = endDate.getFullYear()
-        const startMonth = startDate.getMonth() + 1
-        const endMonth = endDate.getMonth() + 1
-
-        if (startYear === endYear && startMonth === endMonth) {
-            return `${startYear}년 ${startMonth}월`
-        }
-
-        if (startYear === endYear) {
-            return `${startYear}년 ${startMonth}월 ~ ${endMonth}월`
-        }
-
-        return `${startYear}년 ${startMonth}월 ~ ${endYear}년 ${endMonth}월`
-    }
-
-    if (loading) {
+    if (isLoading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-[#fff9db]">
-                <div className="bg-white/50 p-6 rounded-full shadow-sm animate-spin">
-                    <Loader2 className="h-10 w-10 text-yellow-500" />
+            <div className="flex items-center justify-center min-h-screen bg-[#fcf8e3]">
+                <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-amber-800 font-['Jua'] text-lg animate-pulse">추억 명세서를 찾는 중...</p>
                 </div>
             </div>
         )
@@ -92,253 +423,25 @@ export default function RecapDetailPage() {
 
     if (error || !recap) {
         return (
-            <div className="min-h-screen bg-[#fff9db] p-4 flex items-center justify-center">
-                <div className="max-w-md w-full bg-white rounded-[2rem] p-8 text-center shadow-xl border-4 border-white">
-                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Calendar className="h-8 w-8 text-red-400" />
-                    </div>
-                    <h2 className="mb-2 text-2xl font-['Jua'] font-bold text-red-500">오류 발생!</h2>
-                    <p className="text-gray-500 font-medium mb-6">{error || '리캡을 찾을 수 없습니다.'}</p>
-                    <button
-                        onClick={() => navigate('/ai-studio/recap')}
-                        className="w-full rounded-xl bg-amber-500 px-6 py-3 text-white font-bold shadow-md hover:bg-amber-600 transition-colors"
-                    >
-                        목록으로 돌아가기
-                    </button>
-                </div>
+            <div className="flex flex-col items-center justify-center min-h-screen bg-[#fcf8e3] p-6">
+                <AlertCircle className="w-16 h-16 text-amber-600 mb-4" />
+                <p className="text-xl text-amber-900 font-['Jua'] mb-6">{error || "리캡을 찾을 수 없습니다."}</p>
+                <Button onClick={() => navigate(-1)} className="bg-amber-500 hover:bg-amber-600 text-white font-['Jua']">
+                    뒤로가기
+                </Button>
             </div>
         )
     }
 
-    const images = recap.imageUrls || []
-    // 7장 이상일 때만 캐러셀 모드 사용, 그 외에는 콜라주 모드
-    const isCarouselMode = images.length >= 7
+    // --- Dynamic Layout Switching Logic ---
+    const imageCount = (recap.imageUrls || []).length
 
-    return (
-        <div className="min-h-screen pb-20 font-sans text-gray-800" style={{ backgroundColor: '#fff9db' }}>
-            {/* Header */}
-            <header className="sticky top-0 z-40 border-b-2 border-dashed border-yellow-200 bg-white/90 backdrop-blur-md shadow-[0_4px_20px_rgba(255,220,100,0.1)]">
-                <div className="container mx-auto flex max-w-4xl items-center justify-between px-4 py-4">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="rounded-full p-2 hover:bg-yellow-50 text-amber-400 hover:text-amber-600 transition-colors"
-                    >
-                        <ArrowLeft className="h-7 w-7" />
-                    </button>
-                    <h1 className="text-xl font-bold text-amber-500 font-['Jua'] flex items-center gap-2">
-                        <Wand2 className="h-5 w-5" />
-                        AI 리캡 상세
-                    </h1>
-                    <div className="w-10" />
-                </div>
-            </header>
-
-            <main className="container mx-auto max-w-5xl px-4 py-8 text-left">
-
-                {/* 1. Carousel Mode View (>= 7 Images) */}
-                {isCarouselMode && (
-                    <div className="mb-8 relative mx-auto max-w-4xl transform rotate-1 transition-transform hover:rotate-0 duration-500">
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-40 h-8 bg-yellow-200/50 backdrop-blur-sm -rotate-1 z-10"></div>
-
-                        <div className="overflow-hidden rounded-[2rem] border-[6px] border-white shadow-[0_10px_30px_rgba(0,0,0,0.1)] bg-white">
-                            <div className="relative aspect-video overflow-hidden bg-gray-100">
-                                {images.length > 0 ? (
-                                    <>
-                                        <img
-                                            src={images[currentImageIndex]}
-                                            alt={`${recap.title} - ${currentImageIndex + 1}`}
-                                            className="h-full w-full object-cover"
-                                        />
-                                        <button
-                                            onClick={prevImage}
-                                            className="absolute left-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/40 backdrop-blur-md p-3 shadow-lg transition-transform hover:scale-110 hover:bg-white/80"
-                                        >
-                                            <ChevronLeft className="h-6 w-6 text-gray-800" />
-                                        </button>
-                                        <button
-                                            onClick={nextImage}
-                                            className="absolute right-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/40 backdrop-blur-md p-3 shadow-lg transition-transform hover:scale-110 hover:bg-white/80"
-                                        >
-                                            <ChevronRight className="h-6 w-6 text-gray-800" />
-                                        </button>
-                                        <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-2 bg-black/20 p-2 rounded-full backdrop-blur-sm">
-                                            {images.map((_, index) => (
-                                                <button
-                                                    key={index}
-                                                    onClick={() => setCurrentImageIndex(index)}
-                                                    className={`h-2.5 w-2.5 rounded-full transition-all ${index === currentImageIndex
-                                                        ? 'w-6 bg-white'
-                                                        : 'bg-white/50 hover:bg-white/80'
-                                                        }`}
-                                                />
-                                            ))}
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="flex h-full w-full items-center justify-center bg-yellow-50">
-                                        <Sparkles className="h-16 w-16 text-yellow-300" />
-                                    </div>
-                                )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-amber-900/70 via-transparent to-transparent" />
-                                <div className="absolute bottom-8 left-8 text-white">
-                                    <Badge className="mb-3 bg-white/20 backdrop-blur-md text-white border border-white/30 px-3 py-1 hover:bg-white/30">
-                                        <Sparkles className="mr-1 h-3 w-3 text-yellow-300" />
-                                        AI 리캡
-                                    </Badge>
-                                    <h2 className="text-3xl font-bold md:text-5xl font-['Jua'] drop-shadow-lg">{recap.title}</h2>
-                                    <p className="mt-2 text-amber-100 md:text-lg font-medium">
-                                        {formatPeriod(recap.periodStart, recap.periodEnd)} • {recap.momentCount}개의 특별한 순간
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Content Section - Stationery/Notebook Style */}
-                <div className="relative mx-auto max-w-5xl">
-                    <div className="absolute -top-4 -right-4 w-20 h-20 bg-orange-400 rounded-full opacity-10 animate-pulse"></div>
-                    <div className="absolute top-20 -left-6 w-12 h-12 bg-yellow-400 rounded-full opacity-10"></div>
-
-                    <div className="rounded-[2.5rem] bg-white p-6 md:p-10 shadow-[8px_8px_0px_rgba(255,220,100,0.2)] border-2 border-yellow-50 relative z-10 min-h-[600px]">
-                        <div className="prose prose-amber max-w-none relative">
-
-                            {/* 2. Collage Mode Header (Instead of Carousel) */}
-                            {!isCarouselMode && (
-                                <div className="mb-10 text-center border-b-2 border-dashed border-yellow-100 pb-8">
-                                    <Badge className="mb-3 bg-yellow-100 text-amber-600 border-none px-3 py-1 hover:bg-yellow-200">
-                                        <Sparkles className="mr-1 h-3 w-3" /> AI 리캡
-                                    </Badge>
-                                    <h1 className="text-4xl md:text-5xl font-bold text-amber-600 font-['Jua'] mb-3 drop-shadow-sm">{recap.title}</h1>
-                                    <p className="text-gray-400 font-medium">
-                                        {formatPeriod(recap.periodStart, recap.periodEnd)} • {recap.momentCount}개의 특별한 순간
-                                    </p>
-                                </div>
-                            )}
-
-                            {/* Main Content with Floated Images (Collage Effect) */}
-                            <div className="relative mb-12">
-                                {/* Image 1: Summary - Absolute on Desktop, Float on Mobile */}
-                                {!isCarouselMode && images[0] && (
-                                    <div className="float-right w-[40%] ml-4 mb-4 md:float-none md:absolute md:-right-64 md:-top-10 md:w-64 md:rotate-6 z-10 transition-transform hover:scale-105 duration-300">
-                                        <div className="bg-white p-2 md:p-3 rounded-2xl shadow-xl border border-gray-100/50">
-                                            <div className="aspect-[4/5] rounded-xl overflow-hidden">
-                                                <img src={images[0]} alt="Moment 1" className="w-full h-full object-cover" />
-                                            </div>
-                                        </div>
-                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-6 bg-yellow-200/40 -rotate-3 backdrop-blur-sm shadow-sm md:block hidden"></div>
-                                    </div>
-                                )}
-
-                                {isCarouselMode && (
-                                    <div className="flex items-center gap-3 mb-6 border-b-2 border-dashed border-yellow-100 pb-4">
-                                        <BookOpen className="w-8 h-8 text-amber-400" />
-                                        <h3 className="text-3xl font-bold text-amber-600 font-['Jua'] m-0">{recap.title}</h3>
-                                    </div>
-                                )}
-
-                                <p className="text-xl leading-relaxed text-gray-700 font-medium whitespace-pre-wrap">
-                                    {recap.summary}
-                                </p>
-                                <div className="clear-both md:clear-none"></div>
-                            </div>
-
-                            {recap.highlights && recap.highlights.length > 0 && (
-                                <div className="mt-16 relative">
-                                    {/* Image 2: Highlights Header - Absolute on Desktop */}
-                                    {!isCarouselMode && images[1] && (
-                                        <div className="float-left w-[40%] mr-4 mb-4 md:float-none md:absolute md:-left-64 md:-top-12 md:w-60 md:-rotate-3 z-10 transition-transform hover:scale-105 duration-300">
-                                            <div className="bg-white p-2 md:p-3 rounded-2xl shadow-xl border border-gray-100/50">
-                                                <div className="aspect-square rounded-xl overflow-hidden">
-                                                    <img src={images[1]} alt="Moment 2" className="w-full h-full object-cover" />
-                                                </div>
-                                            </div>
-                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-6 bg-orange-200/40 rotate-2 backdrop-blur-sm shadow-sm md:block hidden"></div>
-                                        </div>
-                                    )}
-
-                                    <h4 className="flex items-center gap-2 text-2xl font-bold text-amber-600 font-['Jua'] mb-8 clear-none relative z-0 pl-2">
-                                        <Star className="w-6 h-6 text-yellow-500 fill-yellow-400" />
-                                        이달의 하이라이트
-                                    </h4>
-
-                                    <div className="space-y-6">
-                                        {recap.highlights.map((highlight, index) => (
-                                            <div key={index} className="relative group">
-                                                {/* Image 3 (Index 0): Right Side - EXTRA LARGE */}
-                                                {!isCarouselMode && index === 0 && images[2] && (
-                                                    <div className="float-right w-[35%] ml-4 mb-2 md:float-none md:absolute md:-right-72 md:-top-8 md:w-72 md:rotate-3 z-10 hover:z-20 transition-transform hover:scale-105 duration-300">
-                                                        <div className="bg-white p-2 md:p-3 rounded-2xl shadow-xl border border-gray-100/50">
-                                                            <div className="aspect-square rounded-xl overflow-hidden">
-                                                                <img src={images[2]} alt="Moment 3" className="w-full h-full object-cover" />
-                                                            </div>
-                                                        </div>
-                                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-6 bg-green-200/40 -rotate-2 backdrop-blur-sm md:block hidden"></div>
-                                                    </div>
-                                                )}
-
-                                                {/* Image 4 (Index 1): Left Side - MEDIUM */}
-                                                {!isCarouselMode && index === 1 && images[3] && (
-                                                    <div className="float-left w-[30%] mr-4 mb-2 md:float-none md:absolute md:-left-64 md:top-4 md:w-60 md:-rotate-6 z-10 hover:z-20 transition-transform hover:scale-105 duration-300">
-                                                        <div className="bg-white p-2 md:p-3 rounded-2xl shadow-xl border border-gray-100/50">
-                                                            <div className="aspect-square rounded-xl overflow-hidden">
-                                                                <img src={images[3]} alt="Moment 4" className="w-full h-full object-cover" />
-                                                            </div>
-                                                        </div>
-                                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-6 bg-pink-200/40 rotate-3 backdrop-blur-sm md:block hidden"></div>
-                                                    </div>
-                                                )}
-
-                                                {/* Image 5 (Index 2): Right Side - SMALLER */}
-                                                {!isCarouselMode && index === 2 && images[4] && (
-                                                    <div className="float-right w-[30%] ml-4 mb-2 md:float-none md:absolute md:-right-60 md:top-8 md:w-56 md:rotate-1 z-10 hover:z-20 transition-transform hover:scale-105 duration-300">
-                                                        <div className="bg-white p-2 md:p-3 rounded-2xl shadow-xl border border-gray-100/50">
-                                                            <div className="aspect-square rounded-xl overflow-hidden">
-                                                                <img src={images[4]} alt="Moment 5" className="w-full h-full object-cover" />
-                                                            </div>
-                                                        </div>
-                                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-6 bg-blue-200/40 -rotate-1 backdrop-blur-sm md:block hidden"></div>
-                                                    </div>
-                                                )}
-
-                                                <div
-                                                    className="rounded-2xl border-2 border-yellow-100 bg-[#fffbe6] p-6 hover:bg-yellow-50 transition-colors relative z-0"
-                                                >
-                                                    <h5 className="mb-2 text-lg font-bold text-amber-600 font-['Jua'] flex items-center gap-2">
-                                                        <span className="w-6 h-6 rounded-full bg-yellow-200 flex items-center justify-center text-sm text-yellow-700">{index + 1}</span>
-                                                        {highlight.title}
-                                                    </h5>
-                                                    <p className="text-gray-600 pl-8 leading-relaxed font-medium">{highlight.content}</p>
-                                                </div>
-                                                <div className="clear-both md:clear-none"></div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="mt-10 rounded-2xl bg-gradient-to-r from-yellow-100 to-orange-50 p-6 text-center border border-yellow-100 clear-both">
-                                <p className="text-lg font-bold text-amber-600 font-['Jua'] flex items-center justify-center gap-2">
-                                    <Heart className="w-5 h-5 text-red-400 fill-red-400 animate-pulse-slow" />
-                                    "매 순간이 소중한 추억이 되었습니다"
-                                </p>
-                            </div>
-
-                            <div className="mt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-400 font-medium border-t border-gray-100 pt-6 pr-0 md:pr-32">
-                                <p>기간: {formatDate(recap.periodStart)} ~ {formatDate(recap.periodEnd)}</p>
-                                <p>작성일: {formatDate(recap.createdAt.split('T')[0])}</p>
-                            </div>
-                        </div>
-
-                        {/* Coin Reward Badge - Sticker Style */}
-                        <div className="absolute -bottom-6 -right-6 rotate-[-5deg] animate-bounce-slow z-50">
-                            <div className="bg-[#ffd700] text-white px-6 py-3 rounded-full shadow-[0_4px_0_#e6c200] border-4 border-white font-bold text-xl flex items-center gap-2 transform transition-transform hover:scale-110 cursor-pointer">
-                                <span className="font-['Jua'] drop-shadow-md">+30 코인</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </div>
-    )
+    if (imageCount >= 7) {
+        // [MODIFIED] Uses WidescreenRecapLayout for 7+ images
+        return <WidescreenRecapLayout recap={recap} navigate={navigate} />
+    } else if (imageCount >= 4) {
+        return <PolaroidScrapbookLayout recap={recap} navigate={navigate} /> // 4~6 images
+    } else {
+        return <RetroNotebookLayout recap={recap} navigate={navigate} /> // 1~3 images
+    }
 }

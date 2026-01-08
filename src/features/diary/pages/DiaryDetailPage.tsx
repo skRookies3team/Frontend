@@ -18,7 +18,7 @@ import {
 
 import { Button } from "@/shared/ui/button"
 import { Badge } from "@/shared/ui/badge"
-import { getDiary, deleteDiary, getMyStyleApi } from "@/features/diary/api/diary-api"
+import { getDiary, deleteDiary, getMyStyleApi, getDiaryStyleApi } from "@/features/diary/api/diary-api"
 import { useAuth } from "@/features/auth/context/auth-context"
 import DiaryPreview from "@/features/diary/components/DiaryPreview"
 
@@ -49,12 +49,26 @@ export default function DiaryDetailPage() {
             try {
                 setIsLoading(true)
                 const data = await getDiary(Number(id))
+                console.log("📄 Diary Detail Loaded:", data); // [DEBUG]
                 setDiary(data)
 
-                // Use style from diary response if available
-                if (data.style) {
+                // 1. Always attempt to fetch specifically saved style for this diary first (To ensure freshness after edit)
+                console.log("ℹ️ Fetching Diary Specific Style (Priority)...");
+                const specificStyle = await getDiaryStyleApi(Number(id));
+
+                if (specificStyle) {
+                    console.log("🎨 Diary Specific Style Loaded (Fresh):", specificStyle);
+                    setStyleSettings(specificStyle);
+                } else if (data.style && data.style.diaryId === Number(id)) {
+                    // 2. Fallback to style included in Diary Response (if specific)
+                    console.log("🎨 Using Embedded Diary Style:", data.style);
+                    setStyleSettings(data.style);
+                } else if (data.style) {
+                    // 3. Fallback to generic style from response
+                    console.log("⚠️ Using Generic/Pet Style from Response:", data.style);
                     setStyleSettings(data.style)
                 } else if (user?.id && data.petId) {
+                    console.log("⚠️ No Style in Response, fetching Pet Style..."); // [DEBUG]
                     try {
                         const styleData = await getMyStyleApi(Number(user.id), data.petId)
                         setStyleSettings(styleData)
@@ -62,6 +76,7 @@ export default function DiaryDetailPage() {
                         console.warn("스타일 로드 실패:", styleError)
                     }
                 } else if (user?.id) {
+                    console.log("⚠️ Fetching User Default Style..."); // [DEBUG]
                     const settings = await getMyStyleApi(Number(user.id))
                     if (settings) {
                         setStyleSettings(settings)
@@ -313,9 +328,13 @@ export default function DiaryDetailPage() {
     const selectedImages = diary.images || diary.imageUrls?.map((url: string) => ({ imageUrl: url })) || []
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-[#FFF5F6]" style={{
+            backgroundImage: `linear-gradient(90deg, transparent 50%, rgba(255,255,255,0.5) 50%),
+                              linear-gradient(0deg, transparent 50%, rgba(255,255,255,0.5) 50%)`,
+            backgroundSize: '40px 40px'
+        }}>
             {/* Header with Back Button */}
-            <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+            <div className="sticky top-0 z-30 bg-white/60 backdrop-blur-md border-b border-pink-100 shadow-sm">
                 <div className="container flex h-16 items-center justify-between px-4">
                     <Button
                         variant="ghost"
@@ -352,43 +371,55 @@ export default function DiaryDetailPage() {
                         sizeOption={styleSettings?.sizeOption || "medium"}
                         themeStyle={styleSettings?.themeStyle || "basic"}
                         preset={styleSettings?.preset || null}
+                        fontFamily={styleSettings?.fontFamily || "Noto Sans KR"} // [NEW] Pass saved font family
                     />
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3 mt-6 border-t pt-6">
-                    <Button
-                        variant="outline"
-                        className="text-base h-12"
-                        onClick={() => navigate(`/diary/${id}/style`)}
-                    >
-                        <Palette className="mr-2 h-5 w-5" />
-                        스타일 편집
-                    </Button>
-                    <Button
-                        variant="destructive"
-                        className="text-base h-12"
-                        onClick={handleDelete}
-                    >
-                        <Trash2 className="mr-2 h-5 w-5" />
-                        삭제
-                    </Button>
-                    <Button
-                        className="flex-1 text-base h-12"
-                        onClick={() => setShowDownloadModal(true)}
-                        disabled={isDownloading}
-                    >
-                        <Download className="mr-2 h-5 w-5" />
-                        {isDownloading ? '다운로드 중...' : '다운로드'}
-                    </Button>
-                    <Button
-                        variant="outline"
-                        className="flex-1 text-base h-12"
-                        onClick={() => setShowShareModal(true)}
-                    >
-                        <Share2 className="mr-2 h-5 w-5" />
-                        공유하기
-                    </Button>
+                {/* Action Buttons - Cute Sticker Style */}
+                <div className="mt-12 relative pb-24">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-2">
+                        {/* Style Edit - Yellow Note */}
+                        <button
+                            onClick={() => navigate(`/diary/${id}/style`)}
+                            className="bg-[#FEF9C3] aspect-[4/3] rounded-[2rem] shadow-[4px_4px_0px_rgba(0,0,0,0.05)] transform -rotate-2 hover:rotate-0 hover:scale-105 transition-all flex flex-col items-center justify-center gap-2 group border-4 border-white"
+                        >
+                            <Palette className="w-8 h-8 text-yellow-600 group-hover:scale-110 transition-transform" />
+                            <span className="font-['Jua'] text-xl text-yellow-800">꾸미기</span>
+                        </button>
+
+                        {/* Download - Green Note */}
+                        <button
+                            onClick={() => setShowDownloadModal(true)}
+                            disabled={isDownloading}
+                            className="bg-[#DCFCE7] aspect-[4/3] rounded-[2rem] shadow-[4px_4px_0px_rgba(0,0,0,0.05)] transform rotate-1 hover:rotate-0 hover:scale-105 transition-all flex flex-col items-center justify-center gap-2 group border-4 border-white"
+                        >
+                            <Download className="w-8 h-8 text-green-600 group-hover:scale-110 transition-transform" />
+                            <span className="font-['Jua'] text-xl text-green-800">
+                                {isDownloading ? '저장 중...' : '저장'}
+                            </span>
+                        </button>
+
+                        {/* Share - Blue Note */}
+                        <button
+                            onClick={() => setShowShareModal(true)}
+                            className="bg-[#E0F2FE] aspect-[4/3] rounded-[2rem] shadow-[4px_4px_0px_rgba(0,0,0,0.05)] transform -rotate-1 hover:rotate-0 hover:scale-105 transition-all flex flex-col items-center justify-center gap-2 group border-4 border-white"
+                        >
+                            <Share2 className="w-8 h-8 text-blue-600 group-hover:scale-110 transition-transform" />
+                            <span className="font-['Jua'] text-xl text-blue-800">공유</span>
+                        </button>
+
+                        {/* Delete - Pink Note */}
+                        <button
+                            onClick={handleDelete}
+                            className="bg-[#FFEDD5] aspect-[4/3] rounded-[2rem] shadow-[4px_4px_0px_rgba(0,0,0,0.05)] transform rotate-2 hover:rotate-0 hover:scale-105 transition-all flex flex-col items-center justify-center gap-2 group border-4 border-white"
+                        >
+                            <Trash2 className="w-8 h-8 text-orange-600 group-hover:scale-110 transition-transform" />
+                            <span className="font-['Jua'] text-xl text-orange-800">삭제</span>
+                        </button>
+                    </div>
+
+
                 </div>
             </div>
 
