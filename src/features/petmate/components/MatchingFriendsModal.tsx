@@ -27,6 +27,7 @@ export function MatchingFriendsModal({
     sentRequests,
     onAccept,
     onReject,
+    onUnfriend,
     onCancelRequest,
     onMatchSuccess
 }: MatchingFriendsModalProps) {
@@ -44,14 +45,9 @@ export function MatchingFriendsModal({
     };
 
     const handleUnfriend = async (matchedUserId: number) => {
-        if (confirm('정말 친구를 끊으시겠습니까?')) {
+        if (confirm('정말 매칭을 취소하시겠습니까?')) {
             await onUnfriend(matchedUserId);
         }
-    };
-
-    const handleMessage = (userId: number) => {
-        onClose();
-        navigate(`/messages?userId=${userId}`);
     };
 
     const formatTime = (dateString?: string) => {
@@ -72,7 +68,7 @@ export function MatchingFriendsModal({
     ];
 
     return (
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
             {isOpen && (
                 <motion.div
                     initial={{ opacity: 0 }}
@@ -156,30 +152,27 @@ export function MatchingFriendsModal({
                                                         />
                                                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-400 rounded-full border-2 border-white"></div>
                                                     </div>
-                                                    <div className="flex gap-2 mt-3">
-                                                        <Button
-                                                            onClick={() => handleMessage(match.matchedUserId)}
-                                                            className="flex-1 h-10 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white text-sm"
-                                                        >
-                                                            <MessageCircle className="mr-1 h-4 w-4" />
-                                                            메시지
-                                                        </Button>
-                                                        <Button
-                                                            onClick={() => handleUnfriend(match.matchedUserId)}
-                                                            variant="outline"
-                                                            className="h-10 rounded-xl border-2 border-red-200 text-red-500 hover:bg-red-50 text-sm"
-                                                        >
-                                                            <UserMinus className="h-4 w-4" />
-                                                        </Button>
+                                                    <div className="flex-1">
+                                                        <h3 className="font-bold text-gray-800 text-base" style={{ fontFamily: '"Jua", sans-serif' }}>{match.petName}</h3>
+                                                        <p className="text-xs text-gray-400">{match.matchedUserName} • {formatTime(match.matchedAt)}</p>
                                                     </div>
                                                 </div>
-                                                <Button
-                                                    onClick={() => handleMessage(match.matchedUserId)}
-                                                    className="w-full h-11 rounded-xl bg-emerald-400 hover:bg-emerald-500 text-white text-sm font-bold shadow-sm transition-all"
-                                                >
-                                                    <MessageCircle className="mr-1.5 h-4 w-4" />
-                                                    대화하기
-                                                </Button>
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        onClick={() => window.location.href = `/messages?userId=${match.matchedUserId}`}
+                                                        className="flex-1 h-10 rounded-xl bg-emerald-400 hover:bg-emerald-500 text-white text-sm font-bold"
+                                                    >
+                                                        <MessageCircle className="mr-1.5 h-4 w-4" />
+                                                        대화하기
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() => handleUnfriend(match.matchedUserId)}
+                                                        variant="outline"
+                                                        className="h-10 w-10 rounded-xl border-2 border-red-200 text-red-500 hover:bg-red-50 p-0"
+                                                    >
+                                                        <UserMinus className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
                                             </div>
                                         ))
                                     )}
