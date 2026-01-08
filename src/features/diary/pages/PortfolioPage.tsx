@@ -407,13 +407,31 @@ export default function PortfolioPage() {
     >
       {/* --- Header (White) --- */}
       <div className="absolute top-0 left-0 right-0 z-10 p-8 flex flex-col items-center pointer-events-none">
-        <div className="bg-black/30 backdrop-blur-md px-8 py-4 rounded-full shadow-lg border border-white/10 flex flex-col items-center gap-2 transform hover:scale-105 transition-transform pointer-events-auto cursor-help">
-          <h1 className="text-3xl md:text-4xl font-bold text-white font-['Jua'] flex items-center gap-2 drop-shadow-lg">
-            <span>✨</span> 3D 다이어리 포트폴리오 <span>✨</span>
-          </h1>
-          <p className="text-sm font-['Gaegu'] text-gray-300 flex items-center gap-4">
-            <span className="flex items-center gap-1"><RotateCw size={14} /> 드래그하여 회전, 휠로 확대/축소하세요</span>
-          </p>
+        <div className="w-full flex justify-between items-start">
+          {/* Empty div for spacing/layout balance if needed, or just let the title center naturally via absolute centering or flex logic. 
+               The current layout has the title centered. Let's keep the title centered and put the counter on the right. 
+               The original code had flex-col items-center. To place something on the right while keeping title centered, 
+               we might need a different layout structure or absolute positioning for the counter.
+           */}
+          <div /> {/* Spacer */}
+
+          {/* Title - Centered */}
+          <div className="bg-black/30 backdrop-blur-md px-8 py-4 rounded-full shadow-lg border border-white/10 flex flex-col items-center gap-2 transform hover:scale-105 transition-transform pointer-events-auto cursor-help">
+            <h1 className="text-3xl md:text-4xl font-bold text-white font-['Jua'] flex items-center gap-2 drop-shadow-lg">
+              <span>✨</span> 3D 다이어리 포트폴리오 <span>✨</span>
+            </h1>
+            <p className="text-sm font-['Gaegu'] text-gray-300 flex items-center gap-4">
+              <span className="flex items-center gap-1"><RotateCw size={14} /> 드래그하여 회전, 휠로 확대/축소하세요</span>
+            </p>
+          </div>
+
+          {/* Counter - Right aligned */}
+          <div className="pointer-events-auto bg-black/40 backdrop-blur-md px-6 py-3 rounded-[2rem] border border-white/10 shadow-xl flex items-center gap-3">
+            <span className="font-['Jua'] text-4xl text-cyan-300 drop-shadow-[0_0_10px_rgba(103,232,249,0.5)]">
+              {diaries.filter(d => !d.isPlaceholder).length}
+            </span>
+            <span className="font-['Jua'] text-xl text-white tracking-wide">AI 다이어리</span>
+          </div>
         </div>
       </div>
 
@@ -478,7 +496,7 @@ export default function PortfolioPage() {
                   <span className="bg-white px-2 py-1 rounded-md shadow-sm">{selectedPhoto.date}</span>
                   <span className="bg-white px-2 py-1 rounded-md shadow-sm">{selectedPhoto.weather}</span>
                 </div>
-                <div className="bg-white p-4 rounded-xl shadow-inner min-h-[100px] flex-grow">
+                <div className="bg-white p-4 rounded-xl shadow-inner flex-grow overflow-y-auto max-h-[250px] md:max-h-[400px] custom-scrollbar">
                   <p className="font-['Gaegu'] text-lg text-indigo-900 leading-relaxed whitespace-pre-wrap">
                     {selectedPhoto.content}
                   </p>
@@ -494,7 +512,15 @@ export default function PortfolioPage() {
           </div>
         </div>
       )}
-      <style>{`@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } } .animate-fade-in { animation: fade-in 0.3s ease-out; }`}</style>
+      <style>{`
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } } 
+        .animate-fade-in { animation: fade-in 0.3s ease-out; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #C5CAE9; border-radius: 20px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #9FA8DA; }
+      `}</style>
     </div>
   )
 }
