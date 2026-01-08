@@ -29,7 +29,7 @@ export default function PhotoPage() {
         try {
             const files = selectedPhotos.map(p => p.file)
             await createArchiveApi(files)
-            navigate("/profile")
+            navigate("/profile", { state: { activeTab: "gallery" } })
         } catch (error) {
             console.error("Failed to upload photos:", error)
         }

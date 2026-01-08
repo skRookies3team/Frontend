@@ -3,25 +3,19 @@ import { Button } from "@/shared/ui/button"
 import { useAuth } from "@/features/auth/context/auth-context"
 import { getUserApi, GetPetDto, getUserCoinApi } from "@/features/auth/api/auth-api"
 import {
-    AlertCircle,
-    MapPin,
-    Clock,
-    Phone,
-    Activity,
-    PlusCircle,
-    ChevronLeft,
-    Wind,
-    BrainCircuit,
-    Scale,
-    CheckCircle2,
-    Circle,
-    X,
-    Plus,
-    ChevronRight,
-    Heart,
-    ArrowUpRight,
-    Award,
-    Cat,
+  AlertCircle,
+  MapPin,
+  Clock,
+  Phone,
+  PlusCircle,
+  ChevronLeft,
+  CheckCircle2,
+  Circle,
+  X,
+  Plus,
+  ChevronRight,
+  Award,
+  Cat,
 } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Badge } from "@/shared/ui/badge"
@@ -81,46 +75,6 @@ const initialMissingPets = [
         description: "갈색 시바견, 매우 겁이 많습니다",
     },
 ]
-
-const healthData = {
-    heartRate: {
-        current: 95,
-        status: "normal",
-        trend: "up",
-        change: 5,
-    },
-    respiratoryRate: {
-        current: 28,
-        status: "normal",
-    },
-    activity: {
-        current: 1.8,
-        goal: 3,
-        steps: 4200,
-        status: "normal",
-    },
-    weight: {
-        current: 12.5,
-        status: "normal",
-    },
-    aiDiagnosis: {
-        status: "healthy",
-        confidence: 94,
-    },
-    sleep: {
-        hours: 7,
-        quality: "good",
-        status: "normal",
-    },
-    temperature: {
-        current: 38.2,
-        status: "normal",
-    },
-    meals: {
-        breakfast: true,
-        dinner: false,
-    },
-}
 
 
 
@@ -445,93 +399,8 @@ export default function DashboardPage() {
                             {/* AI 다이어리 3D 캐러셀 */}
                             <DiaryCarousel3D diaries={aiDiaries} isLoading={isDiariesLoading} />
 
-                            <EventBannerCarousel />
-
-                            <Card className="border-purple-200 bg-gradient-to-br from-purple-50/50 to-white">
-                                <CardHeader className="pb-4">
-                                    <CardTitle className="flex items-center gap-2 text-lg">
-                                        <Activity className="h-5 w-5 text-purple-600" />
-                                        헬스케어
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="rounded-lg border border-border bg-white p-3">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center gap-2">
-                                                    <Heart className="h-4 w-4 text-rose-600" />
-                                                    <span className="text-sm font-medium">분당 심박수</span>
-                                                </div>
-                                                <Badge variant="secondary" className="text-xs">
-                                                    {healthData.heartRate.status === "normal" ? "정상 ✅" : "주의 ⚠️"}
-                                                </Badge>
-                                            </div>
-                                            <div className="flex items-baseline gap-2">
-                                                <span className="text-2xl font-bold">{healthData.heartRate.current}</span>
-                                                <span className="text-sm text-muted-foreground">bpm</span>
-                                                <ArrowUpRight className="h-4 w-4 text-rose-500 ml-auto" />
-                                                <span className="text-xs text-rose-500">+{healthData.heartRate.change}%</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="rounded-lg border border-border bg-white p-3">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center gap-2">
-                                                    <Wind className="h-4 w-4 text-cyan-600" />
-                                                    <span className="text-sm font-medium">호흡수</span>
-                                                </div>
-                                                <Badge variant="secondary" className="text-xs">
-                                                    정상 ✅
-                                                </Badge>
-                                            </div>
-                                            <div className="flex items-baseline gap-2">
-                                                <span className="text-2xl font-bold">{healthData.respiratoryRate.current}</span>
-                                                <span className="text-sm text-muted-foreground">rpm</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="rounded-lg border border-purple-200 bg-purple-50 p-3">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center gap-2">
-                                                    <BrainCircuit className="h-4 w-4 text-purple-600" />
-                                                    <span className="text-sm font-medium">AI 진단</span>
-                                                </div>
-                                                <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
-                                                    건강 ✅
-                                                </Badge>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-lg font-bold text-foreground">건강한 상태</span>
-                                                <span className="text-sm text-muted-foreground">{healthData.aiDiagnosis.confidence}%</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="rounded-lg border border-border bg-white p-3">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center gap-2">
-                                                    <Scale className="h-4 w-4 text-green-600" />
-                                                    <span className="text-sm font-medium">몸무게</span>
-                                                </div>
-                                                <Badge variant="secondary" className="text-xs">
-                                                    정상 ✅
-                                                </Badge>
-                                            </div>
-                                            <div className="flex items-baseline gap-2">
-                                                <span className="text-2xl font-bold">{healthData.weight.current}</span>
-                                                <span className="text-sm text-muted-foreground">kg</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <Link to="/healthcare">
-                                        <Button variant="outline" className="w-full text-sm bg-transparent mt-2" size="sm">
-                                            상세 보기
-                                            <ChevronRight className="h-4 w-4 ml-1" />
-                                        </Button>
-                                    </Link>
-                                </CardContent>
-                            </Card>
-                        </main>
+              <EventBannerCarousel />
+            </main>
 
                         <aside className="hidden lg:block space-y-6">
                             {hasPets ? (
