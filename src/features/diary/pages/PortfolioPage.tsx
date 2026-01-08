@@ -17,7 +17,22 @@ interface PortfolioDiary {
   weather: string;
   images?: any[];
   isPlaceholder?: boolean;
+  color?: string; // [NEW] - for card color
 }
+
+// --- Constants ---
+const PAW_PALETTE = [
+  '#FFC4C4', // Soft Strawberry Pink
+  '#FFE8A1', // Custard Yellow
+  '#B8E0BF', // Soft Sage Green
+  '#D7C0AE', // Warm Beige/Latte
+  '#FFD1DC', // Muted Rose
+  '#ABC8E2', // Soft Sky Blue
+  '#E6E6FA', // Lavender Mist
+  '#F5F5DC', // Cream
+  '#FFB7B2', // Soft Coral Pink
+  '#C8E6C9', // Pale Mint
+];
 
 export default function PortfolioPage() {
   const [selectedPhoto, setSelectedPhoto] = useState<PortfolioDiary | null>(null)
@@ -32,37 +47,35 @@ export default function PortfolioPage() {
     const generatePlaceholderImage = (index: number) => {
       const canvas = document.createElement('canvas');
       canvas.width = 512;
-      canvas.height = 640;
+      canvas.height = 512;
       const ctx = canvas.getContext('2d');
       if (!ctx) return "/placeholder.svg";
 
-      // Neon-Pastel Palettes for Dark Space
-      const palettes = [
-        { bg: '#FFEBEE', icon: '#FF5252' }, // Red-Pink
-        { bg: '#F3E5F5', icon: '#E040FB' }, // Purple
-        { bg: '#E3F2FD', icon: '#448AFF' }, // Blue
-        { bg: '#E8F5E9', icon: '#69F0AE' }, // Green
-        { bg: '#FFF3E0', icon: '#FFAB40' }, // Orange
-      ];
-      const palette = palettes[index % palettes.length];
-
       // Background
-      ctx.fillStyle = palette.bg;
-      ctx.fillRect(0, 0, 512, 640);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, 512, 512);
 
-      // Cute Face Drawing
-      ctx.fillStyle = palette.icon;
+      // Paw Pattern Color (Use the card's assigned color for harmony)
+      // We want a slightly darker/stronger version of the card color for visibility
+      const cardColor = PAW_PALETTE[index % PAW_PALETTE.length];
+      ctx.fillStyle = cardColor;
 
-      const cx = 256, cy = 320;
+      // Draw Paw Print (Scaled up from 24x24 vector)
+      // Scale ~20x, Center ~256
+
+      // Main Pad
       ctx.beginPath();
-      ctx.arc(cx, cy, 120, 0, Math.PI * 2);
+      // Ellipse logic for main pad
+      ctx.ellipse(256, 340, 70, 60, 0, 0, 2 * Math.PI);
       ctx.fill();
 
-      ctx.fillStyle = '#FFF';
-      ctx.beginPath();
-      ctx.arc(cx - 40, cy - 20, 15, 0, Math.PI * 2);
-      ctx.arc(cx + 40, cy - 20, 15, 0, Math.PI * 2);
-      ctx.fill();
+      // Outer Toes
+      ctx.beginPath(); ctx.arc(136, 220, 50, 0, 2 * Math.PI); ctx.fill(); // Left
+      ctx.beginPath(); ctx.arc(376, 220, 50, 0, 2 * Math.PI); ctx.fill(); // Right
+
+      // Inner Toes
+      ctx.beginPath(); ctx.arc(196, 130, 45, 0, 2 * Math.PI); ctx.fill(); // Inner Left
+      ctx.beginPath(); ctx.arc(316, 130, 45, 0, 2 * Math.PI); ctx.fill(); // Inner Right
 
       return canvas.toDataURL('image/png');
     }
@@ -78,7 +91,8 @@ export default function PortfolioPage() {
         content: "이곳에 당신과 반려동물의 소중한 추억이 채워질 거예요!",
         likes: 0,
         weather: "🌈",
-        isPlaceholder: true
+        isPlaceholder: true,
+        color: PAW_PALETTE[i % PAW_PALETTE.length] // Assign color
       }));
 
       if (!user?.id || !token) {
@@ -89,7 +103,7 @@ export default function PortfolioPage() {
       try {
         const res = await getAiDiariesApi(Number(user.id))
         if (Array.isArray(res)) {
-          const mapped: PortfolioDiary[] = res.map((d: any) => {
+          const mapped: PortfolioDiary[] = res.map((d: any, index: number) => {
             let firstImage = "/placeholder-diary.jpg";
             if (d.imageUrls && d.imageUrls.length > 0) firstImage = d.imageUrls[0];
             else if (d.images && d.images.length > 0) {
@@ -113,7 +127,8 @@ export default function PortfolioPage() {
               likes: 0,
               weather: d.weather || "맑음 ☀️",
               images: d.images || [],
-              isPlaceholder: false
+              isPlaceholder: false,
+              color: PAW_PALETTE[index % PAW_PALETTE.length] // Assign color cyclically
             }
           })
 
@@ -125,7 +140,8 @@ export default function PortfolioPage() {
               ...placeholders[0],
               id: -1 * (startIdx + i + 1),
               src: generatePlaceholderImage(startIdx + i),
-              isPlaceholder: true
+              isPlaceholder: true,
+              color: PAW_PALETTE[(startIdx + i) % PAW_PALETTE.length]
             }));
             displayedDiaries.push(...newPlaceholders);
           }
@@ -158,6 +174,8 @@ export default function PortfolioPage() {
     if (!containerRef.current || diaries.length === 0) return
 
     const scene = new THREE.Scene()
+
+
 
     // Camera
     const camera = new THREE.PerspectiveCamera(60, containerRef.current.clientWidth / containerRef.current.clientHeight, 0.1, 1000)
@@ -277,11 +295,11 @@ export default function PortfolioPage() {
       cardGroup.position.set(x, y, z);
       cardGroup.lookAt(x * 2, y * 2, z * 2);
 
-      // 1. Frame
-      const frameGeo = new THREE.BoxGeometry(3.4, 4.2, 0.1);
+      // 1. Base Card (Colorful)
+      const frameGeo = new THREE.BoxGeometry(3.6, 4.5, 0.1);
       const frameMat = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        roughness: 0.3,
+        color: photo.color || 0xffffff,
+        roughness: 0.2,
         metalness: 0.1,
       });
       const frame = new THREE.Mesh(frameGeo, frameMat);
@@ -289,17 +307,62 @@ export default function PortfolioPage() {
       frame.receiveShadow = true;
       cardGroup.add(frame);
 
-      // 2. Image
-      const imgGeo = new THREE.PlaneGeometry(3.0, 3.0);
+      // 2. Image (Fills the upper card area - no white border)
+      const imgGeo = new THREE.PlaneGeometry(3.4, 3.4);
       const tex = textureLoader.load(photo.src || "/placeholder.svg");
-      const imgMat = new THREE.MeshBasicMaterial({ map: tex });
+
+      const imgMat = new THREE.MeshBasicMaterial({
+        map: tex,
+        side: THREE.DoubleSide
+      });
       const imgMesh = new THREE.Mesh(imgGeo, imgMat);
-      imgMesh.position.y = 0.3;
-      imgMesh.position.z = 0.06;
+      imgMesh.position.y = 0.4; // Upper area of card
+      imgMesh.position.z = 0.06; // On top of base
       imgMesh.userData = { photo, index };
       cardGroup.add(imgMesh);
 
+      // --- 4. Date Label (Handwritten Style) ---
+      const createDateLabelTexture = (dateText: string) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 128; // Wide strip
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return null;
+
+        // Transparent background
+        ctx.clearRect(0, 0, 512, 128);
+
+        // Text settings - improved readability
+        ctx.fillStyle = '#FFFFFF'; // White for maximum visibility
+        ctx.font = 'bold 80px "Gaegu", cursive'; // Larger handwritten font
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        ctx.fillText(dateText, 256, 64);
+
+        return new THREE.CanvasTexture(canvas);
+      };
+
+      const dateTex = createDateLabelTexture(photo.date);
+      if (dateTex) {
+        const dateGeo = new THREE.PlaneGeometry(3.0, 0.7);
+        const dateMat = new THREE.MeshBasicMaterial({
+          map: dateTex,
+          transparent: true,
+          side: THREE.DoubleSide
+        });
+        const dateMesh = new THREE.Mesh(dateGeo, dateMat);
+        dateMesh.position.y = -1.5; // Bottom area
+        dateMesh.position.z = 0.06;
+        cardGroup.add(dateMesh);
+      }
+
+
       clickableMeshes.push(imgMesh);
+      // Make the whole card clickable for easier interaction
+      clickableMeshes.push(frame);
+      frame.userData = { photo, index };
+
       group.add(cardGroup);
     });
 
