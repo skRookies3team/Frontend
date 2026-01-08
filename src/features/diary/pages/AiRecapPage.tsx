@@ -296,7 +296,7 @@ export default function AiRecapPage() {
               </div>
               <p className="text-orange-600 font-bold text-xl mb-2 font-['Jua']">아직 리캡이 없어요!</p>
               <p className="text-sm text-orange-500 font-medium">
-                위의 '생성하기' 버튼을 눌러<br />첫 번째 추억을 만들어보세요 ✨
+                위의 '생성하기' 버튼을 눌러<br />첫 번째 추억을 만들어보세요
               </p>
             </div>
           ) : (

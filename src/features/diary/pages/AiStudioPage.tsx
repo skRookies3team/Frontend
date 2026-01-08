@@ -33,7 +33,7 @@ export default function AiStudioPage() {
             <div className="w-full h-4 bg-yellow-200/60 absolute bottom-1 left-0 -z-10 -rotate-1 rounded-full blur-[1px]"></div>
           </div>
           <p className="mt-4 text-gray-500 font-medium md:text-xl bg-white/60 inline-block px-4 py-1 rounded-full backdrop-blur-sm">
-            반려동물의 특별한 순간을 AI와 함께 기록해요 🎨
+            반려동물의 특별한 순간을 AI와 함께 기록해요 
           </p>
         </div>
 
@@ -49,7 +49,7 @@ export default function AiStudioPage() {
                   <Sparkles className="h-8 w-8 text-yellow-500 fill-yellow-200" />
                 </div>
                 <div className="bg-white/80 px-3 py-1 rounded-full text-xs font-bold text-yellow-600 border border-yellow-100">
-                  BEST ✨
+                  BEST
                 </div>
               </div>
 
@@ -93,7 +93,7 @@ export default function AiStudioPage() {
                   <BookOpen className="h-8 w-8 text-pink-500 fill-pink-200" />
                 </div>
                 <div className="bg-white/80 px-3 py-1 rounded-full text-xs font-bold text-pink-600 border border-pink-100">
-                  Special 💝
+                  Special
                 </div>
               </div>
 

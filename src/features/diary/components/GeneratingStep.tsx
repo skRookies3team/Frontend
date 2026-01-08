@@ -96,7 +96,7 @@ const GeneratingStep = ({ progress }: { progress: number }) => {
                         <span className="text-2xl animate-bounce">🐈</span>
                     </h2>
                     <p className="text-gray-400 text-sm bg-white/50 px-6 py-2 rounded-full border border-purple-50 shadow-sm">
-                        고양이들이 이야기를 모으고 있어요...
+                        이야기를 모으고 있어요...
                     </p>
                 </div>
             </div>
