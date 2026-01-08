@@ -38,7 +38,7 @@ import WishlistPage from "@/features/shop/pages/WishlistPage"
 import MileagePage from "@/features/shop/pages/MileagePage"
 
 // Feature: Healthcare
-import DashboardPage from "@/features/dashboard/pages/DashboardPage"
+import { DashboardPage } from "@/features/dashboard/pages"
 import HealthcarePage from "@/features/healthcare/pages/HealthcarePage"
 import PetInfoPage from "@/features/healthcare/pages/PetInfoPage"
 import PetProfilePage from "@/features/healthcare/pages/PetProfilePage"
