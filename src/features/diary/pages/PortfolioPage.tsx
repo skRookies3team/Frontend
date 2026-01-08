@@ -55,6 +55,9 @@ export default function PortfolioPage() {
   const { user, token } = useAuth()
   const navigate = useNavigate();
 
+  // Store all fetched diaries to shuffle from locally - declared at top level
+  const allDiariesRef = useRef<PortfolioDiary[]>([]);
+
   // --- Data Fetching ---
   useEffect(() => {
     // Cute placeholder generator (Canvas)
@@ -114,23 +117,30 @@ export default function PortfolioPage() {
       return canvas.toDataURL('image/png');
     }
 
-    const fetchDiaries = async () => {
-      const PLACEHOLDER_COUNT = 24;
-      const placeholders: PortfolioDiary[] = Array.from({ length: PLACEHOLDER_COUNT }).map((_, i) => ({
-        id: -1 * (i + 1),
-        src: generatePlaceholderImage(i),
-        title: "미래의 추억 🐾",
-        date: "Coming Soon",
-        location: "행복한 장소",
-        content: "이곳에 당신과 반려동물의 소중한 추억이 채워질 거예요!",
-        likes: 0,
-        weather: "🌈",
-        isPlaceholder: true,
-        color: PAW_PALETTE[i % PAW_PALETTE.length] // Assign color
-      }));
+    // Store all fetched diaries to shuffle from locally
 
+
+    const fetchDiaries = async () => {
+      const PLACEHOLDER_COUNT = 30; // Increased to 30 for better density
+
+      const generatePlaceholders = (count: number, startIdx: number) => {
+        return Array.from({ length: count }).map((_, i) => ({
+          id: -1 * (startIdx + i + 1),
+          src: generatePlaceholderImage(startIdx + i),
+          title: "미래의 추억 🐾",
+          date: "Coming Soon",
+          location: "행복한 장소",
+          content: "이곳에 당신과 반려동물의 소중한 추억이 채워질 거예요!",
+          likes: 0,
+          weather: "🌈",
+          isPlaceholder: true,
+          color: PAW_PALETTE[(startIdx + i) % PAW_PALETTE.length]
+        }));
+      };
+
+      // Default placeholders if no user/token
       if (!user?.id || !token) {
-        setDiaries(placeholders);
+        setDiaries(generatePlaceholders(PLACEHOLDER_COUNT, 0));
         return;
       }
 
@@ -162,33 +172,62 @@ export default function PortfolioPage() {
               weather: d.weather || "맑음 ☀️",
               images: d.images || [],
               isPlaceholder: false,
-              color: PAW_PALETTE[index % PAW_PALETTE.length] // Assign color cyclically
+              color: PAW_PALETTE[index % PAW_PALETTE.length]
             }
-          })
+          });
 
-          const displayedDiaries = [...mapped];
-          if (displayedDiaries.length < PLACEHOLDER_COUNT) {
-            const startIdx = displayedDiaries.length;
-            const remaining = PLACEHOLDER_COUNT - displayedDiaries.length;
-            const newPlaceholders = Array.from({ length: remaining }).map((_, i) => ({
-              ...placeholders[0],
-              id: -1 * (startIdx + i + 1),
-              src: generatePlaceholderImage(startIdx + i),
-              isPlaceholder: true,
-              color: PAW_PALETTE[(startIdx + i) % PAW_PALETTE.length]
-            }));
-            displayedDiaries.push(...newPlaceholders);
-          }
-          setDiaries(displayedDiaries)
+          allDiariesRef.current = mapped;
+          updateDisplayDiaries(mapped); // Initial load
         } else {
-          setDiaries(placeholders);
+          setDiaries(generatePlaceholders(PLACEHOLDER_COUNT, 0));
         }
       } catch (e: any) {
         if (e.response && e.response.status === 401) navigate('/login');
-        setDiaries(placeholders);
+        setDiaries(generatePlaceholders(PLACEHOLDER_COUNT, 0));
       }
     }
-    fetchDiaries()
+
+    const updateDisplayDiaries = (sourceDiaries: PortfolioDiary[]) => {
+      const PLACEHOLDER_COUNT = 30;
+      // 1. Shuffle
+      const shuffled = [...sourceDiaries].sort(() => 0.5 - Math.random());
+
+      // 2. Take top 30
+      let selected = shuffled.slice(0, PLACEHOLDER_COUNT);
+
+      // 3. Fill if less than 30
+      if (selected.length < PLACEHOLDER_COUNT) {
+        const remaining = PLACEHOLDER_COUNT - selected.length;
+        const startIdx = selected.length;
+        const newPlaceholders = Array.from({ length: remaining }).map((_, i) => ({
+          id: -1 * (startIdx + i + 1),
+          src: generatePlaceholderImage(startIdx + i),
+          title: "미래의 추억 🐾",
+          date: "Coming Soon",
+          location: "행복한 장소",
+          content: "이곳에 당신과 반려동물의 소중한 추억이 채워질 거예요!",
+          likes: 0,
+          weather: "🌈",
+          isPlaceholder: true,
+          color: PAW_PALETTE[(startIdx + i) % PAW_PALETTE.length]
+        }));
+        selected = [...selected, ...newPlaceholders];
+      }
+      setDiaries(selected);
+    };
+
+    fetchDiaries();
+
+    // Random shuffle interval (e.g., every 20 seconds)
+    const intervalId = setInterval(() => {
+      if (allDiariesRef.current.length > 0) {
+        console.log('[Portfolio] 🔄 Refreshing diary selection...'); // Log for debugging
+        updateDisplayDiaries(allDiariesRef.current);
+      }
+    }, 20000); // 20000ms = 20s
+
+    return () => clearInterval(intervalId);
+
   }, [user, token, navigate])
 
 
