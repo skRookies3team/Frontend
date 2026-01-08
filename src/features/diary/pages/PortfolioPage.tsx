@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import * as THREE from "three"
-import { X, Calendar, MapPin, Heart, ChevronLeft, ChevronRight, RotateCw, ZoomIn } from 'lucide-react'
+import { X, Calendar, MapPin, ChevronLeft, ChevronRight, RotateCw, ZoomIn } from 'lucide-react'
 import { Button } from "@/shared/ui/button"
 import { getAiDiariesApi } from "@/features/diary/api/diary-api"
 import { useAuth } from "@/features/auth/context/auth-context"
@@ -22,16 +22,30 @@ interface PortfolioDiary {
 
 // --- Constants ---
 const PAW_PALETTE = [
-  '#FFC4C4', // Soft Strawberry Pink
-  '#FFE8A1', // Custard Yellow
-  '#B8E0BF', // Soft Sage Green
-  '#D7C0AE', // Warm Beige/Latte
-  '#FFD1DC', // Muted Rose
-  '#ABC8E2', // Soft Sky Blue
-  '#E6E6FA', // Lavender Mist
-  '#F5F5DC', // Cream
-  '#FFB7B2', // Soft Coral Pink
-  '#C8E6C9', // Pale Mint
+  '#FF7EB3', // Vivid Pink
+  '#48DBFB', // Vivid Sky Blue
+  '#1DD1A1', // Vivid Green
+  '#FDCB6E', // Vivid Yellow
+  '#FF9F43', // Vivid Orange
+  '#A29BFE', // Vivid Periwinkle
+  '#FF6B6B', // Vivid Coral Red
+  '#00D2D3', // Bright Teal
+  '#6C5CE7', // Vivid Purple
+  '#FD79A8', // Pixie Pink
+  '#FFC312', // Sunflower Yellow
+  '#C4E538', // Lime Green
+  '#12CBC4', // Aqua
+  '#FDA7DF', // Lavender Rose
+  '#ED4C67', // Deep Rose
+  '#F79F1F', // Radiant Orange
+  '#A3CB38', // Olive Green
+  '#1289A7', // Ocean Blue
+  '#D980FA', // Orchid
+  '#B53471', // Berry
+  '#E056FD', // Electric Violet
+  '#686DE0', // Royal Blue
+  '#7ED6DF', // Heliotrope
+  '#22A6B3', // Green-Blue
 ];
 
 export default function PortfolioPage() {
@@ -63,19 +77,39 @@ export default function PortfolioPage() {
       // Draw Paw Print (Scaled up from 24x24 vector)
       // Scale ~20x, Center ~256
 
-      // Main Pad
+      // Main Pad (Soft Triangular Shape)
       ctx.beginPath();
-      // Ellipse logic for main pad
-      ctx.ellipse(256, 340, 70, 60, 0, 0, 2 * Math.PI);
+      const py = 340; // Pad center Y
+      ctx.moveTo(256, py - 40); // Top center dip
+      // Right lobe
+      ctx.bezierCurveTo(296, py - 60, 386, py - 20, 386, py + 40);
+      // Bottom curve
+      ctx.bezierCurveTo(386, py + 120, 126, py + 120, 126, py + 40);
+      // Left lobe
+      ctx.bezierCurveTo(126, py - 20, 216, py - 60, 256, py - 40);
       ctx.fill();
 
-      // Outer Toes
-      ctx.beginPath(); ctx.arc(136, 220, 50, 0, 2 * Math.PI); ctx.fill(); // Left
-      ctx.beginPath(); ctx.arc(376, 220, 50, 0, 2 * Math.PI); ctx.fill(); // Right
+      // Toes - Vertical Ovals (arranged in arch)
 
-      // Inner Toes
-      ctx.beginPath(); ctx.arc(196, 130, 45, 0, 2 * Math.PI); ctx.fill(); // Inner Left
-      ctx.beginPath(); ctx.arc(316, 130, 45, 0, 2 * Math.PI); ctx.fill(); // Inner Right
+      // Far Left
+      ctx.beginPath();
+      ctx.ellipse(90, 200, 35, 55, -0.4, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Inner Left
+      ctx.beginPath();
+      ctx.ellipse(190, 110, 40, 60, -0.2, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Inner Right
+      ctx.beginPath();
+      ctx.ellipse(322, 110, 40, 60, 0.2, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Far Right
+      ctx.beginPath();
+      ctx.ellipse(422, 200, 35, 55, 0.4, 0, 2 * Math.PI);
+      ctx.fill();
 
       return canvas.toDataURL('image/png');
     }
@@ -237,43 +271,51 @@ export default function PortfolioPage() {
     const coreGeo = new THREE.SphereGeometry(9, 64, 64);
     const coreMat = new THREE.ShaderMaterial({
       uniforms: {
-        c: { value: 0.8 },
-        p: { value: 2.5 },
-        glowColor: { value: new THREE.Color(0x7C4DFF) }, // Deep Purple/Blueish Glow
-        viewVector: { value: camera.position }
+        glowColor: { value: new THREE.Color(0x9D50BB) }, // Bright Purple/Pinkish Rim
+        baseColor: { value: new THREE.Color(0x240046) }, // Deep Dark Indigo/Purple Center
       },
       vertexShader: `
-            uniform vec3 viewVector;
-            uniform float c;
-            uniform float p;
-            varying float intensity;
-            void main() {
-                vec3 vNormal = normalize( normalMatrix * normal );
-                vec3 vNormel = normalize( normalMatrix * viewVector );
-                intensity = pow( c - dot(vNormal, vNormel), p );
-                gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-            }
-        `,
+        varying vec3 vNormal;
+        varying vec3 vViewPosition;
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          vViewPosition = -mvPosition.xyz;
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
       fragmentShader: `
-            uniform vec3 glowColor;
-            varying float intensity;
-            void main() {
-                vec3 glow = glowColor * intensity;
-                // Add a solid base color to center to make it look like a planet
-                vec3 baseColor = vec3(0.05, 0.0, 0.1); 
-                gl_FragColor = vec4( baseColor + glow, 0.8 ); 
-            }
-        `,
+        uniform vec3 glowColor;
+        uniform vec3 baseColor;
+        varying vec3 vNormal;
+        varying vec3 vViewPosition;
+        void main() {
+          vec3 normal = normalize(vNormal);
+          vec3 viewDir = normalize(vViewPosition);
+          float dotNM = max(0.0, dot(normal, viewDir)); 
+          
+          // Fresnel factor (0 at center, 1 at edge)
+          float fresnel = pow(1.0 - dotNM, 2.0); 
+          
+          // Smooth Gradient: Mix base (center) to glow (edge)
+          vec3 finalColor = mix(baseColor, glowColor, fresnel);
+          
+          // Brightness boost
+          gl_FragColor = vec4(finalColor * 1.5, 0.95);
+        }
+      `,
       side: THREE.FrontSide,
       blending: THREE.AdditiveBlending,
-      transparent: true
+      transparent: true,
+      depthWrite: false
     });
     const coreSphere = new THREE.Mesh(coreGeo, coreMat);
 
 
     // --- The Sphere of Cards ---
     const group = new THREE.Group();
-    group.add(coreSphere);
+    scene.add(coreSphere); // Add sphere directly to scene (Static)
+    // group.add(coreSphere); // Do NOT add to rotating group
     scene.add(group);
     groupRef.current = group;
 
@@ -383,8 +425,6 @@ export default function PortfolioPage() {
       group.rotation.y = rotationRef.current.y;
       group.rotation.x = rotationRef.current.x;
 
-      coreSphere.material.uniforms.viewVector.value = new THREE.Vector3().subVectors(camera.position, coreSphere.position);
-
       renderer.render(scene, camera);
       animationFrameRef.current = requestAnimationFrame(animate);
     }
@@ -483,8 +523,8 @@ export default function PortfolioPage() {
             <h1 className="text-3xl md:text-4xl font-bold text-white font-['Jua'] flex items-center gap-2 drop-shadow-lg">
               <span>✨</span> 3D 다이어리 포트폴리오 <span>✨</span>
             </h1>
-            <p className="text-sm font-['Gaegu'] text-gray-300 flex items-center gap-4">
-              <span className="flex items-center gap-1"><RotateCw size={14} /> 드래그하여 회전, 휠로 확대/축소하세요</span>
+            <p className="text-xl font-['Jua'] text-white flex items-center gap-4 mt-1 drop-shadow-md">
+              <span className="flex items-center gap-2"><RotateCw size={20} /> 드래그하여 회전, 휠로 확대/축소하세요</span>
             </p>
           </div>
 
@@ -508,7 +548,7 @@ export default function PortfolioPage() {
           onClick={() => { setSelectedPhoto(null); setCurrentImageIndex(0); }}
         >
           <div
-            className="relative max-w-4xl w-full bg-[#E8EAF6] rounded-3xl shadow-2xl p-2 transform rotate-1"
+            className="relative max-w-6xl w-full bg-[#E8EAF6] rounded-3xl shadow-2xl p-2 transform rotate-1"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -553,22 +593,16 @@ export default function PortfolioPage() {
                 )}
               </div>
               {/* Content */}
-              <div className="w-full md:w-80 bg-indigo-50 p-6 flex flex-col">
+              <div className="w-full md:w-[450px] bg-indigo-50 p-6 flex flex-col">
                 <h2 className="text-2xl font-bold font-['Jua'] text-indigo-900 mb-2">{selectedPhoto.title}</h2>
-                <div className="flex flex-wrap gap-2 text-sm font-['Gaegu'] text-indigo-800 mb-4">
-                  <span className="bg-white px-2 py-1 rounded-md shadow-sm">{selectedPhoto.date}</span>
-                  <span className="bg-white px-2 py-1 rounded-md shadow-sm">{selectedPhoto.weather}</span>
+                <div className="flex flex-wrap gap-2 text-base font-['Jua'] text-indigo-800 mb-4">
+                  <span className="bg-white px-3 py-1 rounded-md shadow-sm">{selectedPhoto.date}</span>
+                  <span className="bg-white px-3 py-1 rounded-md shadow-sm">{selectedPhoto.weather}</span>
                 </div>
-                <div className="bg-white p-4 rounded-xl shadow-inner flex-grow overflow-y-auto max-h-[250px] md:max-h-[400px] custom-scrollbar">
-                  <p className="font-['Gaegu'] text-lg text-indigo-900 leading-relaxed whitespace-pre-wrap">
+                <div className="bg-white p-5 rounded-xl shadow-inner flex-grow overflow-y-auto custom-scrollbar h-full">
+                  <p className="font-['Jua'] text-xl text-indigo-950 leading-loose whitespace-pre-wrap">
                     {selectedPhoto.content}
                   </p>
-                </div>
-                <div className="flex justify-end mt-4">
-                  <div className="flex items-center gap-2 bg-indigo-200 px-4 py-2 rounded-full text-white font-bold">
-                    <Heart className="w-5 h-5 fill-white" />
-                    <span>{selectedPhoto.likes}</span>
-                  </div>
                 </div>
               </div>
             </div>
