@@ -110,15 +110,21 @@ const CompleteStep = ({ onHome, earnedAmount, onShare, onThemeChange }: Complete
         <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
             <div className="bg-[#FFF5F6] p-8 rounded-[2.5rem] shadow-[8px_8px_0px_rgba(255,182,193,0.2)] border-2 border-pink-100 mb-8 relative transform rotate-1 transition-transform hover:rotate-0">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-6 bg-pink-100/50 -rotate-2 backdrop-blur-sm rounded-sm"></div>
-                <div className="bg-pink-100 p-4 rounded-full mb-4 inline-block">
-                    <Check className="w-10 h-10 text-pink-500" />
+                <div className="bg-pink-100 p-6 rounded-full mb-6 relative inline-block">
+                    <Check className="w-12 h-12 text-pink-500" />
+                    <div className="absolute top-0 right-0 w-4 h-4 bg-yellow-400 rounded-full animate-ping" />
                 </div>
                 <h2 className="text-3xl md:text-4xl font-bold text-gray-700 mb-3 font-['Jua'] drop-shadow-sm">일기 작성이<br />완료되었어요!</h2>
 
                 {earnedAmount !== null && (
-                    <div className="inline-flex items-center gap-2 bg-yellow-100/80 px-4 py-2 rounded-xl border border-yellow-200 animate-bounce">
-                        <Coins className="w-5 h-5 text-yellow-600 fill-yellow-600" />
-                        <span className="font-bold text-yellow-700">+{earnedAmount} Pet Coin 적립 완료!</span>
+                    <div className="inline-flex items-center gap-3 bg-[#FFF9C4] pl-2 pr-6 py-2 rounded-full border border-yellow-200 animate-bounce shadow-sm">
+                        <div className="bg-yellow-400 rounded-full p-2">
+                            <Coins className="w-5 h-5 text-white" />
+                        </div>
+                        <span className="font-bold text-[#8B5E3C] text-lg">
+                            <span className="text-rose-500 mr-1.5">+{earnedAmount}</span>
+                            Pet Coin 적립 완료!
+                        </span>
                     </div>
                 )}
             </div>

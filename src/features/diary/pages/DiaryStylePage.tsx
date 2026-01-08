@@ -264,9 +264,9 @@ const DiaryStylePage = () => {
                         <ChevronLeft className="w-6 h-6" />
                     </button>
                     <h1 className={`text-2xl md:text-3xl font-bold font-['Jua'] tracking-wider flex items-center gap-3 transition-colors duration-500 ${backgroundTheme === 'pink' ? 'text-[#FF6B8B]' : 'text-blue-500'}`}>
-                        <PawPrint className={`w-6 h-6 animate-bounce delay-100 ${backgroundTheme === 'pink' ? 'text-[#FF8FAB]' : 'text-blue-300'}`} />
-                        <span>너와 나의 이야기</span>
-                        <PawPrint className={`w-6 h-6 animate-bounce delay-300 ${backgroundTheme === 'pink' ? 'text-[#FF8FAB]' : 'text-blue-300'}`} />
+                        <PawPrint className={`w-6 h-6 animate-bounce delay-100 ${backgroundTheme === 'pink' ? 'text-yellow-400' : 'text-blue-300'}`} />
+                        <span>나만의 일기장 꾸미기</span>
+                        <PawPrint className={`w-6 h-6 animate-bounce delay-300 ${backgroundTheme === 'pink' ? 'text-yellow-400' : 'text-blue-300'}`} />
                     </h1>
                     <div className="flex items-center gap-2"></div>
                 </div>

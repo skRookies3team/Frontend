@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Calendar, MapPin, Sun, Smile, Edit3, Save, Loader2, Layers, Grid, Maximize2, Minimize2, Type, Palette, Sparkles, ImageIcon, ArrowUpRight, LayoutGrid } from 'lucide-react';
 import KakaoMap from './KakaoMap';
 
@@ -62,42 +62,14 @@ const StyleStep = ({
         "#fff8e1", // 크림
         "#f3e5f5", // 라이트퍼플
         "#e8f5e9", // 페일그린
-        "#1a1a2e", // 다크모드
     ];
 
     const [activeTab, setActiveTab] = useState<'layout' | 'detail'>('layout');
 
-    // [NEW] Theme/Preset to Font Mapping
-    const getFontForTheme = (theme: string, preset: string | null) => {
-        if (preset === 'cute_planner') return 'Jua';
-        if (preset === 'romantic_picnic') return 'Hi Melody';
-        if (preset === 'vintage_scrapbook') return 'Nanum Myeongjo';
-        if (preset === 'abstract_organic') return 'Song Myung';
-        if (preset === 'memphis_pop') return 'Dongle';
-        if (preset === 'dreamy_pastel') return 'Hi Melody';
-        if (preset === 'ocean_breeze') return 'Gaegu';
-        if (preset === 'retro_notebook') return 'Gaegu'; // [NEW]
-
-        switch (theme) {
-            case 'kawaii': return 'Jua';
-            case 'romantic': return 'Hi Melody';
-            case 'vintage': return 'Nanum Myeongjo';
-            case 'modern': return 'Gowun Dodum';
-            case 'artistic': return 'Song Myung';
-            case 'playful': return 'Dongle';
-            case 'retro': return 'Nanum Myeongjo';
-            case 'natural': return 'Gowun Dodum';
-            case 'dreamy': return 'Hi Melody';
-            case 'fresh': return 'Gaegu';
-            default: return 'Noto Sans KR';
-        }
-    };
-
     // 프리셋/테마 변경 시 스타일 적용 로직
     useEffect(() => {
-        // [NEW] Auto-update font based on theme/preset
-        const newFont = getFontForTheme(themeStyle, preset);
-        setFontFamily(newFont);
+        // [REMOVED] Auto-font changing to respect user's manual selection
+        // Users can now freely choose fonts without theme overriding their choice
 
         if (!preset) return;
 
@@ -107,8 +79,8 @@ const StyleStep = ({
                 setThemeStyle('romantic');
                 setLayoutStyle('grid');
                 break;
-            case 'city_night': // 다크 모드
-                setBackgroundColor('#1a1a2e');
+            case 'city_night': // 다크 모드 → 변경: 밝은 회색
+                setBackgroundColor('#f5f5f5');
                 setThemeStyle('modern');
                 setLayoutStyle('grid');
                 break;
@@ -655,6 +627,28 @@ const StyleStep = ({
                                             </button>
                                         ))}
                                     </div>
+                                </section>
+
+                                {/* [NEW] Font Selection */}
+                                <section>
+                                    <label className="text-xs font-bold text-gray-400 uppercase mb-3 block">글꼴</label>
+                                    <select
+                                        value={fontFamily}
+                                        onChange={(e) => setFontFamily(e.target.value)}
+                                        className="w-full py-2.5 px-3 rounded-lg border border-gray-200 text-sm focus:border-pink-500 focus:ring-2 focus:ring-pink-100 transition-all"
+                                        style={{ fontFamily: fontFamily }}
+                                    >
+                                        <option value="Noto Sans KR">Noto Sans KR (기본)</option>
+                                        <option value="Jua" style={{ fontFamily: 'Jua' }}>Jua (주아)</option>
+                                        <option value="Hi Melody" style={{ fontFamily: 'Hi Melody' }}>Hi Melody (하이멜로디)</option>
+                                        <option value="Nanum Myeongjo" style={{ fontFamily: 'Nanum Myeongjo' }}>Nanum Myeongjo (나눔명조)</option>
+                                        <option value="Gowun Dodum" style={{ fontFamily: 'Gowun Dodum' }}>Gowun Dodum (고운도돔)</option>
+                                        <option value="Song Myung" style={{ fontFamily: 'Song Myung' }}>Song Myung (송명)</option>
+                                        <option value="Dongle" style={{ fontFamily: 'Dongle' }}>Dongle (동글)</option>
+                                        <option value="Gaegu" style={{ fontFamily: 'Gaegu' }}>Gaegu (개구쟁이)</option>
+                                        <option value="Stylish" style={{ fontFamily: 'Stylish' }}>Stylish (스타일리시)</option>
+                                        <option value="Sunflower" style={{ fontFamily: 'Sunflower' }}>Sunflower (해바라기)</option>
+                                    </select>
                                 </section>
                             </div>
                         )}
