@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { PetMateCandidate } from '../api/petmate-api';
-import { MapPin, Star, Heart, Sparkles } from 'lucide-react';
+import { MapPin, Heart, Sparkles } from 'lucide-react';
 
 interface PetCardProps {
     candidate: PetMateCandidate;
@@ -31,8 +31,8 @@ export function PetCard({
     return (
         <motion.div
             className={`relative overflow-hidden cursor-pointer ${isFull
-                    ? 'w-full h-[70vh] max-h-[600px] rounded-3xl'
-                    : 'w-full h-[500px] rounded-2xl'
+                ? 'w-full h-[70vh] max-h-[600px] rounded-3xl'
+                : 'w-full h-[500px] rounded-2xl'
                 }`}
             onClick={onClick}
             whileHover={isTop ? { scale: 1.02 } : undefined}
@@ -104,16 +104,16 @@ export function PetCard({
                             onLike();
                         }}
                         className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-all ${isLiked
-                                ? 'bg-gradient-to-br from-pink-500 to-rose-600'
-                                : 'bg-white/20 backdrop-blur-md hover:bg-white/30'
+                            ? 'bg-gradient-to-br from-pink-500 to-rose-600'
+                            : 'bg-white/20 backdrop-blur-md hover:bg-white/30'
                             }`}
                         whileTap={{ scale: 0.9 }}
                         whileHover={{ scale: 1.1 }}
                     >
                         <Heart
                             className={`w-7 h-7 ${isLiked
-                                    ? 'fill-white text-white'
-                                    : 'text-white'
+                                ? 'fill-white text-white'
+                                : 'text-white'
                                 }`}
                         />
                     </motion.button>

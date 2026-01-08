@@ -19,7 +19,6 @@ interface SwipeableCardStackProps {
  */
 export function SwipeableCardStack({
     candidates,
-    isUserLiked,
     onLike,
     onPass,
     onSelect

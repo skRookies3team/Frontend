@@ -68,7 +68,7 @@ export function PetDetailModal({
                                 <div>
                                     <h2 className="text-2xl font-bold text-gray-800">{candidate.petName}</h2>
                                     <p className="text-gray-500 text-sm">
-                                        {candidate.petBreed} • {candidate.petAge}살 • {candidate.petGender === 'female' ? '여아' : '남아'}
+                                        {candidate.petBreed} • {candidate.petAge}살 • {candidate.petGender === 'female' ? '암컷' : '수컷'}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-1 text-sm text-gray-400">

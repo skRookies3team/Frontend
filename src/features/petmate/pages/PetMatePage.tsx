@@ -6,14 +6,12 @@ import { PetDetailModal } from "@/features/petmate/components/PetDetailModal"
 import { MatchingFriendsModal } from "@/features/petmate/components/MatchingFriendsModal"
 import { Button } from "@/shared/ui/button"
 import {
-  Heart,
-  MessageCircle,
   Search,
   MapPin,
-  Filter,
   RefreshCw,
   SlidersHorizontal,
-  Bell
+  Heart,
+  Navigation
 } from "lucide-react"
 import { useAuth } from "@/features/auth/context/auth-context"
 import { useNavigate } from "react-router-dom"
@@ -21,6 +19,27 @@ import { Dialog, DialogContent, DialogTitle } from "@/shared/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select"
 import { Input } from "@/shared/ui/input"
 import { toast } from "sonner"
+
+// Pet type and breed data (from RegisterPetPage)
+const ANIMAL_TYPES = [
+  { id: "all", label: "전체" },
+  { id: "dog", label: "강아지" },
+  { id: "cat", label: "고양이" },
+  { id: "rabbit", label: "토끼" },
+  { id: "hamster", label: "햄스터" },
+  { id: "other", label: "기타" },
+]
+
+const DOG_BREEDS = [
+  "전체", "골든 리트리버", "래브라도 리트리버", "말티즈", "푸들", "비숙 프리제", "시추", "요크셔 테리어",
+  "포메라니안", "치와와", "비글", "시바견", "시베리안 허스키", "코커 스패니얼",
+  "프렌치 불도그", "보더 콜리", "져먼 셰퍼드 독", "진돏개", "페보로크 웨시 코기", "기타"
+]
+
+const CAT_BREEDS = [
+  "전체", "코리안 숏헤어", "페르시안", "러시안 블루", "브리티시 숏헤어", "샴",
+  "스코티시 폴드", "벵갈", "메인쿤", "아메리칸 숏헤어", "기타"
+]
 
 // Types needed for map markers
 interface MapMarker extends PetMateCandidate {
@@ -40,6 +59,7 @@ export default function PetMatePage() {
   const [locationSearch, setLocationSearch] = useState("")
   const [distanceFilter, setDistanceFilter] = useState("5")
   const [genderFilter, setGenderFilter] = useState<"all" | "male" | "female">("all")
+  const [petTypeFilter, setPetTypeFilter] = useState<"all" | "dog" | "cat" | "other">("all")
   const [breedFilter, setBreedFilter] = useState("all")
   const [matchedUser, setMatchedUser] = useState<PetMateCandidate | null>(null)
 
@@ -56,9 +76,9 @@ export default function PetMatePage() {
   const [userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(null)
   const [currentAddress, setCurrentAddress] = useState("위치 찾는 중...")
   const [searchResults, setSearchResults] = useState<SearchAddressResult[]>([])
-  const [searchLoading, setSearchLoading] = useState(false)
+  const [, setSearchLoading] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [isLocationLoading, setIsLocationLoading] = useState(false)
+  const [, setIsLocationLoading] = useState(false)
 
 
   // --- Hooks ---
@@ -402,43 +422,31 @@ export default function PetMatePage() {
          3. UI Layer (Reverted to V18 Style Controls)
       -------------------------------------------------------------------------------- */}
 
-      {/* Top Floating Layout (Reverted: Location + Rectangular Matching Button) */}
+      {/* Top Floating Layout */}
       <div className="absolute top-0 left-0 right-0 z-20 p-4 pt-6 pointer-events-none">
-        <div className="max-w-md mx-auto w-full flex flex-col gap-3 pointer-events-auto">
+        <div className="max-w-md mx-auto w-full flex gap-2 pointer-events-auto">
 
-          {/* Row 1: Location Bar */}
-          <div className="flex w-full gap-2">
-            <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 h-11 flex items-center px-4 gap-2 cursor-pointer hover:border-gray-300 transition-all"
-              onClick={() => setLocationModalOpen(true)}>
-              <MapPin className="w-4 h-4 text-gray-500" />
-              <span className="font-bold text-gray-700 truncate text-sm flex-1">
-                {currentAddress}
-              </span>
-            </div>
+          {/* Location Bar (Flex to fill) */}
+          <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 h-10 flex items-center px-3 gap-2 cursor-pointer hover:border-gray-300 transition-all"
+            onClick={() => setLocationModalOpen(true)}>
+            <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
+            <span className="font-bold text-gray-700 truncate text-sm">
+              {currentAddress}
+            </span>
           </div>
 
-          {/* Row 2: Matching Mate Button (V23 Heart Theme) */}
+          {/* Matching Mate Button (Auto width on right) */}
           <button
             onClick={() => setRequestsModalOpen(true)}
-            className="w-full h-12 bg-rose-50 rounded-xl shadow-[0_4px_0_#FDA4AF] border-2 border-rose-200 flex items-center justify-between px-4 group hover:bg-rose-100 hover:border-rose-300 active:translate-y-[2px] active:shadow-sm transition-all relative overflow-hidden"
+            className="h-10 bg-rose-50 rounded-xl shadow-sm border-2 border-rose-200 flex items-center gap-2 px-4 hover:bg-rose-100 hover:border-rose-300 transition-all relative flex-shrink-0"
           >
-            <div className="flex items-center gap-2 relative z-10">
-              <div className="text-2xl animate-pulse">
-                💘
-              </div>
-              <span className="font-black text-rose-500 text-base" style={{ fontFamily: '"Jua", sans-serif' }}>
-                나의 매칭 메이트
+            <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
+            <span className="font-bold text-rose-500 text-sm whitespace-nowrap">매칭 메이트 보기</span>
+            {pendingCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center animate-bounce">
+                {pendingCount}
               </span>
-            </div>
-
-            <div className="flex items-center gap-2 relative z-10">
-              {pendingCount > 0 && (
-                <span className="bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-bounce shadow-sm">
-                  {pendingCount}
-                </span>
-              )}
-              <div className="text-rose-300 group-hover:translate-x-1 transition-transform">→</div>
-            </div>
+            )}
           </button>
         </div>
       </div>
@@ -457,7 +465,7 @@ export default function PetMatePage() {
 
           {/* Refresh Action Button */}
           <Button
-            onClick={handleRefresh}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
             className="w-60 h-14 bg-gradient-to-r from-orange-400 to-rose-400 hover:from-orange-500 hover:to-rose-500 rounded-2xl shadow-[0_4px_0_#BE123C] text-white font-bold text-lg flex items-center justify-center gap-2 active:translate-y-[4px] active:shadow-none border-t border-white/20 transition-all"
             style={{ fontFamily: '"Jua", sans-serif' }}
@@ -502,21 +510,131 @@ export default function PetMatePage() {
       </AnimatePresence>
 
       <Dialog open={filterModalOpen} onOpenChange={setFilterModalOpen}>
-        <DialogContent className="bg-white rounded-[2rem] p-6 max-w-sm"><DialogTitle>필터</DialogTitle>
-          <div className="space-y-6 pt-4">
-            <div><label className="text-sm font-bold text-gray-500 block mb-2">거리: {distanceFilter}km</label><input type="range" min="1" max="10" value={distanceFilter} onChange={e => setDistanceFilter(e.target.value)} className="w-full accent-orange-500" /></div>
-            <div className="flex gap-2"><Button onClick={() => setGenderFilter('all')} variant={genderFilter === 'all' ? 'default' : 'outline'} className="flex-1 rounded-xl">전체</Button><Button onClick={() => setGenderFilter('male')} variant={genderFilter === 'male' ? 'default' : 'outline'} className="flex-1 rounded-xl">남아</Button><Button onClick={() => setGenderFilter('female')} variant={genderFilter === 'female' ? 'default' : 'outline'} className="flex-1 rounded-xl">여아</Button></div>
+        <DialogContent className="bg-white rounded-[2rem] p-6 max-w-sm">
+          <DialogTitle className="text-lg font-bold">필터 설정</DialogTitle>
+          <div className="space-y-5 pt-4">
+            {/* Distance Filter */}
+            <div>
+              <label className="text-sm font-bold text-gray-500 block mb-2">거리: {distanceFilter}km</label>
+              <input type="range" min="1" max="10" value={distanceFilter} onChange={e => setDistanceFilter(e.target.value)} className="w-full accent-orange-500" />
+            </div>
+
+            {/* Pet Type Filter */}
+            <div>
+              <label className="text-sm font-bold text-gray-500 block mb-2">종류</label>
+              <Select value={petTypeFilter} onValueChange={(value) => { setPetTypeFilter(value as "all" | "dog" | "cat" | "other"); setBreedFilter('all'); }}>
+                <SelectTrigger className="w-full h-10 rounded-xl border-gray-200">
+                  <SelectValue placeholder="종류를 선택하세요" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  {ANIMAL_TYPES.map((animal) => (
+                    <SelectItem key={animal.id} value={animal.id}>
+                      {animal.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Breed Filter */}
+            <div>
+              <label className="text-sm font-bold text-gray-500 block mb-2">품종</label>
+              {petTypeFilter === 'dog' || petTypeFilter === 'cat' ? (
+                <Select value={breedFilter} onValueChange={setBreedFilter}>
+                  <SelectTrigger className="w-full h-10 rounded-xl border-gray-200">
+                    <SelectValue placeholder="품종을 선택하세요" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white max-h-[200px]">
+                    {(petTypeFilter === 'dog' ? DOG_BREEDS : CAT_BREEDS).map((breed) => (
+                      <SelectItem key={breed} value={breed === '전체' ? 'all' : breed}>
+                        {breed}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <input
+                  type="text"
+                  value={breedFilter === 'all' ? '' : breedFilter}
+                  onChange={e => setBreedFilter(e.target.value || 'all')}
+                  placeholder="품종을 입력하세요"
+                  className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm focus:border-orange-400 focus:outline-none"
+                />
+              )}
+            </div>
+
+            {/* Gender Filter */}
+            <div>
+              <label className="text-sm font-bold text-gray-500 block mb-2">성별</label>
+              <div className="flex gap-2">
+                <Button onClick={() => setGenderFilter('all')} variant={genderFilter === 'all' ? 'default' : 'outline'} className="flex-1 rounded-xl">전체</Button>
+                <Button onClick={() => setGenderFilter('male')} variant={genderFilter === 'male' ? 'default' : 'outline'} className="flex-1 rounded-xl">수컷</Button>
+                <Button onClick={() => setGenderFilter('female')} variant={genderFilter === 'female' ? 'default' : 'outline'} className="flex-1 rounded-xl">암컷</Button>
+              </div>
+            </div>
+
             <Button onClick={handleApplyFilter} className="w-full h-12 rounded-xl bg-slate-800 text-white font-bold">적용</Button>
           </div>
         </DialogContent>
       </Dialog>
 
       <Dialog open={locationModalOpen} onOpenChange={setLocationModalOpen}>
-        <DialogContent className="bg-white rounded-[2rem] p-6 max-w-sm"><DialogTitle>위치 설정</DialogTitle>
-          <div className="flex gap-2 mt-2"><Input value={locationSearch} onChange={e => setLocationSearch(e.target.value)} placeholder="검색..." className="h-12 rounded-xl bg-gray-50" /><Button onClick={handleAddressSearch} className="h-12 w-12 rounded-xl"><Search className="w-5 h-5" /></Button></div>
+        <DialogContent className="bg-gradient-to-b from-amber-50 to-white rounded-[2rem] p-6 max-w-sm border-2 border-amber-100 shadow-xl">
+          <DialogTitle className="text-center">
+            <span className="text-2xl">📍</span>
+            <span className="text-xl font-bold text-amber-800 ml-2">어디서 친구 찾을까요?</span>
+          </DialogTitle>
+
+          {/* Search Input */}
+          <div className="flex gap-2 mt-4">
+            <div className="flex-1 relative">
+              <Input
+                value={locationSearch}
+                onChange={e => setLocationSearch(e.target.value)}
+                placeholder="동네 이름 검색..."
+                className="h-12 rounded-xl bg-white border-2 border-amber-200 focus:border-amber-400 pl-4 pr-4 font-medium"
+              />
+            </div>
+            <Button
+              onClick={handleAddressSearch}
+              className="h-12 w-12 rounded-xl bg-amber-400 hover:bg-amber-500 text-white shadow-md"
+            >
+              <Search className="w-5 h-5" />
+            </Button>
+          </div>
+
+          {/* Search Results */}
           {searchResults.length > 0 ? (
-            <div className="max-h-40 overflow-y-auto mt-4 space-y-1">{searchResults.map((r, i) => <div key={i} onClick={() => handleSelectSearchResult(r)} className="p-3 bg-gray-50 rounded-xl font-bold text-sm cursor-pointer">{r.buildingName || r.addressName}</div>)}</div>
-          ) : <Button variant="ghost" onClick={handleCurrentLocation} className="mt-4 w-full h-12 border-dashed border-2 text-gray-400">📍 현재 위치 사용</Button>}
+            <div className="max-h-48 overflow-y-auto mt-4 space-y-2">
+              {searchResults.map((r, i) => (
+                <div
+                  key={i}
+                  onClick={() => handleSelectSearchResult(r)}
+                  className="p-4 bg-white rounded-xl border-2 border-amber-100 hover:border-amber-300 hover:bg-amber-50 transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-lg">🏠</div>
+                    <div className="flex-1">
+                      <p className="font-bold text-gray-700 group-hover:text-amber-700">{r.buildingName || r.addressName}</p>
+                      {r.buildingName && <p className="text-xs text-gray-400">{r.addressName}</p>}
+                    </div>
+                    <span className="text-amber-400 group-hover:translate-x-1 transition-transform">→</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-6">
+              {/* Current Location Button */}
+              <button
+                onClick={handleCurrentLocation}
+                className="w-full h-12 bg-white border border-gray-200 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center gap-2"
+              >
+                <Navigation className="w-4 h-4 text-blue-500" />
+                <span className="font-medium text-gray-700">현재 위치 사용하기</span>
+              </button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
