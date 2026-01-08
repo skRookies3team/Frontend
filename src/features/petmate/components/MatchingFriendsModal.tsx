@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, Heart, MapPin, Clock, MessageCircle, UserMinus, Send, Users } from 'lucide-react';
+import { X, Check, Heart, MapPin, Clock, UserMinus, Send, Users } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { PendingRequest, MatchResult } from '../api/petmate-api';
-import { useNavigate } from 'react-router-dom';
 
 type TabType = 'matched' | 'received' | 'sent';
 
@@ -33,7 +32,6 @@ export function MatchingFriendsModal({
     onMatchSuccess
 }: MatchingFriendsModalProps) {
     const [activeTab, setActiveTab] = useState<TabType>('matched');
-    const navigate = useNavigate();
 
     const handleAccept = async (request: PendingRequest) => {
         const result = await onAccept(request.matchId);
@@ -47,14 +45,9 @@ export function MatchingFriendsModal({
     };
 
     const handleUnfriend = async (matchedUserId: number) => {
-        if (confirm('정말 친구를 끊으시겠습니까?')) {
+        if (confirm('정말 매칭을 취소하시겠습니까?')) {
             await onUnfriend(matchedUserId);
         }
-    };
-
-    const handleMessage = (userId: number) => {
-        onClose();
-        navigate(`/messages?userId=${userId}`);
     };
 
     // 시간 포맷팅
@@ -179,18 +172,12 @@ export function MatchingFriendsModal({
                                                     </div>
                                                     <div className="flex gap-2 mt-3">
                                                         <Button
-                                                            onClick={() => handleMessage(match.matchedUserId)}
-                                                            className="flex-1 h-10 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white text-sm"
-                                                        >
-                                                            <MessageCircle className="mr-1 h-4 w-4" />
-                                                            메시지
-                                                        </Button>
-                                                        <Button
                                                             onClick={() => handleUnfriend(match.matchedUserId)}
                                                             variant="outline"
-                                                            className="h-10 rounded-xl border-2 border-red-200 text-red-500 hover:bg-red-50 text-sm"
+                                                            className="w-full h-10 rounded-xl border-2 border-red-200 text-red-500 hover:bg-red-50 text-sm"
                                                         >
-                                                            <UserMinus className="h-4 w-4" />
+                                                            <UserMinus className="mr-1 h-4 w-4" />
+                                                            매칭 취소
                                                         </Button>
                                                     </div>
                                                 </div>
