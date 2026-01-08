@@ -39,6 +39,7 @@ interface User {
       photos: number;
     };
     isMemorial?: boolean;
+    status?: 'LOST' | 'DEAD' | 'ALIVE' | string;
   }[];
 }
 
@@ -199,6 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           gender: pet.genderType === "MALE" ? "수컷" : pet.genderType === "FEMALE" ? "암컷" : "알 수 없음",
           neutered: pet.is_neutered,
           birthday: pet.birth,
+          status: pet.status,
           healthStatus: {
             lastCheckup: "",
             vaccination: pet.vaccinated ? "접종 완료" : "접종 미완료",
@@ -321,6 +323,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         photo: response.profileImage || "/placeholder-pet.jpg",
         gender: response.genderType === "MALE" ? "수컷" : response.genderType === "FEMALE" ? "암컷" : "알 수 없음",
         neutered: response.is_neutered,
+        status: response.status,
         birthday: response.birth,
         healthStatus: {
           lastCheckup: "",

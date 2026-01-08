@@ -6,23 +6,17 @@ import { Button } from "@/shared/ui/button"
 const banners = [
   {
     id: 1,
-    title: "🎉 신규 회원 가입 이벤트",
+    icon: "🎉",
+    title: "신규 회원 가입 이벤트",
     description: "첫 AI 다이어리 작성 시 펫코인 100개 지급!",
     image: "/golden-retriever-playing-park.jpg",
     badge: "오늘출발",
     ctaText: "보고픈 장소 바차케어텐",
   },
   {
-    id: 2,
-    title: "🏥 withapet 연동 이벤트",
-    description: "웨어러블 기기 연동하고 펫코인 150개 받으세요",
-    image: "/dog-running-grass.jpg",
-    badge: "마지막",
-    ctaText: "오늘을 또 뭐 입지?",
-  },
-  {
     id: 3,
-    title: "🛍️ 쇼핑몰 오픈 기념",
+    icon: "🛍️",
+    title: "쇼핑몰 오픈 기념",
     description: "모든 상품 20% 할인! 펫코인으로 구매 가능",
     image: "/tabby-cat-sunbeam.png",
     badge: "오늘출발",
@@ -30,7 +24,8 @@ const banners = [
   },
   {
     id: 4,
-    title: "📢 펫메이트 서비스 업데이트",
+    icon: "📢",
+    title: "펫메이트 서비스\n업데이트",
     description: "새로운 매칭 알고리즘으로 완벽한 산책 친구를 찾아보세요",
     image: "/cat-in-box.jpg",
     badge: "주말 배송",
@@ -113,8 +108,9 @@ export function EventBannerCarousel() {
                   특가
                 </span>
               </div>
-              <h2 className="text-3xl lg:text-5xl font-bold mb-3 drop-shadow-lg leading-tight max-w-lg">
-                {banners[currentIndex].title}
+              <h2 className="text-3xl lg:text-5xl font-bold mb-3 drop-shadow-lg leading-tight max-w-lg flex items-start gap-3">
+                <span>{banners[currentIndex].icon}</span>
+                <span className="whitespace-pre-line">{banners[currentIndex].title}</span>
               </h2>
               <p className="text-base lg:text-xl mb-6 drop-shadow-md max-w-md opacity-95">
                 {banners[currentIndex].description}

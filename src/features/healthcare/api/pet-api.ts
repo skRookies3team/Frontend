@@ -20,9 +20,9 @@ export interface PetResponseDto {
     genderType: "MALE" | "FEMALE" | "NONE";
     is_neutered: boolean;
     profileImage: string;
+    status: 'LOST' | 'DEAD' | 'ALIVE';
     age: number;
     birth: string;
-    status: string;
 }
 
 export const createPetApi = async (request: CreatePetDto, file: File | null): Promise<PetResponseDto> => {
@@ -56,7 +56,7 @@ export interface GetPetDto {
     profileImage: string;
     age: number;
     birth: string; // LocalDate format yyyy-MM-dd
-    status: string;
+    status: 'LOST' | 'DEAD' | 'ALIVE';
     vaccinated: boolean;
 }
 

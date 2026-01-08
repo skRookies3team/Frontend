@@ -33,20 +33,29 @@ export function Header() {
 
   const pets = user?.pets || [];
 
-  const getChatbotLabel = () => {
+  // Ensure currentPetIndex is valid when pets array changes
+  useEffect(() => {
     if (pets.length === 0) {
+      setCurrentPetIndex(0);
+    } else if (currentPetIndex >= pets.length) {
+      setCurrentPetIndex(0);
+    }
+  }, [pets.length]);
+
+  const getChatbotLabel = () => {
+    const currentPet = pets[currentPetIndex];
+    if (!currentPet) {
       return "펫 대화하기";
     }
-    const currentPet = pets[currentPetIndex];
     const particle = hasFinalConsonant(currentPet.name) ? "이와" : "와";
     return `${currentPet.name}${particle} 대화하기`;
   };
 
   const getChatbotHref = () => {
-    if (pets.length === 0) {
+    const currentPet = pets[currentPetIndex];
+    if (!currentPet) {
       return "/chatbot";
     }
-    const currentPet = pets[currentPetIndex];
     return `/chatbot?petId=${currentPet.id}`;
   };
 
