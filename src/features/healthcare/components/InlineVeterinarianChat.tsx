@@ -1,19 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Card } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
-import { Send, Mic, Stethoscope, Activity, Sparkles, ChevronRight, Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Send, Mic, BookOpen, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useAuth } from '@/features/auth/context/auth-context';
+import { smartChatApi, SmartChatResponse } from '../api/healthcareApi';
 
 interface Message {
   id: string;
   text: string;
   sender: 'user' | 'bot';
   timestamp: Date;
+  ragUsed?: boolean;
+  department?: string;
+  intent?: string;
 }
 
-export function InlineVeterinarianChat() {
+interface InlineVeterinarianChatProps {
+  petId?: string;
+}
+
+export function InlineVeterinarianChat({ petId }: InlineVeterinarianChatProps) {
+  const { user, token } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -34,7 +43,7 @@ export function InlineVeterinarianChat() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputValue.trim()) return;
 
     const userMsg: Message = {
@@ -45,20 +54,42 @@ export function InlineVeterinarianChat() {
     };
 
     setMessages(prev => [...prev, userMsg]);
+    const messageToSend = inputValue;
     setInputValue("");
     setIsTyping(true);
 
-    // Mock response
-    setTimeout(() => {
+    try {
+      // 실제 API 호출
+      const response: SmartChatResponse = await smartChatApi(
+        messageToSend,
+        user?.id || '0',
+        petId || '0',
+        token
+      );
+
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
-        text: "네, 말씀하신 증상을 기록했습니다. \n소화기 계통의 일시적인 문제일 수 있습니다만, 증상이 24시간 이상 지속된다면 가까운 병원 방문을 권장드립니다.",
+        text: response.response,
+        sender: 'bot',
+        timestamp: new Date(),
+        ragUsed: response.ragUsed,
+        department: response.department,
+        intent: response.intent
+      };
+      
+      setMessages(prev => [...prev, botMsg]);
+    } catch (error) {
+      console.error('Chat error:', error);
+      const errorMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "죄송합니다. 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
         sender: 'bot',
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, botMsg]);
+      setMessages(prev => [...prev, errorMsg]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -102,6 +133,17 @@ export function InlineVeterinarianChat() {
                 : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
             }`}>
               <p className="whitespace-pre-line leading-relaxed">{msg.text}</p>
+              
+              {/* RAG 배지 - AI가 전문 지식을 활용한 경우 표시 */}
+              {msg.sender === 'bot' && msg.ragUsed && (
+                <div className="mt-2 flex items-center gap-1.5 text-xs">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100">
+                    <BookOpen className="w-3 h-3" />
+                    {msg.department || '수의학'} 전문 지식 활용
+                  </span>
+                </div>
+              )}
+              
               <p className={`text-[10px] mt-1 ${msg.sender === 'user' ? 'text-blue-100' : 'text-gray-400'}`}>
                 {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </p>
@@ -110,12 +152,9 @@ export function InlineVeterinarianChat() {
         ))}
         {isTyping && (
           <div className="flex justify-start">
-             <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-none p-4 shadow-sm">
-                <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" />
-                  <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce delay-75" />
-                  <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce delay-150" />
-                </div>
+             <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-none p-4 shadow-sm flex items-center gap-2">
+                <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                <span className="text-sm text-gray-500">AI 수의사가 답변을 생성하고 있어요...</span>
              </div>
           </div>
         )}
@@ -147,10 +186,11 @@ export function InlineVeterinarianChat() {
             onKeyPress={handleKeyPress}
             placeholder="증상이나 궁금한 점을 입력해주세요..." 
             className="flex-1 border-0 bg-transparent focus-visible:ring-0 px-2 text-sm"
+            disabled={isTyping}
           />
           <Button 
             onClick={handleSend}
-            disabled={!inputValue.trim()}
+            disabled={!inputValue.trim() || isTyping}
             size="icon" 
             className="rounded-full bg-blue-500 hover:bg-blue-600 text-white shadow-md disabled:opacity-50"
           >
@@ -161,3 +201,4 @@ export function InlineVeterinarianChat() {
     </Card>
   );
 }
+

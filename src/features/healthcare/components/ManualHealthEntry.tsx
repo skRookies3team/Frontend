@@ -11,10 +11,13 @@ import {
 } from "@/shared/ui/dialog"
 import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
-import { PlusCircle, Activity, Weight, Heart } from "lucide-react"
+import { PlusCircle, Activity, Weight, Heart, Loader2, CheckCircle, XCircle } from "lucide-react"
+import { saveHealthRecordApi } from "../api/healthcareApi"
 
 export function ManualHealthEntry() {
   const [open, setOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [formData, setFormData] = useState({
     weight: "",
     heartRate: "",
@@ -22,12 +25,45 @@ export function ManualHealthEntry() {
     steps: ""
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Implement actual data saving logic (API call)
-    console.log("Saving data:", formData)
-    setOpen(false)
-    setFormData({ weight: "", heartRate: "", respiratoryRate: "", steps: "" })
+    setIsLoading(true)
+    setSaveStatus('idle')
+
+    try {
+      const token = localStorage.getItem('accessToken')
+      const userId = localStorage.getItem('userId') || '0'
+      const petId = localStorage.getItem('selectedPetId') || '0'
+
+      const response = await saveHealthRecordApi(
+        {
+          weight: formData.weight ? parseFloat(formData.weight) : undefined,
+          heartRate: formData.heartRate ? parseInt(formData.heartRate) : undefined,
+          respiratoryRate: formData.respiratoryRate ? parseInt(formData.respiratoryRate) : undefined,
+          steps: formData.steps ? parseInt(formData.steps) : undefined,
+          recordType: 'MANUAL',
+        },
+        userId,
+        petId,
+        token
+      )
+
+      if (response.success) {
+        setSaveStatus('success')
+        setTimeout(() => {
+          setOpen(false)
+          setFormData({ weight: "", heartRate: "", respiratoryRate: "", steps: "" })
+          setSaveStatus('idle')
+        }, 1500)
+      } else {
+        setSaveStatus('error')
+      }
+    } catch (error) {
+      console.error('Health record save failed:', error)
+      setSaveStatus('error')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (

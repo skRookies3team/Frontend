@@ -20,10 +20,19 @@ export default function HealthReport({ analysisResult, onClose }: { analysisResu
   const { user } = useAuth();
   const pet = user?.pets?.[0] || { name: 'test', breed: 'Beagle', age: '0년 1개월', gender: 'Male', birthday: '2025-05-20' };
 
-  // Mock Data for Charts
+  // Mock Data for Charts - 7일간 바이탈 트렌드
   const heartData = [
-    { time: '1', value: 85 }, { time: '2', value: 88 }, { time: '3', value: 82 }, { time: '4', value: 90 }, { time: '5', value: 86 }
+    { time: '1/2', value: 95, respiratory: 22, weight: 7.2 },
+    { time: '1/3', value: 98, respiratory: 24, weight: 7.2 },
+    { time: '1/4', value: 102, respiratory: 26, weight: 7.1 },
+    { time: '1/5', value: 108, respiratory: 28, weight: 7.0 },
+    { time: '1/6', value: 105, respiratory: 25, weight: 7.0 },
+    { time: '1/7', value: 100, respiratory: 23, weight: 7.1 },
+    { time: '1/8', value: 96, respiratory: 22, weight: 7.2 },
   ];
+
+  // 호흡수 데이터 (heartData에서 추출)
+  const respiratoryData = heartData.map(d => ({ time: d.time, value: d.respiratory }));
 
   const handleDownload = async () => {
     if (!reportRef.current) return;
@@ -283,21 +292,19 @@ export default function HealthReport({ analysisResult, onClose }: { analysisResu
           <section>
              <div className="flex items-center gap-2 mb-4">
                   <h3 className="font-bold text-sm text-gray-800">호흡수 변화 추이</h3>
-                  <span className="text-xs text-gray-400">| 호흡수(RR) 데이터 5개의 추이</span>
+                  <span className="text-xs text-gray-400">| 호흡수(RR) 7일간 추이</span>
              </div>
              
              <div className="h-32 border-l border-b border-gray-200 relative">
                   <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={[{v:24},{v:24},{v:24}]}>
+                      <AreaChart data={respiratoryData}>
                         <CartesianGrid vertical={false} stroke="#eee" />
-                        <YAxis hide domain={[0, 40]} />
-                        <Area type="monotone" dataKey="v" stroke="#2563eb" fill="none" strokeWidth={3} />
+                        <XAxis dataKey="time" tick={{ fontSize: 10 }} />
+                        <YAxis hide domain={[15, 35]} />
+                        <Tooltip />
+                        <Area type="monotone" dataKey="value" stroke="#51cf66" fill="rgba(81, 207, 102, 0.2)" strokeWidth={3} />
                       </AreaChart>
                   </ResponsiveContainer>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                     <div className="bg-white border-2 border-[#51cf66] w-3 h-3 rounded-full"></div>
-                     <span className="text-xl font-bold text-gray-800 ml-2">24</span>
-                  </div>
              </div>
 
           </section>

@@ -15,12 +15,13 @@ interface PetCanvasProps {
     speechText: string
     showSpeech: boolean
     isTyping: boolean
+    modelUrl?: string  // ⭐ Meshy AI 생성 3D 모델 URL (없으면 기본 dog.glb 사용)
 }
 
-// 3D 강아지 모델
-function DogModel() {
+// 3D 강아지 모델 (동적 URL 지원)
+function DogModel({ modelUrl = '/dog.glb' }: { modelUrl?: string }) {
     const group = useRef<THREE.Group>(null)
-    const { scene, animations } = useGLTF('/dog.glb')
+    const { scene, animations } = useGLTF(modelUrl)
     const { actions, names } = useAnimations(animations, group)
 
     const isWalking = useRef(false)
@@ -118,7 +119,7 @@ function SpeechBubble({ text, show, isTyping }: { text: string; show: boolean; i
     )
 }
 
-function Scene({ speechText, showSpeech, isTyping }: PetCanvasProps) {
+function Scene({ speechText, showSpeech, isTyping, modelUrl }: PetCanvasProps) {
     return (
         <>
             <ambientLight intensity={0.8} />
@@ -126,7 +127,7 @@ function Scene({ speechText, showSpeech, isTyping }: PetCanvasProps) {
             <Environment preset="park" background blur={0.6} />
             <group position={[0, -1, 0]}>
                 <Suspense fallback={null}>
-                    <DogModel />
+                    <DogModel modelUrl={modelUrl} />
                 </Suspense>
                 <SpeechBubble text={speechText} show={showSpeech} isTyping={isTyping} />
             </group>
@@ -136,7 +137,7 @@ function Scene({ speechText, showSpeech, isTyping }: PetCanvasProps) {
     )
 }
 
-export default function PetCanvas({ speechText, showSpeech, isTyping }: PetCanvasProps) {
+export default function PetCanvas({ speechText, showSpeech, isTyping, modelUrl }: PetCanvasProps) {
     const [isClient, setIsClient] = useState(false)
 
     useEffect(() => {
@@ -158,7 +159,7 @@ export default function PetCanvas({ speechText, showSpeech, isTyping }: PetCanva
                 camera={{ position: [0, 3, 6], fov: 50 }}
                 style={{ background: 'linear-gradient(to bottom, #87CEEB, #98FB98, #F0E68C)' }}
             >
-                <Scene speechText={speechText} showSpeech={showSpeech} isTyping={isTyping} />
+                <Scene speechText={speechText} showSpeech={showSpeech} isTyping={isTyping} modelUrl={modelUrl} />
             </Canvas>
         </div>
     )

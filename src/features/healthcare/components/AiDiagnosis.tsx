@@ -6,9 +6,11 @@ import { Progress } from "@/shared/ui/progress";
 import HealthReport from './HealthReport';
 import MapContainer from '../../chatbot/components/MapContainer';
 import { chatbotApi } from '../../chatbot/api/chatbotApi';
+import { analyzeSkinDiseaseApi, SkinDiseaseResponse } from '../api/healthcareApi';
 
 export default function AiDiagnosis() {
   const [image, setImage] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<any>(null);
@@ -20,6 +22,7 @@ export default function AiDiagnosis() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setImageFile(file); // 실제 파일 저장
       const reader = new FileReader();
       reader.onload = (e) => {
         setImage(e.target?.result as string);
@@ -29,32 +32,66 @@ export default function AiDiagnosis() {
     }
   };
 
-  const startAnalysis = () => {
+  const startAnalysis = async () => {
+    if (!imageFile) return;
+    
     setIsScanning(true);
     setProgress(0);
     
-    // Simulate Scanning Progress
+    // 진행 상태 표시 (UI 피드백)
     const interval = setInterval(() => {
       setProgress(prev => {
-        if (prev >= 100) {
+        if (prev >= 90) {
           clearInterval(interval);
-          finishAnalysis();
-          return 100;
+          return 90; // API 응답까지 90%에서 대기
         }
-        return prev + 2;
+        return prev + 5;
       });
-    }, 50);
-  };
+    }, 200);
 
-  const finishAnalysis = () => {
-    setIsScanning(false);
-    setResult({
-       diagnosis: "알레르기성 피부염 (Atopic Dermatitis)",
-       score: 82,
-       severity: "주의 (Caution)",
-       description: "피부 발적과 가려움증이 관찰됩니다. 특정 알레르겐에 의한 반응일 가능성이 높습니다.",
-       recommendation: "저알러지 사료 교체 및 약용 샴푸 사용 권장"
-    });
+    try {
+      // 실제 백엔드 API 호출
+      const token = localStorage.getItem('accessToken');
+      const userId = localStorage.getItem('userId') || '0';
+      const petId = localStorage.getItem('selectedPetId') || '0';
+      
+      const response: SkinDiseaseResponse = await analyzeSkinDiseaseApi(
+        imageFile, userId, petId, token
+      );
+      
+      clearInterval(interval);
+      setProgress(100);
+      setIsScanning(false);
+      
+      if (response.success) {
+        setResult({
+          diagnosis: response.result.possibleDiseases.join(', ') || '분석 완료',
+          score: response.result.severity === '심각' ? 90 : response.result.severity === '주의' ? 70 : 40,
+          severity: response.result.severity,
+          description: response.result.symptoms.join(', '),
+          recommendation: response.result.recommendation,
+          notes: response.result.notes,
+        });
+      } else {
+        setResult({
+          diagnosis: '분석 실패',
+          score: 0,
+          severity: '오류',
+          description: response.message,
+          recommendation: '다시 시도하거나 수의사와 상담하세요.',
+        });
+      }
+    } catch (error) {
+      clearInterval(interval);
+      setIsScanning(false);
+      setResult({
+        diagnosis: '분석 오류',
+        score: 0,
+        severity: '오류',
+        description: '서버 연결에 실패했습니다.',
+        recommendation: '네트워크 상태를 확인하고 다시 시도해주세요.',
+      });
+    }
   };
 
   const openMap = async () => {
@@ -102,11 +139,19 @@ export default function AiDiagnosis() {
                      <img src={image} alt="Upload" className="w-full h-80 object-cover" />
                      {/* Scanning Line */}
                      {isScanning && (
-                        <motion.div 
-                           className="absolute top-0 left-0 right-0 h-1 bg-blue-400 shadow-[0_0_20px_rgba(96,165,250,0.8)] z-10"
-                           animate={{ top: ["0%", "100%", "0%"] }}
-                           transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                        />
+                        <div className="absolute inset-0 z-20 overflow-hidden rounded-lg pointer-events-none">
+                           <div className="absolute top-0 left-0 w-full h-1 bg-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.8)]" 
+                                style={{ animation: 'scan 2s linear infinite' }} />
+                           <div className="absolute inset-0 bg-emerald-400/10" />
+                           <style>{`
+                              @keyframes scan {
+                                 0% { top: 0%; opacity: 0; }
+                                 10% { opacity: 1; }
+                                 90% { opacity: 1; }
+                                 100% { top: 100%; opacity: 0; }
+                              }
+                           `}</style>
+                        </div>
                      )}
                      {!isScanning && (
                         <button onClick={() => setImage(null)} className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70">

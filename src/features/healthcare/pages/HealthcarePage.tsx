@@ -74,6 +74,7 @@ export default function HealthcarePage() {
   const [selectedChart, setSelectedChart] = useState<"heart" | "respiratory">("heart")
   const [showReport, setShowReport] = useState(false)
   const [analysisResult, setAnalysisResult] = useState<any>(null)
+  const [activeTab, setActiveTab] = useState("dashboard")
   
   // 상태로 데이터 관리 (업데이트 가능하도록)
   const [currentHealthData, setCurrentHealthData] = useState<any>(null);
@@ -87,13 +88,44 @@ export default function HealthcarePage() {
   }, [user?.pets, selectedPetId])
 
   // 펫 변경 시 데이터 초기화
+  // 펫 변경 시 데이터 초기화 및 스크래핑 시뮬레이션
   useEffect(() => {
     if (selectedPetId) {
-      setCurrentHealthData(petHealthDataMap[selectedPetId] || {
+      // 1. 기본 데이터로 즉시 초기화
+      const initialData = petHealthDataMap[selectedPetId] || {
         healthData: defaultHealthData,
         heartRateHistory: defaultHistory,
         respiratoryHistory: defaultHistory,
-      });
+      };
+      setCurrentHealthData(initialData);
+
+      // 2. 스크래핑(동기화) 시뮬레이션 시작
+      setIsScraping(true);
+      
+      const timer = setTimeout(() => {
+          setCurrentHealthData((prev: any) => {
+              if (!prev) return initialData; 
+
+              // 데이터 변동 시뮬레이션
+              const randomHeart = 60 + Math.floor(Math.random() * 60);
+              const randomResp = 15 + Math.floor(Math.random() * 25);
+              const currentWeight = prev.healthData?.weight?.current || 5;
+              const randomWeight = currentWeight + (Math.random() * 0.4 - 0.2);
+
+              return {
+                  ...prev,
+                  healthData: {
+                      ...prev.healthData,
+                      heartRate: { ...prev.healthData.heartRate, current: randomHeart, lastUpdate: "방금 전 (동기화됨)" },
+                      respiratoryRate: { ...prev.healthData.respiratoryRate, current: randomResp, lastUpdate: "방금 전" },
+                      weight: { ...prev.healthData.weight, current: parseFloat(randomWeight.toFixed(1)), lastUpdate: "방금 전" }
+                  }
+              };
+          });
+          setIsScraping(false);
+      }, 1000);
+
+      return () => clearTimeout(timer);
     }
   }, [selectedPetId]);
 
@@ -178,14 +210,12 @@ export default function HealthcarePage() {
                 )}
               </button>
             ))}
-            <button className="w-10 h-10 flex items-center justify-center rounded-full border border-dashed border-gray-300 text-gray-400 hover:border-gray-900 hover:text-gray-900 transition-colors">
-              <span className="text-xl">+</span>
-            </button>
+
           </div>
         </div>
 
         {/* TABS HEADER */}
-        <Tabs defaultValue="dashboard" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full justify-start h-12 bg-transparent p-0 border-b border-gray-100 rounded-none space-x-6">
              <TabsTrigger 
                value="dashboard" 
@@ -409,7 +439,7 @@ export default function HealthcarePage() {
                 <div className="lg:col-span-1 space-y-6">
                    
                    {/* Inline Chat (Original Style) */}
-                   <InlineVeterinarianChat />
+                   <InlineVeterinarianChat petId={selectedPetId} />
 
                    {/* Daily Tip */}
                    <div className="bg-[#fffbeb] border border-[#fcd34d] p-4 relative shadow-sm">
@@ -435,7 +465,7 @@ export default function HealthcarePage() {
 
           {/* RECORDS TAB */}
           <TabsContent value="records" className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <HealthReport onClose={() => {}} />
+              <HealthReport onClose={() => setActiveTab("dashboard")} />
           </TabsContent>
 
           <TabsContent value="insurance">

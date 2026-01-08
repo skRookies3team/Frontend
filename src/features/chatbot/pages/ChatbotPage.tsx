@@ -50,6 +50,10 @@ export default function ChatbotPage() {
   const [showSpeech, setShowSpeech] = useState(true)
   const [showPetSelector, setShowPetSelector] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  
+  // STT 관련 상태
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([])
 
   // 펫 변경 시 초기 메시지 설정
   useEffect(() => {
@@ -88,7 +92,12 @@ export default function ChatbotPage() {
     setIsTyping(true)
 
     try {
-      const response = await chatbotApi.sendMessage(userMsg.content, user?.id || 'guest')
+      // ⭐ Persona Chat - petId 전달로 SSE 스트리밍 활성화
+      const response = await chatbotApi.sendMessage(
+        userMsg.content, 
+        user?.id || 'guest',
+        selectedPet?.id // petId 전달 → SSE 스트리밍 모드
+      )
       
       // If response is 'map' or 'disease', we guide the user to the Healthcare page instead
       if (response.type === 'map' || response.type === 'disease_list') {
@@ -121,16 +130,82 @@ export default function ChatbotPage() {
     }
   }
 
-  const handleSTT = () => {
+  const handleSTT = async () => {
     setIsVoiceMode(true)
     setVoiceStatus('listening')
-    // Mocking the interaction cycle
-    setTimeout(() => setVoiceStatus('processing'), 3000)
-    setTimeout(() => {
-        setVoiceStatus('speaking')
-        setSpeechText("그래, 오늘 산책은 어땠어? 내가 같이 못 가서 아쉬웠어!")
-    }, 5000)
-    setTimeout(() => setVoiceStatus('listening'), 10000)
+    
+    try {
+      // 1. 마이크 권한 요청
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      
+      // 2. MediaRecorder 설정
+      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+      const chunks: Blob[] = []
+      
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data)
+        }
+      }
+      
+      recorder.onstop = async () => {
+        // 3. 녹음 종료 시 처리
+        setVoiceStatus('processing')
+        stream.getTracks().forEach(track => track.stop()) // 마이크 리소스 해제
+        
+        try {
+          // 4. Blob으로 변환 후 API 호출
+          const audioBlob = new Blob(chunks, { type: 'audio/webm' })
+          const formData = new FormData()
+          formData.append('file', audioBlob, 'recording.webm')
+          
+          const response = await fetch('/api/chat/stt', {
+            method: 'POST',
+            body: formData,
+          })
+          
+          if (!response.ok) {
+            throw new Error('STT API 호출 실패')
+          }
+          
+          const data = await response.json()
+          const transcribedText = data.text || data.transcript
+          
+          // 5. 변환된 텍스트로 채팅 전송
+          if (transcribedText) {
+            setInputValue(transcribedText)
+            setIsVoiceMode(false)
+            // 자동 전송 (선택사항)
+            // handleSend()
+          } else {
+            setSpeechText("음성을 인식하지 못했어... 다시 말해줄래?")
+            setVoiceStatus('listening')
+          }
+          
+        } catch (apiError) {
+          console.error('STT API Error:', apiError)
+          setSpeechText("음성 변환 중 오류가 발생했어...")
+          setVoiceStatus('listening')
+        }
+      }
+      
+      // 6. 녹음 시작
+      setMediaRecorder(recorder)
+      recorder.start()
+      setAudioChunks([])
+      
+    } catch (error) {
+      console.error('Microphone permission denied:', error)
+      setSpeechText("마이크 권한이 필요해! 허용해줄래?")
+      setIsVoiceMode(false)
+    }
+  }
+
+  // 녹음 중지 함수
+  const stopRecording = () => {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop()
+    }
   }
 
   const closeVoiceMode = () => {
@@ -383,7 +458,7 @@ export default function ChatbotPage() {
                 {/* Bottom Controls */}
                 <div className="absolute bottom-12 flex items-center gap-8">
                     <button 
-                        onClick={() => setVoiceStatus(prev => prev === 'listening' ? 'processing' : 'listening')}
+                        onClick={stopRecording}
                         className={`p-6 rounded-full transition-all ${
                             voiceStatus === 'listening' 
                             ? 'bg-rose-500/20 text-rose-500 hover:bg-rose-500/30 ring-2 ring-rose-500/50' 
