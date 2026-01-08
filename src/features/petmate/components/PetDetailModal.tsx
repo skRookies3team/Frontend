@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { PetMateCandidate } from '../api/petmate-api';
-import { X, Heart, MessageCircle, MapPin } from 'lucide-react';
+import { X, Heart, MapPin } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 
 interface PetDetailModalProps {
@@ -10,7 +10,6 @@ interface PetDetailModalProps {
     candidate: PetMateCandidate | null;
     isLiked: boolean;
     onLike: () => void;
-    onChat: () => void;
 }
 
 /**
@@ -21,8 +20,7 @@ export function PetDetailModal({
     onClose,
     candidate,
     isLiked,
-    onLike,
-    onChat
+    onLike
 }: PetDetailModalProps) {
     if (!candidate) return null;
 
@@ -106,20 +104,13 @@ export function PetDetailModal({
                             <div className="flex gap-3 pt-2">
                                 <Button
                                     onClick={onLike}
-                                    className={`flex-1 h-12 rounded-xl font-bold ${isLiked
+                                    className={`w-full h-12 rounded-xl font-bold ${isLiked
                                         ? 'bg-rose-500 hover:bg-rose-600 text-white'
                                         : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
                                         }`}
                                 >
                                     <Heart className={`mr-2 h-5 w-5 ${isLiked ? 'fill-white' : ''}`} />
                                     {isLiked ? '좋아요!' : '좋아요'}
-                                </Button>
-
-                                <Button
-                                    onClick={onChat}
-                                    className="w-12 h-12 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white p-0"
-                                >
-                                    <MessageCircle className="h-5 w-5" />
                                 </Button>
                             </div>
                         </div>

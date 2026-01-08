@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, MessageCircle, Users } from 'lucide-react';
+import { X, Check, Heart, MapPin, Clock, MessageCircle, UserMinus, Send, Users } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { PendingRequest, MatchResult } from '../api/petmate-api';
-import { useNavigate } from 'react-router-dom';
 
 type TabType = 'matched' | 'received' | 'sent';
 
@@ -28,11 +27,11 @@ export function MatchingFriendsModal({
     sentRequests,
     onAccept,
     onReject,
+    onUnfriend,
     onCancelRequest,
     onMatchSuccess
 }: MatchingFriendsModalProps) {
     const [activeTab, setActiveTab] = useState<TabType>('matched');
-    const navigate = useNavigate();
 
     const handleAccept = async (request: PendingRequest) => {
         const result = await onAccept(request.matchId);
@@ -45,9 +44,10 @@ export function MatchingFriendsModal({
         await onReject(matchId);
     };
 
-    const handleMessage = (userId: number) => {
-        onClose();
-        navigate(`/messages?userId=${userId}`);
+    const handleUnfriend = async (matchedUserId: number) => {
+        if (confirm('정말 매칭을 취소하시겠습니까?')) {
+            await onUnfriend(matchedUserId);
+        }
     };
 
     const formatTime = (dateString?: string) => {
@@ -68,7 +68,7 @@ export function MatchingFriendsModal({
     ];
 
     return (
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
             {isOpen && (
                 <motion.div
                     initial={{ opacity: 0 }}
@@ -157,13 +157,22 @@ export function MatchingFriendsModal({
                                                         <p className="text-xs text-gray-400">{match.matchedUserName} • {formatTime(match.matchedAt)}</p>
                                                     </div>
                                                 </div>
-                                                <Button
-                                                    onClick={() => handleMessage(match.matchedUserId)}
-                                                    className="w-full h-11 rounded-xl bg-emerald-400 hover:bg-emerald-500 text-white text-sm font-bold shadow-sm transition-all"
-                                                >
-                                                    <MessageCircle className="mr-1.5 h-4 w-4" />
-                                                    대화하기
-                                                </Button>
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        onClick={() => window.location.href = `/messages?userId=${match.matchedUserId}`}
+                                                        className="flex-1 h-10 rounded-xl bg-emerald-400 hover:bg-emerald-500 text-white text-sm font-bold"
+                                                    >
+                                                        <MessageCircle className="mr-1.5 h-4 w-4" />
+                                                        대화하기
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() => handleUnfriend(match.matchedUserId)}
+                                                        variant="outline"
+                                                        className="h-10 w-10 rounded-xl border-2 border-red-200 text-red-500 hover:bg-red-50 p-0"
+                                                    >
+                                                        <UserMinus className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
                                             </div>
                                         ))
                                     )}

@@ -11,7 +11,8 @@ import {
   RefreshCw,
   SlidersHorizontal,
   Heart,
-  Navigation
+  Navigation,
+  Power
 } from "lucide-react"
 import { useAuth } from "@/features/auth/context/auth-context"
 import { useNavigate } from "react-router-dom"
@@ -62,6 +63,7 @@ export default function PetMatePage() {
   const [petTypeFilter, setPetTypeFilter] = useState<"all" | "dog" | "cat" | "other">("all")
   const [breedFilter, setBreedFilter] = useState("all")
   const [matchedUser, setMatchedUser] = useState<PetMateCandidate | null>(null)
+  const [isOnline, setIsOnline] = useState(true)
 
   // Map Component State
   const [mapMarkers, setMapMarkers] = useState<MapMarker[]>([])
@@ -95,6 +97,7 @@ export default function PetMatePage() {
     rejectRequest,
     unfriend,
     cancelRequest,
+    updateOnlineStatus,
   } = usePetMate({
     userId: user?.id ? Number(user.id) : 1,
     initialFilter: userCoords ? {
@@ -308,6 +311,18 @@ export default function PetMatePage() {
     )
   }
 
+  const handleOnlineToggle = async () => {
+    const newStatus = !isOnline
+    setIsOnline(newStatus)
+    await updateOnlineStatus(newStatus)
+    if (newStatus) {
+      toast.success('매칭 활성화! 친구들에게 보여요 ✨')
+      handleRefresh()
+    } else {
+      toast.info('매칭 비활성화. 다른 사람에게 안 보여요')
+    }
+  }
+
   const handleApplyFilter = async () => {
     setFilterModalOpen(false)
     handleRefresh()
@@ -426,6 +441,20 @@ export default function PetMatePage() {
       <div className="absolute top-0 left-0 right-0 z-20 p-4 pt-6 pointer-events-none">
         <div className="max-w-md mx-auto w-full flex gap-2 pointer-events-auto">
 
+          {/* Online/Offline Toggle Button with Text */}
+          <button
+            onClick={handleOnlineToggle}
+            className={`h-10 rounded-xl shadow-sm border-2 flex items-center gap-2 px-3 transition-all flex-shrink-0 ${isOnline
+                ? 'bg-green-50 border-green-300 text-green-600 hover:bg-green-100'
+                : 'bg-gray-100 border-gray-300 text-gray-500 hover:bg-gray-200'
+              }`}
+          >
+            <Power className="w-4 h-4" />
+            <span className="font-bold text-xs whitespace-nowrap">
+              {isOnline ? '활성화' : '비활성화'}
+            </span>
+          </button>
+
           {/* Location Bar (Flex to fill) */}
           <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 h-10 flex items-center px-3 gap-2 cursor-pointer hover:border-gray-300 transition-all"
             onClick={() => setLocationModalOpen(true)}>
@@ -438,10 +467,10 @@ export default function PetMatePage() {
           {/* Matching Mate Button (Auto width on right) */}
           <button
             onClick={() => setRequestsModalOpen(true)}
-            className="h-10 bg-rose-50 rounded-xl shadow-sm border-2 border-rose-200 flex items-center gap-2 px-4 hover:bg-rose-100 hover:border-rose-300 transition-all relative flex-shrink-0"
+            className="h-10 bg-rose-50 rounded-xl shadow-sm border-2 border-rose-200 flex items-center gap-2 px-3 hover:bg-rose-100 hover:border-rose-300 transition-all relative flex-shrink-0"
           >
             <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
-            <span className="font-bold text-rose-500 text-sm whitespace-nowrap">매칭 메이트 보기</span>
+            <span className="font-bold text-rose-500 text-xs whitespace-nowrap">매칭친구</span>
             {pendingCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center animate-bounce">
                 {pendingCount}
@@ -484,7 +513,6 @@ export default function PetMatePage() {
         candidate={selectedCandidate}
         isLiked={selectedCandidate ? isUserLiked(selectedCandidate.userId) : false}
         onLike={() => { if (selectedCandidate) handleLikeForCandidate(selectedCandidate) }}
-        onChat={() => { setIsDetailOpen(false); navigate('/messages') }}
       />
 
       {/* Match Modal */}
