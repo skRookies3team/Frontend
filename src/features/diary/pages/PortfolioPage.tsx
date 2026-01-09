@@ -4,20 +4,10 @@ import * as THREE from "three"
 import { X, ChevronLeft, ChevronRight, RotateCw } from 'lucide-react'
 import { getAiDiariesApi } from "@/features/diary/api/diary-api"
 import { useAuth } from "@/features/auth/context/auth-context"
+import { PortfolioDiary } from "@/features/diary/types/diary"
+import MemoryAlbum from "../components/MemoryAlbum"
 
-interface PortfolioDiary {
-  id: number;
-  src: string;
-  title: string;
-  date: string;
-  location: string;
-  content: string;
-  likes: number;
-  weather: string;
-  images?: any[];
-  isPlaceholder?: boolean;
-  color?: string; // [NEW] - for card color
-}
+
 
 // --- Constants ---
 const PAW_PALETTE = [
@@ -51,6 +41,7 @@ export default function PortfolioPage() {
   const [selectedPhoto, setSelectedPhoto] = useState<PortfolioDiary | null>(null)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [diaries, setDiaries] = useState<PortfolioDiary[]>([])
+  const [viewMode, setViewMode] = useState<'3d' | 'album'>('3d')
   const { user, token } = useAuth()
   const navigate = useNavigate();
 
@@ -545,8 +536,8 @@ export default function PortfolioPage() {
         background: 'radial-gradient(circle at center, #1E1B4B 0%, #000000 100%)', // Dark Space Gradient
       }}
     >
-      {/* --- Header (White) --- */}
-      <div className="absolute top-0 left-0 right-0 z-10 p-8 flex flex-col items-center pointer-events-none">
+      {/* --- Header (White) - Only visible in 3D mode --- */}
+      <div className={`absolute top-0 left-0 right-0 z-10 p-8 flex flex-col items-center pointer-events-none transition-opacity duration-300 ${viewMode === '3d' ? 'opacity-100' : 'opacity-0'}`}>
         <div className="w-full flex justify-between items-start">
           {/* Empty div for spacing/layout balance if needed, or just let the title center naturally via absolute centering or flex logic. 
                The current layout has the title centered. Let's keep the title centered and put the counter on the right. 
@@ -556,13 +547,38 @@ export default function PortfolioPage() {
           <div /> {/* Spacer */}
 
           {/* Title - Centered */}
-          <div className="bg-black/30 backdrop-blur-md px-8 py-4 rounded-full shadow-lg border border-white/10 flex flex-col items-center gap-2 transform hover:scale-105 transition-transform pointer-events-auto cursor-help">
+          <div className="bg-black/30 backdrop-blur-md px-8 py-4 rounded-full shadow-lg border border-white/10 flex flex-col items-center gap-2 pointer-events-auto transition-all duration-300">
+            {/* View Toggle Tabs */}
+            <div className="flex bg-black/40 rounded-full p-1 mb-2 border border-white/20">
+              <button
+                onClick={() => setViewMode('3d')}
+                className={`px-5 py-2 rounded-full font-['Jua'] text-lg transition-all flex items-center gap-2 ${viewMode === '3d'
+                  ? 'bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-md scale-105'
+                  : 'text-gray-300 hover:text-white hover:bg-white/10'
+                  }`}
+              >
+                <span>🔮</span> 3D 스페이스
+              </button>
+              <button
+                onClick={() => setViewMode('album')}
+                className={`px-5 py-2 rounded-full font-['Jua'] text-lg transition-all flex items-center gap-2 ${viewMode === 'album'
+                  ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-md scale-105'
+                  : 'text-gray-300 hover:text-white hover:bg-white/10'
+                  }`}
+              >
+                <span>📒</span> 추억 앨범
+              </button>
+            </div>
+
             <h1 className="text-3xl md:text-4xl font-bold text-white font-['Jua'] flex items-center gap-2 drop-shadow-lg">
               <span>✨</span> 3D 다이어리 포트폴리오 <span>✨</span>
             </h1>
-            <p className="text-xl font-['Jua'] text-white flex items-center gap-4 mt-1 drop-shadow-md">
-              <span className="flex items-center gap-2"><RotateCw size={20} /> 드래그하여 회전, 휠로 확대/축소하세요</span>
-            </p>
+
+            {viewMode === '3d' && (
+              <p className="text-xl font-['Jua'] text-white flex items-center gap-4 mt-1 drop-shadow-md animate-fade-in">
+                <span className="flex items-center gap-2"><RotateCw size={20} /> 드래그하여 회전, 휠로 확대/축소하세요</span>
+              </p>
+            )}
           </div>
 
           {/* Counter - Right aligned */}
@@ -576,7 +592,26 @@ export default function PortfolioPage() {
       </div>
 
       {/* --- 3D Canvas --- */}
-      <div ref={containerRef} className="absolute inset-0 z-1 cursor-grab active:cursor-grabbing" />
+      {/* --- 3D Canvas --- */}
+      <div
+        ref={containerRef}
+        className={`absolute inset-0 z-1 cursor-grab active:cursor-grabbing transition-opacity duration-500 ${viewMode === '3d' ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+      />
+
+      {/* --- 2D Memory Album --- */}
+      {viewMode === 'album' && (
+        <div className="absolute inset-0 z-20 animate-fade-in">
+          <MemoryAlbum
+            diaries={diaries}
+            onSwitchView={setViewMode}
+            onSelect={(diary: PortfolioDiary) => {
+              setSelectedPhoto(diary);
+              setCurrentImageIndex(0);
+            }}
+          />
+        </div>
+      )}
 
       {/* --- Detail Modal --- */}
       {selectedPhoto && (

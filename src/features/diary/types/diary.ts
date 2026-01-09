@@ -139,3 +139,18 @@ export const ImageType = {
     GALLERY: ImageSource.GALLERY,
     ARCHIVE: ImageSource.ARCHIVE,
 } as const;
+
+// 3D/2D 포트폴리오 다이어리 객체
+export interface PortfolioDiary {
+    id: number;
+    src: string;
+    title: string;
+    date: string;
+    location: string;
+    content: string;
+    likes: number;
+    weather: string;
+    images?: any[];
+    isPlaceholder?: boolean;
+    color?: string; // 카드의 테마 색상 (파스텔 톤)
+}

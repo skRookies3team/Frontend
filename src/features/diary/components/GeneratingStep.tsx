@@ -39,10 +39,11 @@ const GeneratingStep = ({ progress }: { progress: number }) => {
                             <path d="M 60 15 L 65 -10 L 45 15 Z" fill="#424242" />
 
                             {/* TAIL - Animated */}
-                            <g transform="translate(10, 110)"> {/* Anchor at base of tail */}
+                            <g transform="translate(25, 115)"> {/* Anchor at base of tail (Moved inward) */}
                                 <path d="M 0 0 Q -20 -30 -10 -60"
-                                    fill="none" stroke="#424242" strokeWidth="8" strokeLinecap="round"
-                                    className="animate-tail-wag-left origin-bottom" />
+                                    fill="none" stroke="#424242" strokeWidth="6" strokeLinecap="round"
+                                    className="animate-tail-wag-left"
+                                    style={{ transformOrigin: '0px 0px' }} />
                             </g>
                         </g>
 
@@ -61,10 +62,11 @@ const GeneratingStep = ({ progress }: { progress: number }) => {
                             <path d="M 40 10 Q 50 0 60 10 L 60 30 Q 50 40 40 30 Z" fill="#FFCC80" opacity="0.6" />
 
                             {/* TAIL - Animated */}
-                            <g transform="translate(70, 100)"> {/* Anchor at base */}
+                            <g transform="translate(55, 105)"> {/* Anchor at base (Moved inward) */}
                                 <path d="M 0 0 Q 30 -40 10 -70"
-                                    fill="none" stroke="#FFCC80" strokeWidth="8" strokeLinecap="round"
-                                    className="animate-tail-wag-right origin-bottom" />
+                                    fill="none" stroke="#FFCC80" strokeWidth="6" strokeLinecap="round"
+                                    className="animate-tail-wag-right"
+                                    style={{ transformOrigin: '0px 0px' }} />
                             </g>
                         </g>
 
@@ -93,7 +95,7 @@ const GeneratingStep = ({ progress }: { progress: number }) => {
                 <div className="text-center space-y-3">
                     <h2 className="text-2xl font-bold text-gray-700 font-['Jua'] flex items-center justify-center gap-2">
                         살랑살랑, 추억을 엮는 중
-                        <span className="text-2xl animate-bounce">🐈</span>
+                        <span className="text-2xl animate-bounce"></span>
                     </h2>
                     <p className="text-gray-400 text-sm bg-white/50 px-6 py-2 rounded-full border border-purple-50 shadow-sm">
                         이야기를 모으고 있어요...
@@ -125,12 +127,12 @@ const GeneratingStep = ({ progress }: { progress: number }) => {
 
                 .animate-tail-wag-left {
                     animation: tail-wag-left 2s ease-in-out infinite;
-                    transform-origin: bottom center;
+                    /* anchor is set via inline style for precision */
                 }
                 
                 .animate-tail-wag-right {
                     animation: tail-wag-right 2s ease-in-out infinite alternate;
-                    transform-origin: bottom center;
+                    /* anchor is set via inline style for precision */
                 }
 
                 .animate-float-heart {
