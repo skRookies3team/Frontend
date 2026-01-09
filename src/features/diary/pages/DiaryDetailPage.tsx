@@ -37,6 +37,7 @@ export default function DiaryDetailPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [showShareModal, setShowShareModal] = useState(false)
     const [showDownloadModal, setShowDownloadModal] = useState(false)
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
     const [isDownloading, setIsDownloading] = useState(false)
 
     // Style settings
@@ -126,15 +127,22 @@ export default function DiaryDetailPage() {
 
     const handleDelete = async () => {
         if (!id) return
-        if (!window.confirm('정말 이 다이어리를 삭제하시겠습니까?')) return
+        setShowDeleteModal(true)
+    }
+
+    const confirmDelete = async () => {
+        if (!id) return
 
         try {
             await deleteDiary(Number(id))
+            setShowDeleteModal(false)
+            // Show cute success message
             alert('다이어리가 삭제되었습니다.')
             navigate(-1)
         } catch (error) {
             console.error('삭제 실패:', error)
             alert('다이어리 삭제 중 오류가 발생했습니다.')
+            setShowDeleteModal(false)
         }
     }
 
@@ -532,6 +540,60 @@ export default function DiaryDetailPage() {
                             >
                                 <span className="font-medium text-gray-700 group-hover:text-blue-700">이미지로 저장</span>
                                 <ImageIcon className="w-5 h-5 text-gray-400 group-hover:text-blue-500" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal - Cute Style! */}
+            {showDeleteModal && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in"
+                    onClick={() => setShowDeleteModal(false)}
+                >
+                    <div
+                        className="bg-gradient-to-br from-pink-50 to-white rounded-3xl w-full max-w-sm p-8 mx-4 animate-in zoom-in-95 duration-300 shadow-2xl border-4 border-white"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Cute Icon */}
+                        <div className="flex justify-center mb-4">
+                            <div className="relative">
+                                <div className="w-20 h-20 bg-gradient-to-br from-orange-100 to-pink-100 rounded-full flex items-center justify-center animate-bounce">
+                                    <Trash2 className="w-10 h-10 text-orange-500" />
+                                </div>
+                                <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center text-xs animate-pulse">
+                                    !
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Message */}
+                        <div className="text-center mb-6">
+                            <h3 className="text-2xl font-bold text-gray-800 mb-2 font-['Jua']">
+                                정말 삭제할까요?
+                            </h3>
+                            <p className="text-gray-500 font-medium">
+                                이 다이어리를 삭제하시겠습니까?
+                            </p>
+                            <p className="text-sm text-orange-400 mt-2 font-['Jua']">
+                                삭제하면 되돌릴 수 없어요
+                            </p>
+                        </div>
+
+                        {/* Buttons */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                onClick={() => setShowDeleteModal(false)}
+                                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-pink-100 to-purple-100 hover:from-pink-200 hover:to-purple-200 text-pink-600 font-bold text-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all font-['Jua']"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-400 to-pink-400 hover:from-orange-500 hover:to-pink-500 text-white font-bold text-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all font-['Jua']"
+                            >
+                                확인
                             </button>
                         </div>
                     </div>
