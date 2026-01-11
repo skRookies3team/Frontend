@@ -20,53 +20,64 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs"
 import { InlineVeterinarianChat } from "../components/InlineVeterinarianChat"
 import AiDiagnosis from "../components/AiDiagnosis"
 import HealthReport from "../components/HealthReport"
+import { Pet3DModelUpload } from "../components/Pet3DModelUpload"
 import { Button } from "@/shared/ui/button"
 
-// 펫별 건강 데이터 (Mock)
-const petHealthDataMap: Record<string, any> = {
-  "pet-1": {
+// 펫별 건강 데이터 생성 함수 (동적 Mock)
+// WHY: 실제 pet ID는 "1", "2" 등 다양한 형식이므로 동적으로 생성
+const generateMockHealthData = (petId: string) => {
+  // petId를 기반으로 일관된 랜덤값 생성 (같은 펫은 같은 데이터)
+  const seed = petId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const baseHeart = 70 + (seed % 30);
+  const baseResp = 20 + (seed % 15);
+  const baseWeight = 5 + (seed % 10);
+  
+  return {
     healthData: {
-      heartRate: { current: 95, min: 75, max: 110, status: "normal", trend: "up", change: 5, lastUpdate: "5분 전" },
-      respiratoryRate: { current: 28, min: 20, max: 35, status: "normal", trend: "stable", lastUpdate: "5분 전" },
-      weight: { current: 12.5, previous: 12.3, status: "normal", trend: "up", change: 0.2, lastUpdate: "오늘 오전 8:00" },
-      aiDiagnosis: { status: "healthy", confidence: 94, summary: "전반적으로 건강한 상태입니다", recommendations: ["규칙적인 산책 유지", "수분 섭취량 모니터링", "다음 주 건강검진 예약 권장"], lastUpdate: "1시간 전" },
+      heartRate: { current: baseHeart, min: baseHeart - 15, max: baseHeart + 20, status: "normal", trend: "stable", change: 2, lastUpdate: "5분 전" },
+      respiratoryRate: { current: baseResp, min: baseResp - 5, max: baseResp + 10, status: "normal", trend: "stable", lastUpdate: "5분 전" },
+      weight: { current: baseWeight, previous: baseWeight - 0.2, status: "normal", trend: "up", change: 0.2, lastUpdate: "오늘 오전 8:00" },
+      aiDiagnosis: { status: "healthy", confidence: 90 + (seed % 10), summary: "전반적으로 건강한 상태입니다", recommendations: ["규칙적인 산책 유지", "수분 섭취량 모니터링"], lastUpdate: "1시간 전" },
     },
     heartRateHistory: [
-      { time: "00:00", value: 88 }, { time: "04:00", value: 82 }, { time: "08:00", value: 95 },
-      { time: "12:00", value: 102 }, { time: "16:00", value: 97 }, { time: "20:00", value: 90 }, { time: "24:00", value: 85 },
+      { time: "00:00", value: baseHeart - 5 },
+      { time: "04:00", value: baseHeart - 8 },
+      { time: "08:00", value: baseHeart },
+      { time: "12:00", value: baseHeart + 10 },
+      { time: "16:00", value: baseHeart + 5 },
+      { time: "20:00", value: baseHeart - 2 },
+      { time: "24:00", value: baseHeart - 6 },
     ],
     respiratoryHistory: [
-      { time: "00:00", value: 24 }, { time: "04:00", value: 22 }, { time: "08:00", value: 28 },
-      { time: "12:00", value: 30 }, { time: "16:00", value: 26 }, { time: "20:00", value: 25 }, { time: "24:00", value: 23 },
+      { time: "00:00", value: baseResp - 2 },
+      { time: "04:00", value: baseResp - 4 },
+      { time: "08:00", value: baseResp + 2 },
+      { time: "12:00", value: baseResp + 5 },
+      { time: "16:00", value: baseResp + 1 },
+      { time: "20:00", value: baseResp },
+      { time: "24:00", value: baseResp - 3 },
     ],
-  },
-  "pet-2": {
-    healthData: {
-      heartRate: { current: 78, min: 60, max: 100, status: "normal", trend: "stable", change: 0, lastUpdate: "3분 전" },
-      respiratoryRate: { current: 22, min: 15, max: 30, status: "normal", trend: "down", lastUpdate: "3분 전" },
-      weight: { current: 8.2, previous: 8.0, status: "normal", trend: "up", change: 0.2, lastUpdate: "오늘 오전 9:00" },
-      aiDiagnosis: { status: "healthy", confidence: 98, summary: "매우 건강한 상태입니다", recommendations: ["현재 식단 유지", "주 3회 산책 권장"], lastUpdate: "30분 전" },
-    },
-    heartRateHistory: [
-      { time: "00:00", value: 72 }, { time: "04:00", value: 70 }, { time: "08:00", value: 78 },
-      { time: "12:00", value: 85 }, { time: "16:00", value: 80 }, { time: "20:00", value: 75 }, { time: "24:00", value: 72 },
-    ],
-    respiratoryHistory: [
-      { time: "00:00", value: 20 }, { time: "04:00", value: 18 }, { time: "08:00", value: 22 },
-      { time: "12:00", value: 25 }, { time: "16:00", value: 23 }, { time: "20:00", value: 21 }, { time: "24:00", value: 19 },
-    ],
-  },
-}
+  };
+};
 
-// 기본 데이터
+// 기본 데이터 (펫이 없을 때)
 const defaultHealthData = {
-  heartRate: { current: 0, min: 0, max: 0, status: "nodata", trend: "stable", change: 0, lastUpdate: "-" },
-  respiratoryRate: { current: 0, min: 0, max: 0, status: "nodata", trend: "stable", lastUpdate: "-" },
-  weight: { current: 0, previous: 0, status: "nodata", trend: "stable", change: 0, lastUpdate: "-" },
-  aiDiagnosis: { status: "unknown", confidence: 0, summary: "데이터가 부족합니다", recommendations: [], lastUpdate: "-" },
+  heartRate: { current: 85, min: 70, max: 110, status: "normal", trend: "stable", change: 0, lastUpdate: "-" },
+  respiratoryRate: { current: 25, min: 18, max: 35, status: "normal", trend: "stable", lastUpdate: "-" },
+  weight: { current: 8.5, previous: 8.3, status: "normal", trend: "stable", change: 0.2, lastUpdate: "-" },
+  aiDiagnosis: { status: "healthy", confidence: 92, summary: "데이터를 불러오는 중입니다", recommendations: [], lastUpdate: "-" },
 }
 
-const defaultHistory: any[] = []
+// 기본 히스토리 (빈 배열 대신 기본값 제공)
+const defaultHistory = [
+  { time: "00:00", value: 80 },
+  { time: "04:00", value: 75 },
+  { time: "08:00", value: 85 },
+  { time: "12:00", value: 95 },
+  { time: "16:00", value: 90 },
+  { time: "20:00", value: 82 },
+  { time: "24:00", value: 78 },
+]
 
 export default function HealthcarePage() {
   const { user } = useAuth()
@@ -91,12 +102,8 @@ export default function HealthcarePage() {
   // 펫 변경 시 데이터 초기화 및 스크래핑 시뮬레이션
   useEffect(() => {
     if (selectedPetId) {
-      // 1. 기본 데이터로 즉시 초기화
-      const initialData = petHealthDataMap[selectedPetId] || {
-        healthData: defaultHealthData,
-        heartRateHistory: defaultHistory,
-        respiratoryHistory: defaultHistory,
-      };
+      // 1. 동적으로 Mock 데이터 생성 (모든 펫 ID에 대해 작동)
+      const initialData = generateMockHealthData(selectedPetId);
       setCurrentHealthData(initialData);
 
       // 2. 스크래핑(동기화) 시뮬레이션 시작
@@ -234,6 +241,12 @@ export default function HealthcarePage() {
               className="rounded-full px-6 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white"
             >
               건강 기록
+            </TabsTrigger>
+            <TabsTrigger
+              value="3dmodel"
+              className="rounded-full px-6 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            >
+              🎮 3D 펫 모델
             </TabsTrigger>
             <TabsTrigger
               value="insurance"
@@ -466,6 +479,17 @@ export default function HealthcarePage() {
           {/* RECORDS TAB */}
           <TabsContent value="records" className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <HealthReport onClose={() => setActiveTab("dashboard")} />
+          </TabsContent>
+
+          {/* 3D MODEL TAB */}
+          <TabsContent value="3dmodel" className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">🐕 3D 펫 모델 생성</h2>
+                <p className="text-gray-500">반려동물 사진을 업로드하면 AI가 3D 모델을 만들어드립니다</p>
+              </div>
+              <Pet3DModelUpload petId={selectedPetId} />
+            </div>
           </TabsContent>
 
           <TabsContent value="insurance">

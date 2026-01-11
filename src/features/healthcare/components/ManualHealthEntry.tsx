@@ -31,7 +31,8 @@ export function ManualHealthEntry() {
     setSaveStatus('idle')
 
     try {
-      const token = localStorage.getItem('accessToken')
+      // [수정] petlog_token 우선 확인 (auth-context.tsx 저장 키와 일치)
+      const token = localStorage.getItem('petlog_token') || localStorage.getItem('accessToken')
       const userId = localStorage.getItem('userId') || '0'
       const petId = localStorage.getItem('selectedPetId') || '0'
 

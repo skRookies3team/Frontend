@@ -50,10 +50,23 @@ export default function AiDiagnosis() {
     }, 200);
 
     try {
-      // 실제 백엔드 API 호출
-      const token = localStorage.getItem('accessToken');
-      const userId = localStorage.getItem('userId') || '0';
-      const petId = localStorage.getItem('selectedPetId') || '0';
+      // [FIX] auth-context와 동일한 키 사용
+      const token = localStorage.getItem('petlog_token'); // 'accessToken' → 'petlog_token'
+      
+      // [FIX] userId는 petlog_user JSON에서 추출
+      let userId = '0';
+      let petId = '0';
+      const storedUser = localStorage.getItem('petlog_user');
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          userId = parsed.id || '0';
+          // 첫 번째 펫 ID 사용 (또는 selectedPetId가 있으면 사용)
+          petId = localStorage.getItem('selectedPetId') || parsed.pets?.[0]?.id || '0';
+        } catch (e) {
+          console.warn('Failed to parse user data');
+        }
+      }
       
       const response: SkinDiseaseResponse = await analyzeSkinDiseaseApi(
         imageFile, userId, petId, token

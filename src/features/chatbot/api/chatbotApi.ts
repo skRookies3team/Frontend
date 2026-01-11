@@ -195,10 +195,19 @@ export const chatbotApi = {
       }
       
       // 일반 채팅 (REST API)
+      // [FIX] JWT 토큰 추가하여 Gateway 인증 통과
+      const token = localStorage.getItem('petlog_token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await axios.post(`${BASE_URL}/smart`, { 
         message, 
         userId 
-      });
+      }, { headers });
       
       return {
         id: response.data.id || Date.now().toString(),
@@ -345,11 +354,12 @@ export const chatbotApi = {
   /**
    * 펫 3D 모델 생성 요청
    * @param petId 펫 ID
-   * @param authorization JWT 토큰
+   * @param authorization JWT 토큰 (옵션 - 없으면 localStorage에서 자동 로드)
    */
-  generate3DModel: async (petId: string, authorization: string) => {
+  generate3DModel: async (petId: string, authorization?: string) => {
+    const token = authorization || localStorage.getItem('petlog_token');
     const response = await axios.post(`/api/model/pet/${petId}`, null, {
-      headers: { Authorization: authorization }
+      headers: token ? { Authorization: token.startsWith('Bearer ') ? token : `Bearer ${token}` } : {}
     });
     return response.data;
   },
@@ -359,7 +369,10 @@ export const chatbotApi = {
    * @param taskId Meshy Task ID
    */
   get3DModelStatus: async (taskId: string) => {
-    const response = await axios.get(`/api/model/status/${taskId}`);
+    const token = localStorage.getItem('petlog_token');
+    const response = await axios.get(`/api/model/status/${taskId}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
     return response.data;
   },
 
@@ -369,7 +382,10 @@ export const chatbotApi = {
    */
   getSavedPetModel: async (petId: string) => {
     try {
-      const response = await axios.get(`/api/model/pet/${petId}/saved`);
+      const token = localStorage.getItem('petlog_token');
+      const response = await axios.get(`/api/model/pet/${petId}/saved`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       return response.data;
     } catch (error) {
       return null; // 저장된 모델 없음
@@ -382,7 +398,10 @@ export const chatbotApi = {
    */
   checkPetModelExists: async (petId: string): Promise<boolean> => {
     try {
-      const response = await axios.get(`/api/model/pet/${petId}/exists`);
+      const token = localStorage.getItem('petlog_token');
+      const response = await axios.get(`/api/model/pet/${petId}/exists`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       return response.data.hasModel;
     } catch (error) {
       return false;
