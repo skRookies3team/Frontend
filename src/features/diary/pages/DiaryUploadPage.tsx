@@ -416,7 +416,7 @@ const DiaryUploadPage = () => {
             <header className="sticky top-0 z-40 border-b-2 border-dashed border-pink-200 bg-white/90 backdrop-blur-md shadow-[0_4px_20px_rgba(255,192,203,0.1)]">
                 <div className="container mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
                     <button onClick={handleBack} className="text-pink-400 hover:text-pink-600 transition-colors p-2 hover:bg-pink-50 rounded-full"><ChevronLeft className="w-7 h-7" /></button>
-                    <h1 className="text-2xl md:text-3xl font-bold text-pink-500 font-['Jua'] tracking-wider flex items-center gap-3 drop-shadow-sm">
+                    <h1 className="text-2xl md:text-3xl font-bold text-pink-400 font-['Jua'] tracking-wider flex items-center gap-3 drop-shadow-sm">
                         <PawPrint className="w-6 h-6 animate-bounce text-yellow-400 delay-100" />
                         <span>너와 나의 이야기</span>
                         <PawPrint className="w-6 h-6 animate-bounce text-yellow-400 delay-300" />
