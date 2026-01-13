@@ -77,7 +77,34 @@ const mockUser: User = {
   petCoin: 1250,
   withapetConnected: false,
   profileCompleted: true,
-  pets: [],
+  pets: [
+    {
+      id: "pet-1",
+      name: "구름이",
+      species: "강아지",
+      breed: "말티즈",
+      age: 3,
+      photo: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=200&h=200",
+      gender: "수컷",
+      neutered: true,
+      birthday: "2021-05-20",
+      healthStatus: { lastCheckup: "2024-03-15", vaccination: "접종 완료", weight: "3.5kg" },
+      stats: { walks: 15, friends: 3, photos: 42 }
+    },
+    {
+      id: "pet-2",
+      name: "솜이",
+      species: "강아지",
+      breed: "비숑 프리제",
+      age: 2,
+      photo: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&q=80&w=200&h=200",
+      gender: "암컷",
+      neutered: true,
+      birthday: "2022-08-10",
+      healthStatus: { lastCheckup: "2024-06-10", vaccination: "접종 완료", weight: "5.2kg" },
+      stats: { walks: 8, friends: 5, photos: 28 }
+    }
+  ],
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
