@@ -1,8 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/shared/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { Hospital } from '../api/chatbotApi';
 import { X, Navigation, Loader2, MapPin, Store } from 'lucide-react';
+
+// Preset Locations
+const PRESET_LOCATIONS = [
+  { name: '동국대(서울)', lat: 37.5582, lng: 126.9982 },
+  { name: '강남역', lat: 37.4979, lng: 127.0276 },
+  { name: '홍대입구', lat: 37.5575, lng: 126.9245 },
+  { name: '여의도', lat: 37.5217, lng: 126.9242 },
+  { name: '분당(서현)', lat: 37.3850, lng: 127.1194 },
+  { name: '부산(해운대)', lat: 35.1587, lng: 129.1603 },
+  { name: '대구(동성로)', lat: 35.8714, lng: 128.6014 },
+  { name: '대전(시청)', lat: 36.3504, lng: 127.3845 },
+  { name: '광주(터미널)', lat: 35.1601, lng: 126.8793 },
+];
 
 interface MapContainerProps {
   onClose: () => void;
@@ -22,6 +36,7 @@ export default function MapContainer({ onClose, hospitals, center, onCenterChang
   const [map, setMap] = useState<any>(null);
   const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
   const [isLocating, setIsLocating] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState<string>("");
 
   useEffect(() => {
     const loadMap = () => {
@@ -79,13 +94,34 @@ export default function MapContainer({ onClose, hospitals, center, onCenterChang
             document.head.appendChild(script);
         } else {
              // Script exists, just wait for it to be ready
-             // Simple polling or just trying to load if it's ready
              if (window.kakao && window.kakao.maps) {
                  window.kakao.maps.load(loadMap);
              }
         }
     }
-  }, [center, hospitals]);
+  }, [hospitals]); // center 제거 - 초기 로드에만 사용
+
+  // center prop 변경 시 지도 이동 (지역 선택 시)
+  useEffect(() => {
+    if (map && center && window.kakao) {
+      const moveLatLon = new window.kakao.maps.LatLng(center.lat, center.lng);
+      map.panTo(moveLatLon);
+    }
+  }, [map, center]);
+
+  const handleRegionChange = (value: string) => {
+    const location = PRESET_LOCATIONS.find(loc => loc.name === value);
+    if (location && map && window.kakao) {
+      const moveLatLon = new window.kakao.maps.LatLng(location.lat, location.lng);
+      map.panTo(moveLatLon);
+      setSelectedRegion(value);
+      
+      // Notify parent to fetch new data
+      if (onCenterChange) {
+        onCenterChange(location.lat, location.lng);
+      }
+    }
+  };
 
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -107,7 +143,23 @@ export default function MapContainer({ onClose, hospitals, center, onCenterChang
         <div className="flex-1 relative h-full">
           <div ref={mapRef} className="w-full h-full" />
           
-          {/* Overlay controls */}
+          {/* Top Controls: Region Select */}
+          <div className="absolute top-4 left-4 z-40 w-40 shadow-lg">
+             <Select value={selectedRegion} onValueChange={handleRegionChange}>
+                <SelectTrigger className="w-full bg-white/90 backdrop-blur text-gray-800 border-0 h-10 rounded-full shadow-md font-medium">
+                  <SelectValue placeholder="지역 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRESET_LOCATIONS.map(loc => (
+                    <SelectItem key={loc.name} value={loc.name}>
+                      {loc.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+             </Select>
+          </div>
+
+          {/* Bottom Right Controls: Geolocation */}
           <div className="absolute bottom-6 right-6 z-10 flex flex-col gap-2">
             <Button 
                 size="icon" 
@@ -121,6 +173,7 @@ export default function MapContainer({ onClose, hospitals, center, onCenterChang
                             const lng = pos.coords.longitude;
                             const moveLatLon = new window.kakao.maps.LatLng(lat, lng);
                             map.panTo(moveLatLon);
+                            setSelectedRegion(""); // Clear region selection when using geolocation
                             
                             // Notify parent to fetch new data
                             if (onCenterChange) {
@@ -171,7 +224,17 @@ export default function MapContainer({ onClose, hospitals, center, onCenterChang
                       </span>
                    </div>
                    <p className="text-white/60 text-xs mt-1">{hospital.address}</p>
-                   <div className="flex items-center gap-2 mt-3 text-xs text-white/40">
+                   {/* 진료과목 태그 */}
+                   {hospital.specialty && (
+                     <div className="flex flex-wrap gap-1 mt-2">
+                       {hospital.specialty.split(',').slice(0, 3).map((spec: string, idx: number) => (
+                         <span key={idx} className="text-[10px] px-1.5 py-0.5 bg-blue-500/20 text-blue-300 rounded">
+                           {spec.trim()}
+                         </span>
+                       ))}
+                     </div>
+                   )}
+                   <div className="flex items-center gap-2 mt-2 text-xs text-white/40">
                       <span className="flex items-center gap-1"><Store className="w-3 h-3" /> {hospital.distance}m</span>
                       <span>⭐ {hospital.rating}</span>
                    </div>

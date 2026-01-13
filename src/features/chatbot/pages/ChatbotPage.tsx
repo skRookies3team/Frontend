@@ -8,7 +8,8 @@ import { useAuth } from "@/features/auth/context/auth-context"
 import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import PetCanvas from '@/shared/components/3d/PetCanvas'
-import { chatbotApi, ChatMessage } from "../api/chatbotApi"
+import { chatbotApi, ChatMessage, resetPersonaChatCounter } from "../api/chatbotApi"
+import Pet3DModelUpload from '@/features/healthcare/components/Pet3DModelUpload'
 
 // Error Boundary Component
 interface ErrorBoundaryState {
@@ -31,7 +32,7 @@ class ErrorBoundary extends Component<{ children: ReactNode; fallback: ReactNode
 }
 
 export default function ChatbotPage() {
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const [searchParams] = useSearchParams()
   const petIdFromUrl = searchParams.get('petId')
 
@@ -55,8 +56,38 @@ export default function ChatbotPage() {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
   const [audioChunks, setAudioChunks] = useState<Blob[]>([])
 
+  // 🆕 3D 모델 상태 - 모델이 있으면 대화 UI, 없으면 생성 UI 표시
+  const [has3DModel, setHas3DModel] = useState<boolean>(false)
+  const [model3DUrl, setModel3DUrl] = useState<string | null>(null)
+
+  // 🆕 펫 선택 시 기존 3D 모델 확인 (localStorage 또는 API에서)
+  useEffect(() => {
+    if (selectedPet?.id) {
+      const savedModelUrl = localStorage.getItem(`pet3DModel_${selectedPet.id}`)
+      if (savedModelUrl) {
+        setHas3DModel(true)
+        setModel3DUrl(savedModelUrl)
+      } else {
+        setHas3DModel(false)
+        setModel3DUrl(null)
+      }
+    }
+  }, [selectedPet?.id])
+
+  // 🆕 3D 모델 생성 완료 핸들러
+  const handle3DModelGenerated = (modelUrl: string) => {
+    if (selectedPet?.id) {
+      localStorage.setItem(`pet3DModel_${selectedPet.id}`, modelUrl)
+    }
+    setModel3DUrl(modelUrl)
+    setHas3DModel(true)
+    setSpeechText(`안녕! 드디어 3D로 만났네! 이제 같이 대화하자! 🐕`)
+    setShowSpeech(true)
+  }
+
   // 펫 변경 시 초기 메시지 설정
   useEffect(() => {
+    resetPersonaChatCounter() // 펫 변경 시 순차 응답 카운터 리셋
     setSpeechText(`안녕! 나는 ${selectedPet?.name || '멍멍이'}야! 오늘 기분 어때?`)
     setShowSpeech(true)
     setMessages([])
@@ -162,6 +193,9 @@ export default function ChatbotPage() {
           const response = await fetch('/api/chat/stt', {
             method: 'POST',
             body: formData,
+            headers: token ? {
+              'Authorization': token.startsWith('Bearer ') ? token : `Bearer ${token}`
+            } : {}
           })
           
           if (!response.ok) {
@@ -236,22 +270,69 @@ export default function ChatbotPage() {
         </AnimatePresence>
       </div>
 
-      {/* 2. 3D Pet Canvas Layer (Middle) */}
+      {/* 2. 3D Pet Canvas Layer (Middle) or 3D Model Upload UI */}
       <div className="absolute inset-0 z-10">
-        <ErrorBoundary fallback={
-           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="flex flex-col items-center gap-4">
-                 <div className="text-6xl">🐕</div>
-                 <p className="text-white/80 font-medium text-sm">3D 강아지 불러오는 중...</p>
+        {has3DModel ? (
+          // ✅ 3D 모델이 있으면 → 대화 UI 표시
+          <ErrorBoundary fallback={
+             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="flex flex-col items-center gap-4">
+                   <div className="text-6xl">🐕</div>
+                   <p className="text-white/80 font-medium text-sm">3D 강아지 불러오는 중...</p>
+                </div>
+             </div>
+          }>
+            <PetCanvas
+              speechText={speechText}
+              showSpeech={showSpeech}
+              isTyping={isTyping}
+              modelUrl={model3DUrl}
+            />
+          </ErrorBoundary>
+        ) : (
+          // 🆕 3D 모델이 없으면 → 생성 UI 표시
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-gray-900/80 via-gray-900/60 to-gray-900/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="max-w-md w-full px-6"
+            >
+              {/* 헤더 */}
+              <div className="text-center mb-8">
+                <motion.div
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="text-6xl mb-4"
+                >
+                  🐕
+                </motion.div>
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  {selectedPet?.name || '반려동물'}을(를) 3D로 만나보세요!
+                </h2>
+                <p className="text-white/60 text-sm">
+                  사진 한 장으로 나만의 3D 펫을 생성하고<br />
+                  실시간 대화를 즐겨보세요 ✨
+                </p>
               </div>
-           </div>
-        }>
-          <PetCanvas
-            speechText={speechText}
-            showSpeech={showSpeech}
-            isTyping={isTyping}
-          />
-        </ErrorBoundary>
+
+              {/* 3D 모델 생성 컴포넌트 */}
+              <Pet3DModelUpload
+                petId={selectedPet?.id}
+                onModelGenerated={handle3DModelGenerated}
+              />
+
+              {/* 스킵 버튼 (개발용) */}
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1, transition: { delay: 2 } }}
+                onClick={() => setHas3DModel(true)}
+                className="mt-6 w-full text-center text-white/40 text-sm hover:text-white/60 transition-colors"
+              >
+                임시로 기본 모델 사용하기 →
+              </motion.button>
+            </motion.div>
+          </div>
+        )}
       </div>
 
       {/* Side Pet Selector (Top Right) */}
@@ -309,9 +390,10 @@ export default function ChatbotPage() {
         </motion.div>
       </div>
 
-      {/* Chat Interface (Overlay) */}
-       <div className="absolute left-0 right-0 bottom-24 px-4 z-20 overflow-hidden h-[35vh] mask-linear-fade pointer-events-none">
-          <div className="max-w-2xl mx-auto flex flex-col justify-end h-full space-y-3 pb-4 px-2">
+      {/* Chat Interface (Overlay) - 3D 모델이 있을 때만 표시 */}
+      {has3DModel && (
+       <div className="absolute left-0 right-0 bottom-24 px-4 z-20 overflow-hidden h-[40vh] pointer-events-none" style={{ maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 100%)' }}>
+          <div className="max-w-2xl mx-auto flex flex-col justify-end h-full space-y-3 pb-4 pt-16 px-2">
              {messages.slice(-5).map((message) => (
                 <motion.div
                   key={message.id}
@@ -331,8 +413,10 @@ export default function ChatbotPage() {
              <div ref={messagesEndRef} />
           </div>
        </div>
+      )}
 
-      {/* Input Area */}
+      {/* Input Area - 3D 모델이 있을 때만 표시 */}
+      {has3DModel && (
       <div className="absolute bottom-0 left-0 right-0 z-30 p-6 pb-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -369,6 +453,7 @@ export default function ChatbotPage() {
           </div>
         </motion.div>
       </div>
+      )}
 
       {/* Voice Mode Overlay */}
       <AnimatePresence>

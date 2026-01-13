@@ -47,10 +47,12 @@ export interface ChatHistoryResponse {
 // ===================================================================
 
 export interface HealthRecordRequest {
+  petName: string;
   weight?: number;
   heartRate?: number;
   respiratoryRate?: number;
   steps?: number;
+  condition?: string;
   recordType?: string;
   notes?: string;
 }
@@ -383,6 +385,113 @@ export const analyzeSkinDiseaseApi = async (
       },
       imageUrl: URL.createObjectURL(imageFile), // 업로드된 이미지 미리보기
       message: '피부질환 AI 분석이 완료되었습니다. (데모 모드)',
+    };
+  }
+};
+
+// ===================================================================
+// WithaPet API Types & Functions
+// ===================================================================
+
+export interface WithaPetHealthData {
+  petName: string;
+  petType: string;
+  healthScore: number;
+  vitalData: {
+    avgHeartRate: number;
+    avgRespiratoryRate: number;
+    weight: number;
+    lastUpdate: string;
+  };
+  heartRateTrend: Array<{ time: string; value: number }>;
+  respiratoryRateTrend: Array<{ time: string; value: number }>;
+  aiAnalysis: {
+    analysisResult: string;
+    recommendations: string[];
+  };
+}
+
+export interface WithaPetSyncResponse {
+  success: boolean;
+  message: string;
+  vectorized: boolean;
+  data: WithaPetHealthData;
+}
+
+/**
+ * WithaPet 데이터 동기화 API
+ * 
+ * 스마트 청진기에서 건강 데이터를 가져와 Milvus에 벡터화하여 저장
+ * 
+ * @param petName 펫 이름
+ * @param petType 펫 종류 (Dog/Cat)
+ * @param userId 사용자 ID
+ * @param petId 펫 ID
+ * @param token JWT 토큰
+ */
+export const syncWithaPetDataApi = async (
+  petName: string,
+  petType: string | undefined,
+  userId: string,
+  petId: string,
+  token: string | null
+): Promise<WithaPetSyncResponse> => {
+  try {
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    if (userId) {
+      headers['X-User-Id'] = userId;
+    }
+    if (petId) {
+      headers['X-Pet-Id'] = petId;
+    }
+
+    const params = new URLSearchParams();
+    params.append('petName', petName);
+    if (petType) {
+      params.append('petType', petType);
+    }
+
+    const response = await axios.post<WithaPetSyncResponse>(
+      `${GATEWAY_URL}/api/withapet/sync?${params.toString()}`,
+      null,
+      { headers, timeout: 30000 }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.warn('[HealthcareAPI] WithaPet sync failed, returning MOCK data:', error);
+    
+    // 백엔드 연결 실패 시 Mock 데이터 반환
+    const now = new Date();
+    const mockTrends = Array.from({ length: 12 }, (_, i) => ({
+      time: `${(now.getHours() - 11 + i + 24) % 24}:00`,
+      value: 60 + Math.floor(Math.random() * 60),
+    }));
+
+    return {
+      success: true,
+      message: '건강 데이터가 동기화되었습니다 (데모 모드)',
+      vectorized: false,
+      data: {
+        petName,
+        petType: petType || 'Dog',
+        healthScore: 85 + Math.floor(Math.random() * 15),
+        vitalData: {
+          avgHeartRate: 60 + Math.floor(Math.random() * 60),
+          avgRespiratoryRate: 15 + Math.floor(Math.random() * 25),
+          weight: 5 + Math.random() * 10,
+          lastUpdate: '방금 전 (동기화됨)',
+        },
+        heartRateTrend: mockTrends,
+        respiratoryRateTrend: mockTrends.map(t => ({ ...t, value: 15 + Math.floor(Math.random() * 25) })),
+        aiAnalysis: {
+          analysisResult: '전반적인 건강 상태가 양호합니다.',
+          recommendations: ['규칙적인 산책', '균형 잡힌 식단 유지'],
+        },
+      },
     };
   }
 };

@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { useAuth } from "@/features/auth/context/auth-context"
 import { Badge } from "@/shared/ui/badge"
 import PetInsurance from "../components/PetInsurance"
@@ -12,16 +12,18 @@ import {
   Activity,
   FileText,
   RefreshCw,
-  Download
+  Download,
+  TrendingUp
 } from "lucide-react"
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs"
 import { InlineVeterinarianChat } from "../components/InlineVeterinarianChat"
 import AiDiagnosis from "../components/AiDiagnosis"
 import HealthReport from "../components/HealthReport"
-import { Pet3DModelUpload } from "../components/Pet3DModelUpload"
 import { Button } from "@/shared/ui/button"
+import { syncWithaPetDataApi, WithaPetHealthData } from "../api/healthcareApi"
+import { DailyHealthLog } from "../components/DailyHealthLog"
 
 // 펫별 건강 데이터 생성 함수 (동적 Mock)
 // WHY: 실제 pet ID는 "1", "2" 등 다양한 형식이므로 동적으로 생성
@@ -61,78 +63,66 @@ const generateMockHealthData = (petId: string) => {
 };
 
 // 기본 데이터 (펫이 없을 때)
+// 기본 데이터 (빈 상태)
 const defaultHealthData = {
-  heartRate: { current: 85, min: 70, max: 110, status: "normal", trend: "stable", change: 0, lastUpdate: "-" },
-  respiratoryRate: { current: 25, min: 18, max: 35, status: "normal", trend: "stable", lastUpdate: "-" },
-  weight: { current: 8.5, previous: 8.3, status: "normal", trend: "stable", change: 0.2, lastUpdate: "-" },
-  aiDiagnosis: { status: "healthy", confidence: 92, summary: "데이터를 불러오는 중입니다", recommendations: [], lastUpdate: "-" },
+  heartRate: { current: 0, min: 0, max: 0, status: "-", trend: "-", change: 0, lastUpdate: "-" },
+  respiratoryRate: { current: 0, min: 0, max: 0, status: "-", trend: "-", lastUpdate: "-" },
+  weight: { current: 0, previous: 0, status: "-", trend: "-", change: 0, lastUpdate: "-" },
+  aiDiagnosis: { status: "unknown", confidence: 0, summary: "WithaPet 기기와 연동하여 데이터를 불러오세요.", recommendations: [], lastUpdate: "-" },
 }
 
 // 기본 히스토리 (빈 배열 대신 기본값 제공)
+// 기본 히스토리 (빈 배열)
 const defaultHistory = [
-  { time: "00:00", value: 80 },
-  { time: "04:00", value: 75 },
-  { time: "08:00", value: 85 },
-  { time: "12:00", value: 95 },
-  { time: "16:00", value: 90 },
-  { time: "20:00", value: 82 },
-  { time: "24:00", value: 78 },
+  { time: "00:00", value: 0 },
+  { time: "04:00", value: 0 },
+  { time: "08:00", value: 0 },
+  { time: "12:00", value: 0 },
+  { time: "16:00", value: 0 },
+  { time: "20:00", value: 0 },
+  { time: "24:00", value: 0 },
 ]
 
 export default function HealthcarePage() {
-  const { user } = useAuth()
-  const [selectedPetId, setSelectedPetId] = useState<string>("")
-  const [selectedChart, setSelectedChart] = useState<"heart" | "respiratory">("heart")
-  const [showReport, setShowReport] = useState(false)
-  const [analysisResult, setAnalysisResult] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState("dashboard")
-  
-  // 상태로 데이터 관리 (업데이트 가능하도록)
-  const [currentHealthData, setCurrentHealthData] = useState<any>(null);
-  const [isScraping, setIsScraping] = useState(false);
+  const { user } = useAuth();
+  const token = localStorage.getItem('accessToken');
+  const [pets, setPets] = useState(user?.pets || []);
+  const [selectedPetId, setSelectedPetId] = useState<string>(user?.pets?.[0]?.id?.toString() || "");
+  const selectedPet = user?.pets?.find(p => p.id.toString() === selectedPetId);
 
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [isScraping, setIsScraping] = useState(false);
+  
+  // State for manual health entry
+  const [manualHealthData, setManualHealthData] = useState<any>(null);
+
+  const handleManualSave = (data: any) => {
+      setManualHealthData({
+          weight: data.weight,
+          steps: data.steps,
+          condition: data.condition,
+          notes: data.notes
+      });
+  };
+
+  // WithaPet 및 AI 진단 결과 상태
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [currentHealthData, setCurrentHealthData] = useState<any>(null);
+  const [selectedChart, setSelectedChart] = useState("heart");
+  const [showReport, setShowReport] = useState(false);
+  
   // 펫 선택 초기화
   useEffect(() => {
     if (user?.pets?.length && !selectedPetId) {
-      setSelectedPetId(user.pets[0].id)
+      setSelectedPetId(user.pets[0].id.toString())
     }
   }, [user?.pets, selectedPetId])
 
-  // 펫 변경 시 데이터 초기화
-  // 펫 변경 시 데이터 초기화 및 스크래핑 시뮬레이션
+  // 펫 변경 시 데이터 초기화 (자동 로딩 제거)
   useEffect(() => {
     if (selectedPetId) {
-      // 1. 동적으로 Mock 데이터 생성 (모든 펫 ID에 대해 작동)
-      const initialData = generateMockHealthData(selectedPetId);
-      setCurrentHealthData(initialData);
-
-      // 2. 스크래핑(동기화) 시뮬레이션 시작
-      setIsScraping(true);
-      
-      const timer = setTimeout(() => {
-          setCurrentHealthData((prev: any) => {
-              if (!prev) return initialData; 
-
-              // 데이터 변동 시뮬레이션
-              const randomHeart = 60 + Math.floor(Math.random() * 60);
-              const randomResp = 15 + Math.floor(Math.random() * 25);
-              const currentWeight = prev.healthData?.weight?.current || 5;
-              const randomWeight = currentWeight + (Math.random() * 0.4 - 0.2);
-
-              return {
-                  ...prev,
-                  healthData: {
-                      ...prev.healthData,
-                      heartRate: { ...prev.healthData.heartRate, current: randomHeart, lastUpdate: "방금 전 (동기화됨)" },
-                      respiratoryRate: { ...prev.healthData.respiratoryRate, current: randomResp, lastUpdate: "방금 전" },
-                      weight: { ...prev.healthData.weight, current: parseFloat(randomWeight.toFixed(1)), lastUpdate: "방금 전" }
-                  }
-              };
-          });
-          setIsScraping(false);
-      }, 1000);
-
-      return () => clearTimeout(timer);
+       // 펫이 변경되면 기존 데이터만 비워줌 (로딩 X)
+       setCurrentHealthData(null);
     }
   }, [selectedPetId]);
 
@@ -142,35 +132,102 @@ export default function HealthcarePage() {
     respiratoryHistory: defaultHistory 
   };
 
-  // WithaPet 데이터 스크래핑 시뮬레이션
-  const simulateDataScraping = () => {
+  // WithaPet 데이터 동기화 (실제 백엔드 API 호출)
+  const syncWithaPetData = async () => {
+    if (!selectedPetId) return;
+    
     setIsScraping(true);
-    // 1.5초 로딩 시뮬레이션
-    setTimeout(() => {
-      if (!currentHealthData) return;
+    
+    try {
+      // 선택된 펫 정보 가져오기
+      const selectedPet = pets.find(p => p.id.toString() === selectedPetId);
+      const petName = selectedPet?.name || '반려동물';
+      const petType = selectedPet?.species === 'cat' ? 'Cat' : 'Dog';
       
-      const randomHeart = 60 + Math.floor(Math.random() * 60); // 60-120
-      const randomResp = 15 + Math.floor(Math.random() * 25);  // 15-40
-      const randomWeight = 5 + Math.random() * 10;            // 5-15 (float)
+      // 실제 API 호출 (최소 4초 대기 - 사용자 UX 경험을 위해 추가)
+      const [response] = await Promise.all([
+        syncWithaPetDataApi(
+          petName,
+          petType,
+          user?.id?.toString() || '0',
+          selectedPetId,
+          token
+        ),
+        new Promise(resolve => setTimeout(resolve, 4000))
+      ]);
       
-      setCurrentHealthData((prev: any) => ({
-        ...prev,
-        healthData: {
-          ...prev.healthData,
-          heartRate: { ...prev.healthData.heartRate, current: randomHeart, lastUpdate: "방금 전" },
-          respiratoryRate: { ...prev.healthData.respiratoryRate, current: randomResp, lastUpdate: "방금 전" },
-          weight: { ...prev.healthData.weight, current: parseFloat(randomWeight.toFixed(1)), lastUpdate: "방금 전" }
-        },
-        heartRateHistory: prev.heartRateHistory.map((h: any) => ({ ...h, value: 60 + Math.floor(Math.random() * 60) })),
-        respiratoryHistory: prev.respiratoryHistory.map((r: any) => ({ ...r, value: 15 + Math.floor(Math.random() * 25) }))
-      }));
-      
+      if (response.success && response.data) {
+        const data = response.data;
+        
+        // 상태 업데이트
+        // 상태 업데이트
+        setCurrentHealthData((prev: any) => {
+           const baseData = prev?.healthData || defaultHealthData;
+           return {
+              healthData: {
+                ...baseData,
+                heartRate: { ...baseData.heartRate, current: data.vitalData.avgHeartRate, lastUpdate: data.vitalData.lastUpdate },
+                respiratoryRate: { ...baseData.respiratoryRate, current: data.vitalData.avgRespiratoryRate, lastUpdate: data.vitalData.lastUpdate },
+                weight: { ...baseData.weight, current: parseFloat(data.vitalData.weight.toFixed(1)), lastUpdate: data.vitalData.lastUpdate },
+                aiDiagnosis: {
+                    status: "healthy",
+                    confidence: data.healthScore,
+                    summary: data.aiAnalysis.analysisResult,
+                    recommendations: data.aiAnalysis.recommendations,
+                    lastUpdate: data.vitalData.lastUpdate
+                }
+              },
+              heartRateHistory: data.heartRateTrend || [],
+              respiratoryHistory: data.respiratoryRateTrend || []
+           };
+        });
+        
+        console.log('[WithaPet] 동기화 성공:', response.message);
+      }
+    } catch (error) {
+      console.error('[WithaPet] 동기화 실패:', error);
+    } finally {
       setIsScraping(false);
-    }, 1500);
+    }
   };
 
   return (
-    <main className="min-h-screen bg-[#faf9f7] p-6 lg:p-8">
+    <main className="min-h-screen bg-[#faf9f7] p-6 lg:p-8 relative">
+      
+      {/* ⭐ WithaPet 데이터 로딩 오버레이 */}
+      <AnimatePresence>
+        {isScraping && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="bg-white/95 backdrop-blur-xl rounded-3xl p-10 shadow-2xl flex flex-col items-center gap-6 max-w-sm mx-4"
+            >
+              <div className="relative">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center animate-pulse">
+                  <Stethoscope className="w-10 h-10 text-white" />
+                </div>
+                <div className="absolute inset-0 w-20 h-20 rounded-full border-4 border-blue-500/30 animate-ping" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">WithaPet 데이터 수신 중</h3>
+                <p className="text-gray-500 text-sm">스마트 청진기에서 건강 데이터를 가져오고 있습니다...</p>
+              </div>
+              <div className="flex gap-1">
+                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} className="w-3 h-3 rounded-full bg-blue-500" />
+                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} className="w-3 h-3 rounded-full bg-indigo-500" />
+                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} className="w-3 h-3 rounded-full bg-purple-500" />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* HEADER SECTION */}
@@ -190,24 +247,24 @@ export default function HealthcarePage() {
             {user?.pets?.map((pet) => (
               <button
                 key={pet.id}
-                onClick={() => setSelectedPetId(pet.id)}
+                onClick={() => setSelectedPetId(pet.id.toString())}
                 className={`relative group flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-300 ${
-                  selectedPetId === pet.id 
+                  selectedPetId === pet.id.toString()
                     ? "bg-gray-900 text-white shadow-md scale-100" 
                     : "hover:bg-gray-50 text-gray-600 scale-95"
                 }`}
               >
-                <div className={`w-8 h-8 rounded-full overflow-hidden border-2 ${selectedPetId === pet.id ? "border-white/30" : "border-transparent"}`}>
+                <div className={`w-8 h-8 rounded-full overflow-hidden border-2 ${selectedPetId === pet.id.toString() ? "border-white/30" : "border-transparent"}`}>
                    {pet.photo ? (
                      <img src={pet.photo} alt={pet.name} className="w-full h-full object-cover" />
                    ) : (
                      <div className="w-full h-full bg-gray-200 flex items-center justify-center text-xs">🐕</div>
                    )}
                 </div>
-                <span className={`text-sm font-semibold ${selectedPetId === pet.id ? "text-white" : "text-gray-600"}`}>
+                <span className={`text-sm font-semibold ${selectedPetId === pet.id.toString() ? "text-white" : "text-gray-600"}`}>
                   {pet.name}
                 </span>
-                {selectedPetId === pet.id && (
+                {selectedPetId === pet.id.toString() && (
                    <motion.div 
                      layoutId="active-pet-indicator"
                      className="absolute inset-0 border-2 border-gray-900 rounded-xl"
@@ -236,24 +293,24 @@ export default function HealthcarePage() {
              >
                AI 피부/질병 진단
              </TabsTrigger>
-             <TabsTrigger
-              value="records"
-              className="rounded-full px-6 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-            >
-              건강 기록
-            </TabsTrigger>
-            <TabsTrigger
-              value="3dmodel"
-              className="rounded-full px-6 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-            >
-              🎮 3D 펫 모델
-            </TabsTrigger>
-            <TabsTrigger
-              value="insurance"
-              className="rounded-full px-6 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-            >
-              펫 보험
-            </TabsTrigger>
+             <TabsTrigger 
+               value="records" 
+               className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-gray-900 rounded-none px-0 pb-3 text-gray-500 data-[state=active]:text-gray-900 font-semibold text-base transition-all"
+             >
+               건강 기록
+             </TabsTrigger>
+             <TabsTrigger 
+               value="3dmodel" 
+               className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-gray-900 rounded-none px-0 pb-3 text-gray-500 data-[state=active]:text-gray-900 font-semibold text-base transition-all"
+             >
+               🎮 3D 펫 모델
+             </TabsTrigger>
+             <TabsTrigger 
+               value="insurance" 
+               className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-gray-900 rounded-none px-0 pb-3 text-gray-500 data-[state=active]:text-gray-900 font-semibold text-base transition-all"
+             >
+               펫 보험
+             </TabsTrigger>
           </TabsList>
 
           {/* DASHBOARD TAB (Modern Medical Design - Korean) */}
@@ -266,7 +323,7 @@ export default function HealthcarePage() {
                 </div>
                 <div className="flex gap-2">
                    <Button 
-                      onClick={simulateDataScraping}
+                      onClick={syncWithaPetData}
                       disabled={isScraping}
                       className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg border-0 animate-in fade-in zoom-in duration-300"
                    >
@@ -282,7 +339,7 @@ export default function HealthcarePage() {
                         </>
                      )}
                    </Button>
-                   <ManualHealthEntry />
+                   <ManualHealthEntry onSave={handleManualSave} petName={selectedPet?.name} petId={selectedPetId} />
                 </div>
              </div>
 
@@ -320,76 +377,142 @@ export default function HealthcarePage() {
                      </CardContent>
                    </Card>
 
-                   {/* 2. Vital Signs Grid (Medical Style) */}
+                   {/* 2. Vital Signs Grid (Modern Glass Style) */}
                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {/* Heart Rate */}
-                      <Card className="rounded-none border-t-4 border-t-red-500 border-x border-b border-gray-100 shadow-sm bg-white hover:bg-gray-50 transition-colors">
-                         <CardContent className="p-4">
-                            <div className="flex items-center gap-2 mb-3">
-                               <Activity className="w-4 h-4 text-red-500" />
-                               <span className="text-xs font-bold text-gray-500 uppercase">평균 심박수</span>
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                      >
+                        <Card className="group relative overflow-hidden rounded-2xl border-0 shadow-lg bg-gradient-to-br from-red-500 to-rose-600 text-white hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-8 -mt-8 blur-xl" />
+                          <CardContent className="p-5 relative z-10">
+                            <div className="flex items-center gap-2 mb-4">
+                              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                                <Activity className="w-5 h-5" />
+                              </div>
+                              <span className="text-xs font-semibold text-white/80 uppercase tracking-wider">심박수</span>
                             </div>
-                            <div className="flex items-baseline gap-1">
-                               <span className="text-3xl font-bold text-gray-900 font-mono tracking-tight">{healthData?.heartRate?.current || '-'}</span>
-                               <span className="text-xs text-gray-400">BPM</span>
+                            <div className="flex items-baseline gap-2">
+                              <motion.span 
+                                key={healthData?.heartRate?.current}
+                                initial={{ scale: 1.2, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                className="text-4xl font-bold tracking-tight"
+                              >
+                                {healthData?.heartRate?.current || '-'}
+                              </motion.span>
+                              <span className="text-sm text-white/70">BPM</span>
                             </div>
-                            <div className="mt-2 text-[10px] text-green-600 font-medium bg-green-50 inline-block px-1.5 py-0.5 rounded">
-                               정상 범위
+                            <div className="mt-3 flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-green-300 animate-pulse" />
+                              <span className="text-xs text-white/80">정상 범위</span>
                             </div>
-                         </CardContent>
-                      </Card>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
 
                       {/* Respiratory */}
-                      <Card className="rounded-none border-t-4 border-t-blue-500 border-x border-b border-gray-100 shadow-sm bg-white hover:bg-gray-50 transition-colors">
-                         <CardContent className="p-4">
-                            <div className="flex items-center gap-2 mb-3">
-                               <Wind className="w-4 h-4 text-blue-500" />
-                               <span className="text-xs font-bold text-gray-500 uppercase">분당 호흡수</span>
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        <Card className="group relative overflow-hidden rounded-2xl border-0 shadow-lg bg-gradient-to-br from-blue-500 to-cyan-600 text-white hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-8 -mt-8 blur-xl" />
+                          <CardContent className="p-5 relative z-10">
+                            <div className="flex items-center gap-2 mb-4">
+                              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                                <Wind className="w-5 h-5" />
+                              </div>
+                              <span className="text-xs font-semibold text-white/80 uppercase tracking-wider">호흡수</span>
                             </div>
-                            <div className="flex items-baseline gap-1">
-                               <span className="text-3xl font-bold text-gray-900 font-mono tracking-tight">{healthData?.respiratoryRate?.current || '-'}</span>
-                               <span className="text-xs text-gray-400">RPM</span>
+                            <div className="flex items-baseline gap-2">
+                              <motion.span 
+                                key={healthData?.respiratoryRate?.current}
+                                initial={{ scale: 1.2, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                className="text-4xl font-bold tracking-tight"
+                              >
+                                {healthData?.respiratoryRate?.current || '-'}
+                              </motion.span>
+                              <span className="text-sm text-white/70">RPM</span>
                             </div>
-                            <div className="mt-2 text-[10px] text-green-600 font-medium bg-green-50 inline-block px-1.5 py-0.5 rounded">
-                               안정적
+                            <div className="mt-3 flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-green-300 animate-pulse" />
+                              <span className="text-xs text-white/80">안정적</span>
                             </div>
-                         </CardContent>
-                      </Card>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
 
                       {/* Weight */}
-                      <Card className="rounded-none border-t-4 border-t-emerald-500 border-x border-b border-gray-100 shadow-sm bg-white hover:bg-gray-50 transition-colors">
-                         <CardContent className="p-4">
-                            <div className="flex items-center gap-2 mb-3">
-                               <Scale className="w-4 h-4 text-emerald-500" />
-                               <span className="text-xs font-bold text-gray-500 uppercase">몸무게</span>
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                      >
+                        <Card className="group relative overflow-hidden rounded-2xl border-0 shadow-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-8 -mt-8 blur-xl" />
+                          <CardContent className="p-5 relative z-10">
+                            <div className="flex items-center gap-2 mb-4">
+                              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                                <Scale className="w-5 h-5" />
+                              </div>
+                              <span className="text-xs font-semibold text-white/80 uppercase tracking-wider">몸무게</span>
                             </div>
-                            <div className="flex items-baseline gap-1">
-                               <span className="text-3xl font-bold text-gray-900 font-mono tracking-tight">{healthData?.weight?.current || '-'}</span>
-                               <span className="text-xs text-gray-400">kg</span>
+                            <div className="flex items-baseline gap-2">
+                              <motion.span 
+                                key={healthData?.weight?.current}
+                                initial={{ scale: 1.2, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                className="text-4xl font-bold tracking-tight"
+                              >
+                                {healthData?.weight?.current || '-'}
+                              </motion.span>
+                              <span className="text-sm text-white/70">kg</span>
                             </div>
-                            <div className="mt-2 text-[10px] text-gray-400 font-medium px-1.5 py-0.5">
-                               변화 없음
+                            <div className="mt-3 flex items-center gap-2">
+                              <TrendingUp className="w-4 h-4 text-white/70" />
+                              <span className="text-xs text-white/80">유지 중</span>
                             </div>
-                         </CardContent>
-                      </Card>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    </div>
+
+                    {/* Daily Health Log Section */}
+                    <div className="mt-6">
+                        <DailyHealthLog healthData={manualHealthData} />
+                    </div>
 
                       {/* Condition Score */}
-                      <Card className="rounded-none border-t-4 border-t-indigo-500 border-x border-b border-gray-100 shadow-sm bg-white hover:bg-gray-50 transition-colors">
-                         <CardContent className="p-4">
-                            <div className="flex items-center gap-2 mb-3">
-                               <Sparkles className="w-4 h-4 text-indigo-500" />
-                               <span className="text-xs font-bold text-gray-500 uppercase">컨디션 지수</span>
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                      >
+                        <Card className="group relative overflow-hidden rounded-2xl border-0 shadow-lg bg-gradient-to-br from-violet-500 to-purple-600 text-white hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-8 -mt-8 blur-xl" />
+                          <CardContent className="p-5 relative z-10">
+                            <div className="flex items-center gap-2 mb-4">
+                              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                                <Sparkles className="w-5 h-5" />
+                              </div>
+                              <span className="text-xs font-semibold text-white/80 uppercase tracking-wider">컨디션</span>
                             </div>
-                            <div className="flex items-baseline gap-1">
-                               <span className="text-3xl font-bold text-gray-900 font-mono tracking-tight">98</span>
-                               <span className="text-xs text-gray-400">/100</span>
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-4xl font-bold tracking-tight">98</span>
+                              <span className="text-sm text-white/70">/100</span>
                             </div>
-                            <div className="mt-2 text-[10px] text-indigo-600 font-medium bg-indigo-50 inline-block px-1.5 py-0.5 rounded">
-                               최상
+                            <div className="mt-3 flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-yellow-300 animate-pulse" />
+                              <span className="text-xs text-white/80">최상</span>
                             </div>
-                         </CardContent>
-                      </Card>
-                   </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
 
                    {/* 3. Main Chart Section */}
                    <Card className="rounded-none border border-gray-200 shadow-sm bg-white">
@@ -481,14 +604,21 @@ export default function HealthcarePage() {
               <HealthReport onClose={() => setActiveTab("dashboard")} />
           </TabsContent>
 
-          {/* 3D MODEL TAB */}
+          {/* 3D MODEL TAB - 이제 펫과 대화하기 페이지로 이동됨 */}
           <TabsContent value="3dmodel" className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">🐕 3D 펫 모델 생성</h2>
-                <p className="text-gray-500">반려동물 사진을 업로드하면 AI가 3D 모델을 만들어드립니다</p>
-              </div>
-              <Pet3DModelUpload petId={selectedPetId} />
+            <div className="max-w-md mx-auto text-center py-16">
+              <div className="text-6xl mb-4">🐕</div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">3D 펫 모델이 이동했어요!</h2>
+              <p className="text-gray-500 mb-6">
+                3D 펫 모델 생성은 이제 <strong>"펫과 대화하기"</strong> 페이지에서<br />
+                더욱 풍부한 경험으로 만나보실 수 있어요.
+              </p>
+              <a 
+                href="/chatbot" 
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold rounded-full hover:from-pink-600 hover:to-rose-600 transition-all shadow-lg"
+              >
+                펫과 대화하기로 이동 →
+              </a>
             </div>
           </TabsContent>
 

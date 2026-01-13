@@ -107,10 +107,37 @@ export default function AiDiagnosis() {
     }
   };
 
+  const [mapCenter, setMapCenter] = useState({ lat: 37.5582, lng: 126.9982 }); // 기본값: 동국대학교
+
   const openMap = async () => {
-     const data = await chatbotApi.getNearbyHospitals(37.5665, 126.9780);
-     setHospitals(data);
-     setShowMap(true);
+    // 1. 현재 위치 가져오기 시도
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          console.log(`[AiDiagnosis] 현재 위치: ${latitude}, ${longitude}`);
+          
+          setMapCenter({ lat: latitude, lng: longitude });
+          
+          // 현재 위치 기반 병원 검색
+          const data = await chatbotApi.getNearbyHospitals(latitude, longitude);
+          setHospitals(data);
+          setShowMap(true);
+        },
+        async (error) => {
+          console.warn("[AiDiagnosis] 위치 정보를 가져올 수 없어 기본 위치(동국대)를 사용합니다.", error);
+          // 실패 시 기본 위치로 검색
+          const data = await chatbotApi.getNearbyHospitals(37.5582, 126.9982);
+          setHospitals(data);
+          setShowMap(true);
+        }
+      );
+    } else {
+      // Geolocation 미지원 시 기본 위치
+      const data = await chatbotApi.getNearbyHospitals(37.5582, 126.9982);
+      setHospitals(data);
+      setShowMap(true);
+    }
   };
 
   return (
@@ -265,8 +292,9 @@ export default function AiDiagnosis() {
          <MapContainer 
             onClose={() => setShowMap(false)} 
             hospitals={hospitals}
-            center={{ lat: 37.5665, lng: 126.9780 }}
+            center={mapCenter}
             onCenterChange={async (lat, lng) => {
+                setMapCenter({ lat, lng }); // 지도 중심 상태 업데이트
                 const data = await chatbotApi.getNearbyHospitals(lat, lng);
                 setHospitals(data);
             }}

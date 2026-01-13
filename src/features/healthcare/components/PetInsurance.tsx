@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import InsuranceCompareModal from "./InsuranceCompareModal";
 import {
   Check,
   Shield,
+  ArrowRight,
   AlertCircle,
   FileText,
   ChevronDown,
@@ -112,6 +114,7 @@ export default function PetInsurance() {
   const [petType, setPetType] = useState<"dog" | "cat">("dog");
   const [breed, setBreed] = useState("");
   const [birthDate, setBirthDate] = useState("");
+  const [showCompareModal, setShowCompareModal] = useState(false);
 
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-5 duration-500 pb-12">
@@ -359,9 +362,15 @@ export default function PetInsurance() {
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
             맞춤형 플랜 비교
           </h2>
-          <p className="text-gray-600">
+          <p className="text-gray-600 mb-6">
             아이의 나이와 건강 상태에 딱 맞는 플랜을 선택하세요
           </p>
+          <Button 
+            onClick={() => setShowCompareModal(true)}
+            className="bg-[#004e92] hover:bg-[#003b70] text-white px-8 py-3 rounded-full font-semibold shadow-lg shadow-blue-200"
+          >
+            🏢 보험사별 상세 비교하기 <ArrowRight className="ml-2 h-4 w-4 inline" />
+          </Button>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
@@ -459,6 +468,12 @@ export default function PetInsurance() {
           </div>
         </div>
       </section>
+
+      {/* Insurance Compare Modal */}
+      <InsuranceCompareModal 
+        isOpen={showCompareModal} 
+        onClose={() => setShowCompareModal(false)} 
+      />
     </div>
   );
 }

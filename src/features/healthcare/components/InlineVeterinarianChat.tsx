@@ -36,7 +36,7 @@ export function InlineVeterinarianChat({ petId }: InlineVeterinarianChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
 
   useEffect(() => {
@@ -97,7 +97,7 @@ export function InlineVeterinarianChat({ petId }: InlineVeterinarianChatProps) {
   };
 
   return (
-    <Card className="h-[600px] flex flex-col overflow-hidden border-0 shadow-xl bg-white/80 backdrop-blur-sm ring-1 ring-gray-100">
+    <Card className="h-[750px] flex flex-col overflow-hidden border-0 shadow-xl bg-white/80 backdrop-blur-sm ring-1 ring-gray-100">
       {/* Header */}
       <div className="bg-gradient-to-r from-[#004e92] to-[#50cc7f] p-6 text-white relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl" />

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import React, { useState } from "react"
 import { Button } from "@/shared/ui/button"
 import {
   Dialog,
@@ -11,10 +11,10 @@ import {
 } from "@/shared/ui/dialog"
 import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
-import { PlusCircle, Activity, Weight, Heart, Loader2, CheckCircle, XCircle } from "lucide-react"
+import { PlusCircle, Activity, Weight, Heart, Loader2, CheckCircle, XCircle, FileText } from "lucide-react"
 import { saveHealthRecordApi } from "../api/healthcareApi"
 
-export function ManualHealthEntry() {
+export function ManualHealthEntry({ onSave, petName = "My Pet", petId }: { onSave?: (data: any) => void; petName?: string; petId?: string | number }) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
@@ -22,7 +22,9 @@ export function ManualHealthEntry() {
     weight: "",
     heartRate: "",
     respiratoryRate: "",
-    steps: ""
+    steps: "",
+    condition: "",
+    notes: ""
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,26 +36,36 @@ export function ManualHealthEntry() {
       // [수정] petlog_token 우선 확인 (auth-context.tsx 저장 키와 일치)
       const token = localStorage.getItem('petlog_token') || localStorage.getItem('accessToken')
       const userId = localStorage.getItem('userId') || '0'
-      const petId = localStorage.getItem('selectedPetId') || '0'
+      // const petId = localStorage.getItem('selectedPetId') || '0' // Remove this line as we use the prop
 
       const response = await saveHealthRecordApi(
         {
+          petName: petName,
           weight: formData.weight ? parseFloat(formData.weight) : undefined,
           heartRate: formData.heartRate ? parseInt(formData.heartRate) : undefined,
           respiratoryRate: formData.respiratoryRate ? parseInt(formData.respiratoryRate) : undefined,
           steps: formData.steps ? parseInt(formData.steps) : undefined,
+          condition: formData.condition,
+          notes: formData.notes,
           recordType: 'MANUAL',
         },
         userId,
-        petId,
+        petId?.toString() || '0',
         token
       )
 
       if (response.success) {
         setSaveStatus('success')
+        if (onSave) {
+             onSave({
+                 ...formData,
+                 weight: formData.weight ? parseFloat(formData.weight) : 0,
+                 steps: formData.steps ? parseInt(formData.steps) : 0,
+             }); 
+        }
         setTimeout(() => {
           setOpen(false)
-          setFormData({ weight: "", heartRate: "", respiratoryRate: "", steps: "" })
+          setFormData({ weight: "", heartRate: "", respiratoryRate: "", steps: "", condition: "", notes: "" })
           setSaveStatus('idle')
         }, 1500)
       } else {
@@ -140,8 +152,72 @@ export function ManualHealthEntry() {
               onChange={(e) => setFormData({ ...formData, steps: e.target.value })}
             />
           </div>
+          
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label className="text-right flex items-center justify-end gap-2">
+               <span>😊</span>
+               컨디션
+            </Label>
+            <div className="col-span-3 flex gap-2">
+              {['최고', '좋음', '보통', '나쁨'].map((cond) => (
+                <Button
+                  key={cond}
+                  type="button"
+                  variant={formData.condition === cond ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setFormData({ ...formData, condition: cond })}
+                >
+                  {cond}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="notes" className="text-right flex items-center justify-end gap-2">
+              <FileText className="h-4 w-4 text-gray-500" />
+              메모
+            </Label>
+            <Input
+              id="notes"
+              placeholder="특이사항을 기록해주세요"
+              className="col-span-3"
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            />
+          </div>
           <DialogFooter>
-            <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700">저장하기</Button>
+            <Button 
+              type="submit" 
+              className={`text-white min-w-[100px] ${
+                saveStatus === 'success' 
+                  ? 'bg-green-600 hover:bg-green-700' 
+                  : saveStatus === 'error'
+                  ? 'bg-red-600 hover:bg-red-700'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  저장 중...
+                </>
+              ) : saveStatus === 'success' ? (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  저장 완료!
+                </>
+              ) : saveStatus === 'error' ? (
+                <>
+                  <XCircle className="mr-2 h-4 w-4" />
+                  저장 실패
+                </>
+              ) : (
+                '저장하기'
+              )}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
